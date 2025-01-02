@@ -1,8 +1,12 @@
 package com.lapis.database
 
+import com.lapis.database.base.FromJson
 import com.lapis.database.base.HasDTO
 import com.lapis.database.base.HasName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -33,7 +37,7 @@ object Characters : IntIdTable(), HasName
 
 class ExposedCharacter(
 	id: EntityID<Int>
-) : Entity<Int>(id), HasDTO<CharacterDTO>
+) : Entity<Int>(id), HasDTO<CharacterDTO>, FromJson<ExposedCharacter>
 {
 	companion object : EntityClass<Int, ExposedCharacter>(Characters)
 	
@@ -56,6 +60,24 @@ class ExposedCharacter(
 	
 	override fun toDTO(): CharacterDTO {
 		return CharacterDTO.fromEntity(this)
+	}
+	
+	override fun ExposedCharacter.customizeFromJson(json: JsonObject)
+	{
+		json["name"]?.jsonPrimitive?.content?.let { name = it }
+		json["removedHp"]?.jsonPrimitive?.int?.let { removedHp = it }
+		json["maxHp"]?.jsonPrimitive?.int?.let { maxHp = it }
+		json["temporaryHp"]?.jsonPrimitive?.int?.let { temporaryHp = it }
+		
+		json["recoveries"]?.jsonPrimitive?.int?.let { recoveries = it }
+		json["maxRecoveries"]?.jsonPrimitive?.int?.let { maxRecoveries = it }
+		
+		json["resources"]?.jsonPrimitive?.int?.let { resources = it }
+		json["surges"]?.jsonPrimitive?.int?.let { surges = it }
+		json["victories"]?.jsonPrimitive?.int?.let { victories = it }
+		
+		json["campaign"]?.jsonPrimitive?.int?.let { campaign = ExposedCampaign.findById(it) ?: error("Campaign not found") }
+		json["user"]?.jsonPrimitive?.int?.let { user = ExposedUser.findById(it) ?: error("User not found") }
 	}
 }
 

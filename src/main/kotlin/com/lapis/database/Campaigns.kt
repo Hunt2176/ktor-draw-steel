@@ -1,8 +1,11 @@
 package com.lapis.database
 
+import com.lapis.database.base.FromJson
 import com.lapis.database.base.HasDTO
 import com.lapis.database.base.HasName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -15,13 +18,18 @@ object Campaigns : IntIdTable(), HasName {
 
 class ExposedCampaign(
 	id: EntityID<Int>
-) : Entity<Int>(id), HasDTO<CampaignDTO> {
+) : Entity<Int>(id), HasDTO<CampaignDTO>, FromJson<ExposedCampaign> {
 	companion object : EntityClass<Int, ExposedCampaign>(Campaigns)
 	
 	var name by Campaigns.name
 	
 	override fun toDTO(): CampaignDTO {
 		return CampaignDTO.fromEntity(this)
+	}
+	
+	override fun ExposedCampaign.customizeFromJson(json: JsonObject)
+	{
+		json["name"]?.jsonPrimitive?.content?.let { name = it }
 	}
 }
 

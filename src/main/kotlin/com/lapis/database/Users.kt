@@ -1,8 +1,11 @@
 package com.lapis.database
 
+import com.lapis.database.base.FromJson
 import com.lapis.database.base.HasDTO
 import com.lapis.database.base.HasName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -15,7 +18,7 @@ object Users : IntIdTable(), HasName
 
 class ExposedUser(
 	id: EntityID<Int>
-) : Entity<Int>(id), HasDTO<UserDTO>
+) : Entity<Int>(id), HasDTO<UserDTO>, FromJson<ExposedUser>
 {
 	companion object : EntityClass<Int, ExposedUser>(Users)
 	
@@ -24,6 +27,11 @@ class ExposedUser(
 	override fun toDTO(): UserDTO
 	{
 		return UserDTO.fromEntity(this)
+	}
+	
+	override fun ExposedUser.customizeFromJson(json: JsonObject)
+	{
+		json["name"]?.jsonPrimitive?.content?.let { name = it }
 	}
 }
 

@@ -2,6 +2,7 @@ package com.lapis.config
 
 import com.lapis.database.*
 import com.lapis.database.base.BaseRepository
+import com.lapis.database.base.BaseRepositoryEntityMapper
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.Database
@@ -20,12 +21,24 @@ fun Application.configureDatabases()
 	
 	val repos = transaction(database) {
 		arrayOf(
-			BaseRepository(ExposedCampaign, database, ExposedCampaign::toDTO),
-			BaseRepository(ExposedUser, database, ExposedUser::toDTO),
-			BaseRepository(ExposedCharacter, database, ExposedCharacter::toDTO),
-			BaseRepository(ExposedCharacterCondition, database, ExposedCharacterCondition::toDTO),
-			BaseRepository(ExposedCombat, database, ExposedCombat::toDTO),
-			BaseRepository(ExposedCombatant, database, ExposedCombatant::toDTO),
+			BaseRepository(ExposedCampaign, database, BaseRepositoryEntityMapper(ExposedCampaign::toDTO) {
+				customizeFromJson(it)
+			}),
+			BaseRepository(ExposedUser, database, BaseRepositoryEntityMapper(ExposedUser::toDTO) {
+				customizeFromJson(it)
+			}),
+			BaseRepository(ExposedCharacter, database, BaseRepositoryEntityMapper(ExposedCharacter::toDTO) {
+				customizeFromJson(it)
+			}),
+			BaseRepository(ExposedCharacterCondition, database, BaseRepositoryEntityMapper(ExposedCharacterCondition::toDTO) {
+				customizeFromJson(it)
+			}),
+			BaseRepository(ExposedCombat, database, BaseRepositoryEntityMapper(ExposedCombat::toDTO) {
+				customizeFromJson(it)
+			}),
+			BaseRepository(ExposedCombatant, database, BaseRepositoryEntityMapper(ExposedCombatant::toDTO) {
+				customizeFromJson(it)
+			}),
 		)
 	}
 	

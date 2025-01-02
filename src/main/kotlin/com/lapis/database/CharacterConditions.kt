@@ -1,8 +1,12 @@
 package com.lapis.database
 
+import com.lapis.database.base.FromJson
 import com.lapis.database.base.HasDTO
 import com.lapis.database.base.HasName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -20,7 +24,7 @@ object CharacterConditions : IntIdTable(), HasName
 	val endType = enumeration<EndType>("end_type")
 }
 
-class ExposedCharacterCondition(id: EntityID<Int>) : IntEntity(id), HasDTO<CharacterConditionDTO>
+class ExposedCharacterCondition(id: EntityID<Int>) : IntEntity(id), HasDTO<CharacterConditionDTO>, FromJson<ExposedCharacterCondition>
 {
 	companion object : IntEntityClass<ExposedCharacterCondition>(CharacterConditions)
 	
@@ -30,6 +34,14 @@ class ExposedCharacterCondition(id: EntityID<Int>) : IntEntity(id), HasDTO<Chara
 	
 	override fun toDTO(): CharacterConditionDTO {
 		return CharacterConditionDTO.fromEntity(this)
+	}
+	
+	override fun ExposedCharacterCondition.customizeFromJson(json: JsonObject)
+	{
+		json["endType"]?.jsonPrimitive?.content?.let { endType = EndType.valueOf(it) }
+		json["name"]?.jsonPrimitive?.content?.let { name = it }
+		
+		json["character"]?.jsonPrimitive?.int?.let { character = ExposedCharacter.findById(it) ?: error("Character not found") }
 	}
 }
 

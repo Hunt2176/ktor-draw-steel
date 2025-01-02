@@ -6,11 +6,15 @@ import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.defaultheaders.*
 import io.ktor.server.plugins.partialcontent.*
+import kotlinx.serialization.json.Json
 
 fun Application.configureHTTP()
 {
 	install(ContentNegotiation) {
-		json()
+		json(json = Json {
+			ignoreUnknownKeys = true
+			isLenient = true
+		})
 	}
 	install(Compression)
 	install(DefaultHeaders) {

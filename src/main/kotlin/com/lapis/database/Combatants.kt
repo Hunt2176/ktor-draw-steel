@@ -1,7 +1,12 @@
 package com.lapis.database
 
+import com.lapis.database.base.FromJson
 import com.lapis.database.base.HasDTO
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -25,7 +30,7 @@ object Combatants : IntIdTable()
 
 class ExposedCombatant(
 	id: EntityID<Int>
-) : Entity<Int>(id), HasDTO<CombatantDTO>
+) : Entity<Int>(id), HasDTO<CombatantDTO>, FromJson<ExposedCombatant>
 {
 	companion object : EntityClass<Int, ExposedCombatant>(Combatants)
 	
@@ -36,6 +41,14 @@ class ExposedCombatant(
 	override fun toDTO(): CombatantDTO
 	{
 		return CombatantDTO.fromEntity(this)
+	}
+	
+	override fun ExposedCombatant.customizeFromJson(json: JsonObject)
+	{
+		json["available"]?.jsonPrimitive?.boolean?.let { available = it }
+		
+		json["combat"]?.jsonPrimitive?.int?.let { combat = ExposedCombat.findById(it) ?: error("Combat not found") }
+		json["character"]?.jsonPrimitive?.int?.let { character = ExposedCharacter.findById(it) ?: error("Character not found") }
 	}
 }
 
