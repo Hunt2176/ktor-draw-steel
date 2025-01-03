@@ -5,6 +5,7 @@ import com.lapis.database.base.HasDTO
 import com.lapis.database.base.HasName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.dao.Entity
@@ -15,7 +16,7 @@ import org.jetbrains.exposed.sql.ReferenceOption
 
 object Characters : IntIdTable(), HasName
 {
-	override val name = varchar("name", 50)
+	override val name = varchar("name", 255)
 	
 	val removedHp = integer("removed_hp").default(0)
 	val maxHp = integer("max_hp").default(0)
@@ -27,6 +28,9 @@ object Characters : IntIdTable(), HasName
 	val resources = integer("resources").default(0)
 	val surges = integer("surges").default(0)
 	val victories = integer("victories").default(0)
+	
+	val pictureUrl = varchar("picture_url", 255).nullable()
+	val border = varchar("border", 255).nullable()
 	
 	val campaign = reference("campaign", Campaigns)
 	val user = reference("user", Users,
@@ -53,6 +57,9 @@ class ExposedCharacter(
 	var surges by Characters.surges
 	var victories by Characters.victories
 	
+	var pictureUrl by Characters.pictureUrl
+	var border by Characters.border
+	
 	var campaign by ExposedCampaign referencedOn Characters.campaign
 	var user by ExposedUser referencedOn Characters.user
 	
@@ -76,6 +83,9 @@ class ExposedCharacter(
 		json["surges"]?.jsonPrimitive?.int?.let { surges = it }
 		json["victories"]?.jsonPrimitive?.int?.let { victories = it }
 		
+		if (json.containsKey("pictureUrl")) json["pictureUrl"]?.jsonPrimitive?.contentOrNull?.let { pictureUrl = it }
+		if (json.containsKey("border")) json["border"]?.jsonPrimitive?.contentOrNull?.let { border = it }
+		
 		json["campaign"]?.jsonPrimitive?.int?.let { campaign = ExposedCampaign.findById(it) ?: error("Campaign not found") }
 		json["user"]?.jsonPrimitive?.int?.let { user = ExposedUser.findById(it) ?: error("User not found") }
 	}
@@ -95,6 +105,8 @@ data class CharacterDTO (
 	val victories: Int,
 	val campaign: Int,
 	val user: Int,
+	val pictureUrl: String?,
+	val border: String?,
 	val conditions: List<CharacterConditionDTO>
 )
 {
@@ -115,6 +127,8 @@ data class CharacterDTO (
 				entity.victories,
 				entity.campaign.id.value,
 				entity.user.id.value,
+				entity.pictureUrl,
+				entity.border,
 				entity.conditions.map { it.toDTO() }
 			)
 		}
