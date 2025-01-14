@@ -30,7 +30,7 @@ export function CharacterPage(): ReactNode {
 	)
 }
 
-async function fetchCharacter(id: string): Promise<Character> {
+export async function fetchCharacter(id: string): Promise<Character> {
 	const res = await fetch(`/api/characters/${id}`)
 	return (await res.json()) as Character
 }

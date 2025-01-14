@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Table } from "react-bootstrap";
 import { useParams } from "react-router-dom";
-import { Case, Switch } from "src/components/switch.tsx";
+import { Case, Switch } from "src/components/visibility.tsx";
 import { Campaign, Character } from "src/types/models.ts";
 
 export function CampaignDetail() {

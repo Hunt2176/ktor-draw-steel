@@ -27,6 +27,15 @@ export interface CaseProps {
 }
 
 export function Case({ children }: CaseProps): React.ReactNode {
-	
 	return children;
+}
+
+
+export interface ShowProps {
+	when: boolean;
+	children: React.ReactNode;
+}
+
+export function Show({when, children}: ShowProps): React.ReactNode {
+	return when ? children : <></>;
 }
