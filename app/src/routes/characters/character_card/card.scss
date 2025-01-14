@@ -1,0 +1,23 @@
+table.table.character-card-table {
+  margin: 0;
+  --bs-table-bg: 'transparent';
+  --bs-table-border-color: 'transparent';
+
+  > tbody {
+    > tr {
+      > td {
+        text-align: center;
+        color: white;
+        font-weight: bolder;
+        font-size: 1.2rem;
+        text-shadow: white 0 0 10px;
+      }
+    }
+  }
+}
+
+div.card.character-card {
+  > .card-body {
+    padding-top: 4px;
+  }
+}

@@ -21,7 +21,7 @@ class BaseRepositoryEntityMapper<EType: Entity<Int>>(
 open class BaseRepository<EType: Entity<Int>, ECType: EntityClass<Int, EType>> (
 	private val entityClass: ECType,
 	val database: Database,
-	val mapper: BaseRepositoryEntityMapper<EType>
+	private val mapper: BaseRepositoryEntityMapper<EType>
 )
 {
 	init {
@@ -30,7 +30,11 @@ open class BaseRepository<EType: Entity<Int>, ECType: EntityClass<Int, EType>> (
 		}
 	}
 	
-	fun registerRoutes(baseRoute: Route) {
+	open fun Route.customizeRoute(baseRoute: Route) {
+		// Override this method to add custom routes
+	}
+	
+	internal fun registerRoutes(baseRoute: Route) {
 		val name = entityClass.table.tableName.toCamelCase()
 		baseRoute.route("/$name") {
 			
@@ -118,6 +122,8 @@ open class BaseRepository<EType: Entity<Int>, ECType: EntityClass<Int, EType>> (
 					call.respond(HttpStatusCode.OK, "Entity deleted")
 				}
 			}
+			
+			customizeRoute(this)
 		}
 	}
 }

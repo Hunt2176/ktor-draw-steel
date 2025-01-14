@@ -21,9 +21,7 @@ fun Application.configureDatabases()
 	
 	val repos = transaction(database) {
 		arrayOf(
-			BaseRepository(ExposedCampaign, database, BaseRepositoryEntityMapper(ExposedCampaign::toDTO) {
-				customizeFromJson(it)
-			}),
+			CampaignRepository(database),
 			BaseRepository(ExposedUser, database, BaseRepositoryEntityMapper(ExposedUser::toDTO) {
 				customizeFromJson(it)
 			}),
@@ -47,35 +45,4 @@ fun Application.configureDatabases()
 			repos.forEach { it.registerRoutes(this) }
 		}
 	}
-	
-//	transaction(database) {
-//		val campaignId = Campaigns.insert {
-//			it[name] = "Test Campaign"
-//		}[Campaigns.id]
-//
-//		val userId = Users.insert {
-//			it[name] = "Test User"
-//		}[Users.id]
-//
-//		val characterId = Characters.insert {
-//			it[name] = "Test Character"
-//			it[user] = userId
-//			it[campaign] = campaignId
-//		}[Characters.id]
-//
-//		CharacterConditions.insert {
-//			it[name] = "Test Condition"
-//			it[character] = characterId
-//			it[endType] = EndType.endOfTurn
-//		}
-//
-//		val combatId = Combats.insert {
-//			it[campaign] = campaignId
-//		}[Combats.id]
-//
-//		Combatants.insert {
-//			it[combat] = combatId
-//			it[character] = characterId
-//		}
-//	}
 }

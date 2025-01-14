@@ -8,10 +8,18 @@ plugins {
 	kotlin("jvm") version "2.1.0"
 	id("io.ktor.plugin") version "3.0.3"
 	id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
+	id("idea")
 }
 
 group = "com.lapis"
 version = "0.0.1"
+
+idea {
+	module {
+		isDownloadJavadoc = true
+		isDownloadSources = true
+	}
+}
 
 application {
 	mainClass.set("io.ktor.server.netty.EngineMain")
