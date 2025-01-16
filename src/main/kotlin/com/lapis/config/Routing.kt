@@ -23,5 +23,12 @@ fun Application.configureRouting()
 		staticResources("/static", "static") {
 		
 		}
+		
+		singlePageApplication {
+			useResources = true
+			applicationRoute = "/"
+			filesPath = "static/app"
+			defaultPage = "index.html"
+		}
 	}
 }

@@ -7,6 +7,10 @@ export default defineConfig({
     react(),
     tsconfigPaths()
   ],
+  build: {
+    outDir: '../build/resources/main/static/app',
+    emptyOutDir: true,
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:8080',

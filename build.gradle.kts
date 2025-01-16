@@ -33,6 +33,18 @@ repositories {
 	maven { url = uri("https://packages.confluent.io/maven/") }
 }
 
+task("build-app") {
+	exec {
+		workingDir = file("$projectDir/app")
+		commandLine("bun", "install")
+		commandLine("bun", "run", "build")
+	}
+}
+
+tasks.named("build") {
+	dependsOn("build-app")
+}
+
 dependencies {
 	implementation("org.xerial:sqlite-jdbc:$sqlite_version")
 	implementation("io.ktor:ktor-server-auto-head-response-jvm")
