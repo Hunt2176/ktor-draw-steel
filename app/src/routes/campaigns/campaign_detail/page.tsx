@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Table } from "react-bootstrap";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { Clickable } from "src/components/utility.tsx";
 import { Case, Switch } from "src/components/visibility.tsx";
-import { Campaign, Character } from "src/types/models.ts";
+import { CharacterCard } from "src/routes/characters/character_card/card.tsx";
+import { CampaignDetails, fetchCampaign } from "src/services/api.ts";
 
 export function CampaignDetail() {
 	const params = useParams();
@@ -15,6 +16,7 @@ export function CampaignDetail() {
 	});
 	
 	const [campaignDetails, setCampaignDetails] = useState<CampaignDetails>();
+	const navigate = useNavigate();
 	
 	useEffect(() => {
 		if (typeof id !== 'number') {
@@ -37,32 +39,21 @@ export function CampaignDetail() {
 				<p>Loading...</p>
 			</Case>
 			<Case when={!!campaignDetails}>
-				<>
-					<h2>{campaignDetails?.campaign.name}</h2>
-					<h3>Characters</h3>
-					<Table>
-						<tbody>
-							{campaignDetails?.characters.map((character) => (
-								<tr key={character.id}>
-									<td>{character.name}</td>
-								</tr>
-							))}
-						</tbody>
-					</Table>
-				</>
+				{ () =>
+					<>
+						<h2>{campaignDetails?.campaign.name}</h2>
+						<h3>Characters</h3>
+						{
+							campaignDetails?.characters.map((char) => (
+								<Clickable onClick={() => navigate(`/characters/${char.id}`)}>
+									<CharacterCard key={char.id} character={char} type={'tile'}></CharacterCard>
+								</Clickable>
+							))
+						}
+					</>
+				}
 			</Case>
 		</Switch>
 		{ (campaignDetails == null) ? <p>Invalid Id</p> : <></> }
 	</>
 }
-
-async function fetchCampaign(id: number): Promise<CampaignDetails> {
-	const campaignResp = await fetch(`/api/campaigns/${id}`);
-	const campaign = await campaignResp.json() as Campaign;
-	
-	const characterResp = await fetch(`/api/campaigns/${id}/characters`);
-	const characters = await characterResp.json() as Character[];
-	return { campaign, characters };
-}
-
-type CampaignDetails = { campaign: Campaign, characters: Character[] };

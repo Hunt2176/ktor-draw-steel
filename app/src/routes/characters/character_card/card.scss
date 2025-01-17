@@ -21,3 +21,13 @@ div.card.character-card {
     padding-top: 4px;
   }
 }
+
+.card.character-card-tile {
+  flex-direction: row;
+  > img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    object-position: top;
+  }
+}

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Show } from "src/components/visibility.tsx";
 import { CharacterEditor } from "src/routes/characters/character_editor/character_editor.tsx";
 import { fetchCharacter } from "src/routes/characters/page.tsx";
+import { saveCharacter } from "src/services/api.ts";
 import { Character } from "src/types/models.ts";
 
 export function CharacterEditorPage() {
@@ -34,19 +35,4 @@ export function CharacterEditorPage() {
 			<CharacterEditor character={character!} onSubmit={save}/>
 		</Show>
 	</>
-}
-
-export async function saveCharacter(id: number, character: Partial<Character>) {
-	const res = await fetch(`/api/characters/${id}`, {
-		method: 'PATCH',
-		body: JSON.stringify(character),
-		headers: {
-			'Content-Type': 'application/json'
-		}
-	});
-	
-	if (!res.ok) {
-		throw new Error('Failed to save character');
-	}
-	
 }

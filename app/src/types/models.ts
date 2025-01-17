@@ -12,6 +12,11 @@ export type CharacterCondition = HasId & HasName & {
 }
 
 export interface Character extends HasId, HasName {
+	might: number;
+	agility: number;
+	reason: number;
+	intuition: number;
+	presence: number;
 	removedHp: number;
 	maxHp: number;
 	temporaryHp: number;

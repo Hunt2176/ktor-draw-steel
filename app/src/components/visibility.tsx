@@ -23,19 +23,19 @@ export function Switch({ fallback, children }: SwitchProps): React.ReactNode {
 
 export interface CaseProps {
 	when: boolean;
-	children: React.ReactNode;
+	children: React.ReactNode | (() => React.ReactNode);
 }
 
-export function Case({ children }: CaseProps): React.ReactNode {
-	return children;
+export function Case({ when, children }: CaseProps): React.ReactNode {
+	return when ? typeof children === 'function' ? children() : children : null;
 }
 
 
 export interface ShowProps {
 	when: boolean;
-	children: React.ReactNode;
+	children: React.ReactNode | (() => React.ReactNode);
 }
 
 export function Show({when, children}: ShowProps): React.ReactNode {
-	return when ? children : <></>;
+	return when ? typeof children === 'function' ? children() : children : null;
 }

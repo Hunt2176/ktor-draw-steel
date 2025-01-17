@@ -18,6 +18,12 @@ object Characters : IntIdTable(), HasName
 {
 	override val name = varchar("name", 255)
 	
+	val might = integer("might").default(0)
+	val agility = integer("agility").default(0)
+	val reason = integer("reason").default(0)
+	val intuition = integer("intuition").default(0)
+	val presence = integer("presence").default(0)
+	
 	val removedHp = integer("removed_hp").default(0)
 	val maxHp = integer("max_hp").default(0)
 	val temporaryHp = integer("temporary_hp").default(0)
@@ -46,6 +52,13 @@ class ExposedCharacter(
 	companion object : EntityClass<Int, ExposedCharacter>(Characters)
 	
 	var name by Characters.name
+	
+	var might by Characters.might
+	var agility by Characters.agility
+	var reason by Characters.reason
+	var intuition by Characters.intuition
+	var presence by Characters.presence
+	
 	var removedHp by Characters.removedHp
 	var maxHp by Characters.maxHp
 	var temporaryHp by Characters.temporaryHp
@@ -72,6 +85,13 @@ class ExposedCharacter(
 	override fun ExposedCharacter.customizeFromJson(json: JsonObject)
 	{
 		json["name"]?.jsonPrimitive?.content?.let { name = it }
+		
+		json["might"]?.jsonPrimitive?.int?.let { might = it }
+		json["agility"]?.jsonPrimitive?.int?.let { agility = it }
+		json["reason"]?.jsonPrimitive?.int?.let { reason = it }
+		json["intuition"]?.jsonPrimitive?.int?.let { intuition = it }
+		json["presence"]?.jsonPrimitive?.int?.let { presence = it }
+		
 		json["removedHp"]?.jsonPrimitive?.int?.let { removedHp = it }
 		json["maxHp"]?.jsonPrimitive?.int?.let { maxHp = it }
 		json["temporaryHp"]?.jsonPrimitive?.int?.let { temporaryHp = it }
@@ -95,6 +115,11 @@ class ExposedCharacter(
 data class CharacterDTO (
 	val id: Int,
 	val name: String,
+	val might: Int,
+	val agility: Int,
+	val reason: Int,
+	val intuition: Int,
+	val presence: Int,
 	val removedHp: Int,
 	val maxHp: Int,
 	val temporaryHp: Int,
@@ -117,6 +142,11 @@ data class CharacterDTO (
 			return CharacterDTO(
 				entity.id.value,
 				entity.name,
+				entity.might,
+				entity.agility,
+				entity.reason,
+				entity.intuition,
+				entity.presence,
 				entity.removedHp,
 				entity.maxHp,
 				entity.temporaryHp,

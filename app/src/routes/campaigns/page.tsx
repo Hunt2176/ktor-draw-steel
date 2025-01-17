@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { fetchCampaigns } from "src/services/api.ts";
 import { Campaign } from "src/types/models.ts";
 
 export function CampaignPage(): ReactNode {
@@ -34,9 +35,4 @@ export function CampaignPage(): ReactNode {
 			}
 		</>
 	)
-}
-
-async function fetchCampaigns(): Promise<Campaign[]> {
-	const res = await fetch('/api/campaigns')
-	return (await res.json()) as Campaign[]
 }

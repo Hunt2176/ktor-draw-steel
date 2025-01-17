@@ -19,11 +19,11 @@ const RouterEl = () => {
 		<Router>
 			<Routes>
 				<Route path="/" element={<HomePage/>}></Route>
-				<Route path="/campaigns/:id" element={<CampaignDetail/>}></Route>
-				<Route path="/campaigns/:id" element={<CampaignDetail/>}></Route>
 				<Route path="/campaigns" element={<CampaignPage/>}></Route>
-				<Route path="/character/:id" element={<CharacterPage/>}></Route>
-				<Route path="/character/:id/edit" element={<CharacterEditorPage/>}></Route>
+				<Route path="/campaigns/:id" element={<CampaignDetail/>}></Route>
+				<Route path="/campaigns/:id/characters" element={<CharacterPage/>}></Route>
+				<Route path="/characters/:id" element={<CharacterPage/>}></Route>
+				<Route path="/characters/:id/edit" element={<CharacterEditorPage/>}></Route>
 			</Routes>
 		</Router>
 	)
