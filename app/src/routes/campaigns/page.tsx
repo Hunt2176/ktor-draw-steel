@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Table } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { fetchCampaigns } from "src/services/api.ts";
+import { CampaignDetails, fetchCampaigns } from "src/services/api.ts";
 import { Campaign } from "src/types/models.ts";
 
 export function CampaignPage(): ReactNode {
@@ -15,6 +15,11 @@ export function CampaignPage(): ReactNode {
 		})();
 	}, [])
 	
+	//TODO: Make normal /api/campaigns also return characters
+	function selectCampaign(details: CampaignDetails) {
+	
+	}
+	
 	return (
 		<>
 			{
@@ -25,7 +30,7 @@ export function CampaignPage(): ReactNode {
 						<Table>
 							<tbody>
 								{campaigns.map((campaign) => (
-									<tr>
+									<tr key={campaign.id}>
 										<td onClick={() => navigator(`/campaigns/${campaign.id}`)}>{campaign.name}</td>
 									</tr>
 								))}

@@ -1,36 +1,39 @@
-import { ReactNode, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { ReactNode } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Case, Switch } from "src/components/visibility.tsx";
+import { useCharacter } from "src/hooks/api_hooks.ts";
+import { usePromise } from "src/hooks/promise_hook.ts";
 import { CharacterCard } from "src/routes/characters/character_card/card.tsx";
-import { Character } from "src/types/models.ts";
 
 export function CharacterPage(): ReactNode {
 	const params = useParams();
-	const [character, setCharacter] = useState<Character>();
+	const navigator = useNavigate();
+	const id = parseInt(params.id as string);
 	
-	useEffect(() => {
-		(async () => {
-			const id = params.id;
-			if (id == null) return;
-
-			setCharacter(await fetchCharacter(id));
-		})()
-		
-	}, []);
+	if (isNaN(id) || id == null) {
+		console.error(`Invalid character ${id}`);
+		navigator('/');
+		return <></>;
+	}
+	
+	const charPromise = useCharacter(id);
+	const charResult = usePromise(charPromise);
 	
 	return (
 		<>
-			{
-				(character == null)
-					? <p>Loading...</p>
-					: <>
-						<CharacterCard character={character}/>
-					</>
-			}
+			<Switch>
+				<Case when={charResult.loading}>
+					<p>Loading...</p>
+				</Case>
+				<Case when={charResult.error}>
+					<p>Error: {charResult?.error}</p>
+				</Case>
+				<Case when={!!charResult.value}>
+					{() => (
+						<CharacterCard character={charResult.value!} type={'full'}/>
+					)}
+				</Case>
+			</Switch>
 		</>
 	)
-}
-
-export async function fetchCharacter(id: string): Promise<Character> {
-	const res = await fetch(`/api/characters/${id}`)
-	return (await res.json()) as Character
 }

@@ -14,6 +14,11 @@ export async function fetchCampaign(id: number): Promise<CampaignDetails> {
 	return { campaign, characters };
 }
 
+export async function fetchCharacter(id: number): Promise<Character> {
+	const res = await fetch(`/api/characters/${id}`)
+	return (await res.json()) as Character
+}
+
 export type CampaignDetails = { campaign: Campaign, characters: Character[] };
 
 export async function saveCharacter(id: number, character: Partial<Character>) {

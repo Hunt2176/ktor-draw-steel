@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Show } from "src/components/visibility.tsx";
 import { CharacterEditor } from "src/routes/characters/character_editor/character_editor.tsx";
-import { fetchCharacter } from "src/routes/characters/page.tsx";
-import { saveCharacter } from "src/services/api.ts";
+import { fetchCharacter, saveCharacter } from "src/services/api.ts";
 import { Character } from "src/types/models.ts";
 
 export function CharacterEditorPage() {
