@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Show } from "src/components/visibility.tsx";
 import { CharacterEditor } from "src/routes/characters/character_editor/character_editor.tsx";
 import { fetchCharacter, saveCharacter } from "src/services/api.ts";
 import { Character } from "src/types/models.ts";
@@ -19,7 +18,7 @@ export function CharacterEditorPage() {
 		if (id == null) return;
 		
 		(async () => {
-			const character = await fetchCharacter(id.toString());
+			const character = await fetchCharacter(id);
 			setCharacter(character);
 		})();
 	}, [params]);
@@ -29,9 +28,7 @@ export function CharacterEditorPage() {
 		await saveCharacter(character.id, char);
 	}
 	
-	return <>
-		<Show when={!!character}>
-			<CharacterEditor character={character!} onSubmit={save}/>
-		</Show>
-	</>
+	if (character) {
+		return <CharacterEditor character={character!} onSubmit={save}/>
+	}
 }

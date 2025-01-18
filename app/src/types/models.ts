@@ -3,7 +3,11 @@ export type HasName = { name: string };
 
 export type User = HasId;
 
-export type Campaign = HasId & HasName;
+export interface Campaign extends HasId, HasName {}
+export interface CampaignDetails {
+	campaign: Campaign;
+	characters: Character[];
+}
 
 export type CharacterConditionEndType = 'endOfTurn' | 'save';
 export type CharacterCondition = HasId & HasName & {

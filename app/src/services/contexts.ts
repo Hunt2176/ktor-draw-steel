@@ -1,6 +1,5 @@
 import { Context, createContext, useState } from "react";
-import { CampaignDetails } from "src/services/api.ts";
-import { Character } from "src/types/models.ts";
+import { CampaignDetails, Character } from "src/types/models.ts";
 
 type ReactStateController<T> = ReturnType<typeof useState<T>>;
 

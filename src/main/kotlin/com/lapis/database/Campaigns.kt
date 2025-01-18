@@ -5,15 +5,13 @@ import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.transactions.transaction
 
 class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, ExposedCampaign.Companion>(
 	ExposedCampaign.Companion,
@@ -23,7 +21,59 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 		{ this.customizeFromJson(it) }
 	)
 ) {
-	override fun Route.customizeRoute(baseRoute: Route)
+	
+	private fun getCampaignDetails(ids: Collection<Int>?): JsonElement {
+		val res = transaction {
+			val campaigns =
+				if (ids == null) {
+					ExposedCampaign.all().map { it.toDTO() }
+				} else {
+					ExposedCampaign.find { Campaigns.id inList ids }.map { it.toDTO() }
+				}
+			
+			val characters = ExposedCharacter
+				.find { Characters.campaign inList campaigns.map { it.id } }
+				.map { it.toDTO() }
+			
+			campaigns.map { c ->
+				val cCharacters = characters.filter { it.campaign == c.id }
+				mapOf(
+					"campaign" to Json.encodeToJsonElement(c),
+					"characters" to Json.encodeToJsonElement(cCharacters)
+				)
+			}
+		}
+		
+		return Json.encodeToJsonElement<List<Map<String, JsonElement>>>(res)
+	}
+	
+	override fun Route.getRoot()
+	{
+		get {
+			val res = getCampaignDetails(null)
+			call.respond(HttpStatusCode.OK, res)
+		}
+	}
+	
+	override fun Route.getById() {
+		get("/{id}") {
+			val id = call.parameters["id"]?.toIntOrNull()
+			if (id == null) {
+				call.respond(HttpStatusCode.BadRequest, "Invalid ID")
+				return@get
+			}
+			
+			val res = getCampaignDetails(listOf(id))
+			if (res !is JsonArray || res.isEmpty()) {
+				call.respond(HttpStatusCode.NotFound, "Campaign not found")
+				return@get
+			}
+			
+			call.respond(HttpStatusCode.OK, res[0])
+		}
+	}
+	
+	override fun Route.additionalRouteSetup()
 	{
 		get("/{id}/characters") {
 			val id = call.parameters["id"]?.toIntOrNull()
@@ -32,7 +82,7 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 				return@get
 			}
 			
-			val callback = transaction(database) {
+			val callback = transaction {
 				ExposedCampaign.findById(id)
 					?: return@transaction suspend {
 						call.respond(HttpStatusCode.NotFound, "Campaign not found")
@@ -51,6 +101,7 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 
 object Campaigns : IntIdTable(), HasName {
 	override val name: Column<String> = varchar("name", 100)
+	val background = text("background").nullable()
 }
 
 class ExposedCampaign(
@@ -59,6 +110,7 @@ class ExposedCampaign(
 	companion object : EntityClass<Int, ExposedCampaign>(Campaigns)
 	
 	var name by Campaigns.name
+	var background by Campaigns.background
 	
 	override fun toDTO(): CampaignDTO {
 		return CampaignDTO.fromEntity(this)
@@ -73,11 +125,12 @@ class ExposedCampaign(
 @Serializable
 data class CampaignDTO(
 	val id: Int,
-	val name: String
+	val name: String,
+	val background: String?
 ) {
 	companion object {
 		fun fromEntity(entity: ExposedCampaign): CampaignDTO {
-			return CampaignDTO(entity.id.value, entity.name)
+			return CampaignDTO(entity.id.value, entity.name, entity.background)
 		}
 	}
 }

@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { Button, Form, FormLabel } from "react-bootstrap";
-import { Show } from "src/components/visibility.tsx";
 import { Character } from "src/types/models.ts";
 
 export interface CharacterEditorProps {
@@ -57,9 +56,11 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 					value={stateVars['pictureUrl'][0]}
 					onChange={(e) => onEdit('pictureUrl', e.target.value)}
 				/>
-				<Show when={!!stateVars['pictureUrl'][0]}>
-					<img src={stateVars['pictureUrl'][0]!} alt={stateVars['pictureUrl'][0]!}/>
-				</Show>
+				{
+					stateVars['pictureUrl'][0] ?
+						<img src={stateVars['pictureUrl'][0]!} alt={stateVars['pictureUrl'][0]!}/>
+						: <></>
+				}
 			</Form.Group>
 			<Button onClick={submit}>Submit</Button>
 		</Form>

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Card, ProgressBar, Table } from "react-bootstrap";
-import { Case, Switch } from "src/components/visibility.tsx";
 import { Character } from "src/types/models.ts";
 
 import './card.scss';
@@ -72,14 +71,12 @@ export function CharacterCard({character: char, type = 'full'}: CharacterCardPro
 		</>
 	);
 	
-	return <>
-		<Switch>
-			<Case when={type == 'full'}>
-				{fullCard()}
-			</Case>
-			<Case when={type == 'tile'}>
-				{tileCard()}
-			</Case>
-		</Switch>
-	</>
+	switch (type) {
+		case 'full':
+			return fullCard();
+		case 'tile':
+			return tileCard();
+		default:
+			return <></>;
+	}
 }

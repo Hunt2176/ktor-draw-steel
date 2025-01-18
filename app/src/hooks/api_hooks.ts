@@ -1,7 +1,7 @@
 import { useContext, useMemo } from "react";
-import { CampaignDetails, fetchCampaign, fetchCharacter } from "src/services/api.ts";
+import { fetchCampaign, fetchCampaigns, fetchCharacter } from "src/services/api.ts";
 import { CampaignContext, CharacterContext } from "src/services/contexts.ts";
-import { Character } from "src/types/models.ts";
+import { CampaignDetails, Character } from "src/types/models.ts";
 
 export function useCharacter(id: number): Promise<Character | undefined> {
 	const [character, setCharacter] = useContext(CharacterContext);
@@ -47,4 +47,10 @@ export function useCampaign(id: number): Promise<CampaignDetails | undefined> {
 		
 		return campaignDetails;
 	}, [id]);
+}
+
+export function useCampaignList(): Promise<CampaignDetails[]> {
+	return useMemo(async () => {
+		return await fetchCampaigns();
+	}, []);
 }
