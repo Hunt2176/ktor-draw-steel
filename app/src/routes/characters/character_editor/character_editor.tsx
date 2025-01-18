@@ -1,13 +1,16 @@
 import { useRef, useState } from "react";
-import { Button, Form, FormLabel } from "react-bootstrap";
+import { Button, Col, Form, FormLabel, Row } from "react-bootstrap";
+import { usePromise } from "src/hooks/promise_hook.ts";
 import { Character } from "src/types/models.ts";
 
 export interface CharacterEditorProps {
 	character: Character
-	onSubmit: (character: CharacterEditorResult) => void;
+	onSubmit: (character: CharacterEditorResult) => void | Promise<void>;
 }
 
 export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
+	const [submitPromise, setSubmitPromise] = useState<Promise<void>>();
+	
 	const stateVars = Object.entries(character)
 		.reduce((eState, [key, value]) => {
 			const reactProps = useState(value);
@@ -16,6 +19,7 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 		}, {} as CharacterEditorState);
 	
 	const changedKeys = useRef(new Set<EditorKey>());
+	const { loading: submitLoading } = usePromise(submitPromise);
 	
 	function onEdit<K extends EditorKey>(key: K, value: CharacterEditorValue<K>) {
 		console.log(key, value);
@@ -30,7 +34,34 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 		}
 		
 		console.log(JSON.stringify(toSend, null, 2));
-		onSubmit(toSend);
+		const res = onSubmit(toSend);
+		if (res instanceof Promise) {
+			setSubmitPromise(res);
+		}
+	}
+	
+	function wrapNumberValue(val: any): number | string {
+		if (typeof val !== 'number') {
+			return '';
+		}
+		else if (isNaN(val)) {
+			return '';
+		}
+		
+		return val;
+	}
+	
+	function createStateBlock(key: keyof Pick<CharacterEditorCore, 'might' | 'agility' | 'intuition' | 'presence' | 'reason'>) {
+		return (
+			<Form.Group controlId={'char-' + key}>
+				<FormLabel>{key[0].toUpperCase() + key.slice(1)}</FormLabel>
+				<Form.Control
+					value={wrapNumberValue(stateVars[key][0])}
+					type={'number'}
+					onChange={(e) => onEdit(key, parseInt(e.target.value))}
+				/>
+			</Form.Group>
+		);
 	}
 	
 	return <>
@@ -39,15 +70,43 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 				<FormLabel>Name</FormLabel>
 				<Form.Control
 					value={stateVars['name'][0]}
+					maxLength={100}
 					onChange={(e) => onEdit('name', e.target.value)}
 				/>
 			</Form.Group>
-			<Form.Group controlId={'char-level'}>
+			<Row>
+				<Col>
+					{createStateBlock('might')}
+				</Col>
+				<Col>
+					{createStateBlock('agility')}
+				</Col>
+				<Col>
+					{createStateBlock('intuition')}
+				</Col>
+				<Col>
+					{createStateBlock('presence')}
+				</Col>
+				<Col>
+					{createStateBlock('reason')}
+				</Col>
+			</Row>
+			<Form.Group controlId={'char-hp'}>
 				<FormLabel>Max HP</FormLabel>
 				<Form.Control
 					value={stateVars['maxHp'][0]}
 					typeof={'number'}
+					min={0}
 					onChange={(e) => onEdit('maxHp', parseInt(e.target.value))}
+				/>
+			</Form.Group>
+			<Form.Group controlId={'char-recoveries'}>
+				<FormLabel>Level</FormLabel>
+				<Form.Control
+					value={stateVars['maxRecoveries'][0]}
+					typeof={'number'}
+					min={0}
+					onChange={(e) => onEdit('maxRecoveries', parseInt(e.target.value))}
 				/>
 			</Form.Group>
 			<Form.Group controlId={'char-picture'}>
@@ -58,11 +117,15 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 				/>
 				{
 					stateVars['pictureUrl'][0] ?
-						<img src={stateVars['pictureUrl'][0]!} alt={stateVars['pictureUrl'][0]!}/>
+						<img style={{maxWidth: '100%', objectFit: 'contain'}} src={stateVars['pictureUrl'][0]!} alt={stateVars['pictureUrl'][0]!}/>
 						: <></>
 				}
 			</Form.Group>
-			<Button onClick={submit}>Submit</Button>
+			<Row style={{justifyContent: 'end', paddingTop: '10px'}}>
+				<Col sm={4} style={{textAlign: 'right'}}>
+					<Button disabled={submitLoading} onClick={submit}>Submit</Button>
+				</Col>
+			</Row>
 		</Form>
 	</>
 }

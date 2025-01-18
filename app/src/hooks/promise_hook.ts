@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 
-export function usePromise<T>(promise: Promise<T>): UsePromiseResult<T> {
-	const [result, setResult] = useState<UsePromiseResult<T>>(() => ({ loading: true }));
+export function usePromise<T>(promise: Promise<T> | undefined): UsePromiseResult<T> {
+	const [result, setResult] = useState<UsePromiseResult<T>>(() => ({ loading: false }));
 	
 	useEffect(() => {
+		if (!promise) {
+			return;
+		}
+		
 		setResult({ loading: true });
 		(async () => {
 			let pResult: T | undefined;

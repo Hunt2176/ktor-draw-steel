@@ -27,6 +27,6 @@ export function CharacterPage(): ReactNode {
 	}
 	
 	if (character != null) {
-		return <CharacterCard type={'full'} character={character} />;
+		return <CharacterCard showEdit={true} type={'full'} character={character} />;
 	}
 }

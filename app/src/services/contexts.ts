@@ -12,3 +12,4 @@ function createDeadValueContexts<T>(initial: T): Context<ReactStateController<T>
 
 export const CampaignContext = createDeadValueContexts<CampaignDetails | undefined>(undefined);
 export const CharacterContext = createDeadValueContexts<Character | undefined>(undefined);
+export const ErrorContext = createDeadValueContexts<Object | unknown | undefined>(undefined);

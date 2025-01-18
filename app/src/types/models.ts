@@ -55,6 +55,31 @@ export class Character {
 		return { current: char.recoveries, max: char.maxRecoveries, percent };
 	}
 	
+	static new() {
+		return {
+			id: -1,
+			name: '',
+			might: 0,
+			agility: 0,
+			reason: 0,
+			intuition: 0,
+			presence: 0,
+			removedHp: 0,
+			maxHp: 0,
+			temporaryHp: 0,
+			recoveries: 0,
+			maxRecoveries: 0,
+			resources: 0,
+			surges: 0,
+			victories: 0,
+			user: -1,
+			campaign: -1,
+			pictureUrl: undefined,
+			border: undefined,
+			conditions: [],
+		} as Character;
+	}
+	
 	private constructor() {}
 }
 

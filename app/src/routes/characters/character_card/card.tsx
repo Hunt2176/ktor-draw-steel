@@ -1,21 +1,28 @@
-import { useState } from "react";
-import { Card, ProgressBar, Table } from "react-bootstrap";
+import { faPen } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useContext, useMemo, useState } from "react";
+import { Button, Card, CloseButton, Col, Modal, ProgressBar, Row, Table } from "react-bootstrap";
+import { CharacterEditor, CharacterEditorResult } from "src/routes/characters/character_editor/character_editor.tsx";
+import { saveCharacter } from "src/services/api.ts";
+import { ErrorContext } from "src/services/contexts.ts";
 import { Character } from "src/types/models.ts";
 
 import './card.scss';
 
 export interface CharacterCardProps {
 	character: Character;
+	showEdit?: boolean;
 	type: CharacterCardType | undefined;
 }
 
 type CharacterCardType = 'full' | 'tile';
 
-export function CharacterCard({character: char, type = 'full'}: CharacterCardProps) {
+export function CharacterCard({character: char, type = 'full', showEdit = false}: CharacterCardProps) {
+	const hp = useMemo(() => Character.getHp(char), [char]);
+	const recoveries = useMemo(() => Character.getRecoveries(char), [char]);
 	
-	const [hp] = useState(Character.getHp(char));
-	const [recoveries] = useState(Character.getRecoveries(char));
-	
+	const [_, setError] = useContext(ErrorContext);
+	const [editing, setEditing] = useState(false);
 	
 	
 	const fullCard = () => (
@@ -56,6 +63,21 @@ export function CharacterCard({character: char, type = 'full'}: CharacterCardPro
 						<ProgressBar now={recoveries.percent * 100}></ProgressBar>
 					</div>
 				</Card.Body>
+				{
+					(!showEdit) ? <></>
+					: <Card.Footer>
+							<Row style={{justifyContent: 'end'}}>
+								{(showEdit)
+									? <Col sm={4} style={{textAlign: 'right'}}>
+											<Button onClick={() => setEditing(true)}>
+												<FontAwesomeIcon icon={faPen}></FontAwesomeIcon>
+											</Button>
+										</Col>
+									: <></>
+								}
+							</Row>
+						</Card.Footer>
+				}
 			</Card>
 		</>
 	)
@@ -71,12 +93,36 @@ export function CharacterCard({character: char, type = 'full'}: CharacterCardPro
 		</>
 	);
 	
-	switch (type) {
-		case 'full':
-			return fullCard();
-		case 'tile':
-			return tileCard();
-		default:
-			return <></>;
+	function getCard() {
+		switch (type) {
+			case 'full':
+				return fullCard();
+			case 'tile':
+				return tileCard();
+			default:
+				return <></>;
+		}
 	}
+	
+	async function onSubmit(result: CharacterEditorResult) {
+		try {
+			await saveCharacter(char.id, result);
+			setEditing(false);
+		} catch (e) {
+			setError(e);
+		}
+	}
+	
+	return <>
+		<Modal show={editing}>
+			<Modal.Header>
+				<Modal.Title>Edit</Modal.Title>
+				<CloseButton onClick={() => setEditing(false)}></CloseButton>
+			</Modal.Header>
+			<Modal.Body>
+				<CharacterEditor character={char} onSubmit={onSubmit}></CharacterEditor>
+			</Modal.Body>
+		</Modal>
+		{getCard()}
+	</>;
 }
