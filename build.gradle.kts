@@ -33,16 +33,27 @@ repositories {
 	maven { url = uri("https://packages.confluent.io/maven/") }
 }
 
-task("build-app") {
-	exec {
-		workingDir = file("$projectDir/app")
-		commandLine("bun", "install")
-		commandLine("bun", "run", "build")
+val buildApp by tasks.registering {
+	group = "frontend"
+	description = "Builds the frontend app"
+	doLast {
+		exec {
+			workingDir = file("$projectDir/app")
+			commandLine("bun", "install")
+			commandLine("bun", "run", "build")
+		}
 	}
 }
 
-tasks.named("build") {
-	dependsOn("build-app")
+val clean = tasks.getByName("clean")
+val build = tasks.getByName("build")
+
+val fullBuild by tasks.registering {
+	group = "build"
+	description = "Run clean, buildApp and build"
+	dependsOn(clean)
+	dependsOn(buildApp)
+	dependsOn(build)
 }
 
 dependencies {
