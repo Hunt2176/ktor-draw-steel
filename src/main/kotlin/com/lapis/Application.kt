@@ -15,4 +15,5 @@ fun Application.module()
 	configureSockets()
 	configureMonitoring()
 	configureRouting()
+	configureInjection()
 }

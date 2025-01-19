@@ -1,8 +1,11 @@
+@file:Suppress("PropertyName")
+
 val exposed_version: String by project
 val h2_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val sqlite_version: String by project
+val koin_version: String by project
 
 plugins {
 	kotlin("jvm") version "2.1.0"
@@ -62,6 +65,9 @@ val fullBuild by tasks.registering {
 }
 
 dependencies {
+	implementation(project.dependencies.platform("io.insert-koin:koin-bom:$koin_version"))
+	implementation("io.insert-koin:koin-core:$koin_version")
+	implementation("io.insert-koin:koin-ktor:$koin_version")
 	implementation("org.xerial:sqlite-jdbc:$sqlite_version")
 	implementation("io.ktor:ktor-server-auto-head-response-jvm")
 	implementation("io.ktor:ktor-server-core-jvm")

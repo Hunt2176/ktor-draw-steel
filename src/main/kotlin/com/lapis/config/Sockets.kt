@@ -1,6 +1,7 @@
 package com.lapis.config
 
 import com.lapis.database.ExposedCampaign
+import com.lapis.services.SocketCampaignService
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
@@ -8,6 +9,7 @@ import io.ktor.websocket.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.koin.ktor.ext.inject
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureSockets()
@@ -18,6 +20,7 @@ fun Application.configureSockets()
 		maxFrameSize = Long.MAX_VALUE
 		masking = false
 	}
+	
 	routing {
 		webSocket("/ws") { // websocketSession
 			for (frame in incoming)
@@ -33,6 +36,17 @@ fun Application.configureSockets()
 				}
 			}
 		}
+		
+		webSocket("/campaigns/{id}") {
+			val id = call.parameters["id"]?.toIntOrNull()
+			if (id == null) {
+				close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "The id of the campaign is invalid"))
+				return@webSocket
+			}
+			val socketCampaignService by call.inject<SocketCampaignService>()
+			socketCampaignService.addConnection(id, this@webSocket)
+		}
+		
 		webSocket("/campaigns") {
 			for (frame in incoming)
 			{

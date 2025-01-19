@@ -10,11 +10,15 @@ import kotlinx.serialization.json.Json
 
 fun Application.configureHTTP()
 {
+	val jsonBuilder = Json {
+		ignoreUnknownKeys = true
+		isLenient = true
+	}
+	
+	getKoinModule().single { jsonBuilder }
+	
 	install(ContentNegotiation) {
-		json(json = Json {
-			ignoreUnknownKeys = true
-			isLenient = true
-		})
+		json(json = jsonBuilder)
 	}
 	install(Compression)
 	install(DefaultHeaders) {

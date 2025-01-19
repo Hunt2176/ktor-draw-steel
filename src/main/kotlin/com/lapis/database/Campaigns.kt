@@ -22,7 +22,7 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 	)
 ) {
 	
-	private fun getCampaignDetails(ids: Collection<Int>?): JsonElement {
+	final fun getCampaignDetails(ids: Collection<Int>?): JsonArray {
 		val res = transaction {
 			val campaigns =
 				if (ids == null) {
@@ -44,7 +44,7 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 			}
 		}
 		
-		return Json.encodeToJsonElement<List<Map<String, JsonElement>>>(res)
+		return Json.encodeToJsonElement<List<Map<String, JsonElement>>>(res).jsonArray
 	}
 	
 	override fun Route.getRoot()
@@ -64,7 +64,7 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 			}
 			
 			val res = getCampaignDetails(listOf(id))
-			if (res !is JsonArray || res.isEmpty()) {
+			if (res.isEmpty()) {
 				call.respond(HttpStatusCode.NotFound, "Campaign not found")
 				return@get
 			}

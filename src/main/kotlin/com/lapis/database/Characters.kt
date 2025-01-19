@@ -1,6 +1,7 @@
 package com.lapis.database
 
 import com.lapis.database.base.FromJson
+import com.lapis.database.base.HasCampaign
 import com.lapis.database.base.HasDTO
 import com.lapis.database.base.HasName
 import kotlinx.serialization.Serializable
@@ -14,7 +15,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 
-object Characters : IntIdTable(), HasName
+object Characters : IntIdTable(), HasName, HasCampaign
 {
 	override val name = varchar("name", 255)
 	
@@ -38,7 +39,7 @@ object Characters : IntIdTable(), HasName
 	val pictureUrl = varchar("picture_url", 255).nullable()
 	val border = varchar("border", 255).nullable()
 	
-	val campaign = reference("campaign", Campaigns)
+	override val campaign = reference("campaign", Campaigns)
 	val user = reference("user", Users,
 		onDelete = ReferenceOption.CASCADE,
 		onUpdate = ReferenceOption.CASCADE

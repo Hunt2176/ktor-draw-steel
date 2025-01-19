@@ -24,23 +24,15 @@ class BaseRepositoryEntityMapper<EType: Entity<Int>>(
 @AllOpen
 class BaseRepository<EType: Entity<Int>, ECType: EntityClass<Int, EType>> (
 	private val entityClass: ECType,
-	val database: Database,
+	override val database: Database,
 	private val mapper: BaseRepositoryEntityMapper<EType>
-)
+) : ScopedTransactionProvider
 {
 	init {
 		transaction {
 			SchemaUtils.create(entityClass.table)
 		}
 	}
-	
-	final fun <T> transaction(statement: Transaction.() -> T): T =
-		transaction(
-			database.transactionManager.defaultIsolationLevel,
-			database.transactionManager.defaultReadOnly,
-			database,
-			statement
-		)
 	
 	fun Route.additionalRouteSetup() {
 		// Override this method to add custom routes
@@ -154,6 +146,17 @@ class BaseRepository<EType: Entity<Int>, ECType: EntityClass<Int, EType>> (
 			additionalRouteSetup()
 		}
 	}
+}
+
+interface ScopedTransactionProvider {
+	val database : Database
+	fun <T> transaction(statement: Transaction.() -> T): T =
+		transaction(
+			database.transactionManager.defaultIsolationLevel,
+			database.transactionManager.defaultReadOnly,
+			database,
+			statement
+		)
 }
 
 fun String.toCamelCase(): String {
