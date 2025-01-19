@@ -8,13 +8,14 @@ import { CampaignDetail } from "src/routes/campaigns/campaign_detail/page.tsx";
 import { CampaignPage } from "src/routes/campaigns/page.tsx";
 import { CharacterPage } from "src/routes/characters/page.tsx";
 import { HomePage } from "src/routes/home/page.tsx";
+import { SocketTest } from "src/routes/home/socket_test.tsx";
 import { CampaignContext, CharacterContext, ErrorContext } from "src/services/contexts.ts";
 import { CampaignDetails, Character } from "src/types/models.ts";
 
 const App = () => {
 	const campaignController = useState<CampaignDetails>();
 	const characterController = useState<Character>();
-	const errorController = useState<Object | unknown | undefined>()
+	const errorController = useState<Object | unknown | undefined>();
 	
 	return <>
 		<ErrorContext.Provider value={errorController}>
@@ -43,6 +44,7 @@ const RouterEl = () => {
 						<Route path="/campaigns/:id" element={<CampaignDetail/>}></Route>
 						<Route path="/campaigns/:id/characters" element={<CharacterPage/>}></Route>
 						<Route path="/characters/:id" element={<CharacterPage/>}></Route>
+						<Route path={'/socket-test'} element={<SocketTest/>}></Route>
 					</Routes>
 				</Router>
 	)
