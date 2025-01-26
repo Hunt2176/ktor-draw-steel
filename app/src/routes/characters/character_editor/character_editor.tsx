@@ -19,6 +19,8 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 		}, {} as CharacterEditorState);
 	
 	const changedKeys = useRef(new Set<EditorKey>());
+	
+	//TODO: Move to using query mutations
 	const { loading: submitLoading } = usePromise(submitPromise);
 	
 	function onEdit<K extends EditorKey>(key: K, value: CharacterEditorValue<K>) {
@@ -101,7 +103,7 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 				/>
 			</Form.Group>
 			<Form.Group controlId={'char-recoveries'}>
-				<FormLabel>Level</FormLabel>
+				<FormLabel>Recoveries</FormLabel>
 				<Form.Control
 					value={stateVars['maxRecoveries'][0]}
 					typeof={'number'}

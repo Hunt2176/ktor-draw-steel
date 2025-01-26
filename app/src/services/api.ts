@@ -15,6 +15,20 @@ export async function fetchCharacter(id: number): Promise<Character> {
 	return (await res.json()) as Character
 }
 
+export async function createCharacter(character: Partial<Character>) {
+	const res = await fetch(`/api/characters`, {
+		method: 'POST',
+		body: JSON.stringify(character),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to create character');
+	}
+}
+
 export async function saveCharacter(id: number, character: Partial<Character>) {
 	const res = await fetch(`/api/characters/${id}`, {
 		method: 'PATCH',

@@ -31,7 +31,7 @@ class SocketCampaignService : KoinComponent, ScopedTransactionProvider
 	}
 	
 	suspend fun addConnection(campaignId: Int, session: DefaultWebSocketSession) {
-		val fn = transaction {
+		val fn = transactionProvider.transaction {
 			val campaign = ExposedCampaign.find { Campaigns.id eq campaignId }.firstOrNull()
 			if (campaign == null) {
 				suspend {

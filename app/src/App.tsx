@@ -1,5 +1,6 @@
 import 'src/App.scss'
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { CloseButton, Modal } from "react-bootstrap";
 import { createRoot } from "react-dom/client";
@@ -8,9 +9,12 @@ import { CampaignDetail } from "src/routes/campaigns/campaign_detail/page.tsx";
 import { CampaignPage } from "src/routes/campaigns/page.tsx";
 import { CharacterPage } from "src/routes/characters/page.tsx";
 import { HomePage } from "src/routes/home/page.tsx";
-import { SocketTest } from "src/routes/home/socket_test.tsx";
+import { CampaignWatcher } from "src/services/campaign_watcher.tsx";
 import { CampaignContext, CharacterContext, ErrorContext } from "src/services/contexts.ts";
 import { CampaignDetails, Character } from "src/types/models.ts";
+
+const queryClient = new QueryClient();
+const campaignWatcher = new CampaignWatcher(queryClient);
 
 const App = () => {
 	const campaignController = useState<CampaignDetails>();
@@ -18,20 +22,22 @@ const App = () => {
 	const errorController = useState<Object | unknown | undefined>();
 	
 	return <>
-		<ErrorContext.Provider value={errorController}>
-			<Modal show={errorController[0] != null}>
-				<Modal.Header>
-					<Modal.Title>Error</Modal.Title>
-					<CloseButton onClick={() => errorController[1](undefined)}></CloseButton>
-				</Modal.Header>
-				<Modal.Body>{errorController[0]?.toString()}</Modal.Body>
-			</Modal>
-			<CampaignContext.Provider value={campaignController}>
-				<CharacterContext.Provider value={characterController}>
-					<RouterEl/>
-				</CharacterContext.Provider>
-			</CampaignContext.Provider>
-		</ErrorContext.Provider>
+		<QueryClientProvider client={queryClient}>
+			<ErrorContext.Provider value={errorController}>
+				<Modal show={errorController[0] != null}>
+					<Modal.Header>
+						<Modal.Title>Error</Modal.Title>
+						<CloseButton onClick={() => errorController[1](undefined)}></CloseButton>
+					</Modal.Header>
+					<Modal.Body>{errorController[0]?.toString()}</Modal.Body>
+				</Modal>
+				<CampaignContext.Provider value={campaignController}>
+					<CharacterContext.Provider value={characterController}>
+						<RouterEl/>
+					</CharacterContext.Provider>
+				</CampaignContext.Provider>
+			</ErrorContext.Provider>
+		</QueryClientProvider>
 	</>;
 }
 
@@ -44,7 +50,6 @@ const RouterEl = () => {
 						<Route path="/campaigns/:id" element={<CampaignDetail/>}></Route>
 						<Route path="/campaigns/:id/characters" element={<CharacterPage/>}></Route>
 						<Route path="/characters/:id" element={<CharacterPage/>}></Route>
-						<Route path={'/socket-test'} element={<SocketTest/>}></Route>
 					</Routes>
 				</Router>
 	)

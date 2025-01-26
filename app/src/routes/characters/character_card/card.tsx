@@ -1,8 +1,9 @@
 import { faPen } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useContext, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useContext, useMemo, useState } from "react";
 import { Button, Card, CloseButton, Col, Modal, ProgressBar, Row, Table } from "react-bootstrap";
-import { CharacterEditor, CharacterEditorResult } from "src/routes/characters/character_editor/character_editor.tsx";
+import { CharacterEditor, CharacterEditorCore, CharacterEditorResult } from "src/routes/characters/character_editor/character_editor.tsx";
 import { saveCharacter } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character } from "src/types/models.ts";
@@ -18,11 +19,26 @@ export interface CharacterCardProps {
 type CharacterCardType = 'full' | 'tile';
 
 export function CharacterCard({character: char, type = 'full', showEdit = false}: CharacterCardProps) {
+	const queryClient = useQueryClient();
+	
 	const hp = useMemo(() => Character.getHp(char), [char]);
 	const recoveries = useMemo(() => Character.getRecoveries(char), [char]);
 	
 	const [_, setError] = useContext(ErrorContext);
 	const [editing, setEditing] = useState(false);
+	
+	const saveMutation = useMutation({
+		mutationFn: (toSave: Partial<CharacterEditorCore>) => {
+			return saveCharacter(char.id, toSave);
+		},
+		onSuccess: () =>{
+			queryClient.invalidateQueries({
+				queryKey: ['character', char.id]
+			});
+			setEditing(false);
+		},
+		onError: setError
+	});
 	
 	
 	const fullCard = () => (
@@ -104,15 +120,6 @@ export function CharacterCard({character: char, type = 'full', showEdit = false}
 		}
 	}
 	
-	async function onSubmit(result: CharacterEditorResult) {
-		try {
-			await saveCharacter(char.id, result);
-			setEditing(false);
-		} catch (e) {
-			setError(e);
-		}
-	}
-	
 	return <>
 		<Modal show={editing}>
 			<Modal.Header>
@@ -120,7 +127,7 @@ export function CharacterCard({character: char, type = 'full', showEdit = false}
 				<CloseButton onClick={() => setEditing(false)}></CloseButton>
 			</Modal.Header>
 			<Modal.Body>
-				<CharacterEditor character={char} onSubmit={onSubmit}></CharacterEditor>
+				<CharacterEditor character={char} onSubmit={saveMutation.mutateAsync}></CharacterEditor>
 			</Modal.Body>
 		</Modal>
 		{getCard()}

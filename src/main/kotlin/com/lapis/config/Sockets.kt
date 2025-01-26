@@ -37,7 +37,7 @@ fun Application.configureSockets()
 			}
 		}
 		
-		webSocket("/campaigns/{id}") {
+		webSocket("/watch/campaigns/{id}") {
 			val id = call.parameters["id"]?.toIntOrNull()
 			if (id == null) {
 				close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "The id of the campaign is invalid"))
