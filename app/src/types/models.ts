@@ -37,7 +37,7 @@ export interface Character extends HasId, HasName {
 	conditions: CharacterCondition[];
 }
 
-interface CharacterPool {
+export interface CharacterPool {
 	current: number;
 	max: number;
 	percent: number;

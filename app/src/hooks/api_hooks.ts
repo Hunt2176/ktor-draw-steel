@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useWebSocket from "react-use-websocket";
 import { fetchCampaign, fetchCampaigns, fetchCharacter } from "src/services/api.ts";
 import { CampaignDetails, Character } from "src/types/models.ts";
@@ -37,34 +37,35 @@ export function useCampaignList(): CampaignDetails[] {
 	return query.data ?? [];
 }
 
-export function useWatchCampaign(id: number | undefined) {
-	const lastMessageTimestamp = useRef<number>();
-	const client = useQueryClient();
+export function useWatchCampaign(id?: number) {
+	const queryClient = useQueryClient();
+	const [lastMessageTime, setLastMessageTime] = useState(0);
 	
-	const url = useMemo(() => id ? `/watch/campaigns/${id}` : null, [id]);
-	
-	let o = useWebSocket<CampaignDetails | undefined>(url, {
-		shouldReconnect: (e) => !e.wasClean,
-		onError: (e) => console.error(e),
+	const wsRes = useWebSocket<CampaignDetails | undefined>(`/watch/campaigns/${id}`, {
 		reconnectAttempts: 5,
-		reconnectInterval: 5000,
-	}, id == null || !isNaN(id));
+		retryOnError: true
+	}, id != null && !isNaN(id));
 	
-	if (id == undefined) {
+	if (!wsRes || id == null || isNaN(id)) {
 		return;
 	}
 	
-	const lastJsonMessage = o.lastJsonMessage;
-	const lastMessage = o.lastMessage;
-	
-	if (lastMessage?.timeStamp != lastMessageTimestamp.current && lastJsonMessage?.campaign?.id == id) {
-		lastMessageTimestamp.current = lastMessage?.timeStamp;
-		
-		const queryKey = ['campaign', lastJsonMessage.campaign.id];
-		client.setQueryData(queryKey, lastJsonMessage);
-		
-		client.invalidateQueries();
+	const { lastJsonMessage, lastMessage } = wsRes;
+	if (lastMessage == null || lastJsonMessage == null || lastMessage.timeStamp === lastMessageTime) {
+		return;
 	}
 	
-	return;
+	setLastMessageTime(lastMessage.timeStamp);
+	
+	queryClient.invalidateQueries({
+		queryKey: ['campaigns']
+	});
+	
+	if (lastJsonMessage.campaign != null) {
+		queryClient.setQueryData(['campaign', id], lastJsonMessage.campaign);
+	}
+	
+	lastJsonMessage.characters.forEach((character: Character) => {
+		queryClient.setQueryData(['character', character.id], character);
+	});
 }

@@ -3,7 +3,7 @@ import { useContext, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { Clickable } from "src/components/utility.tsx";
-import { useCampaign } from "src/hooks/api_hooks.ts";
+import { useCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
 import { CharacterCard } from "src/routes/characters/character_card/card.tsx";
 import { CharacterEditor } from "src/routes/characters/character_editor/character_editor.tsx";
 import { createCharacter } from "src/services/api.ts";
@@ -47,6 +47,7 @@ export function CampaignDetail() {
 	}
 	
 	const campaign = useCampaign(id);
+	useWatchCampaign(id);
 	
 	function newCharacterModal() {
 		const model = Character.new();

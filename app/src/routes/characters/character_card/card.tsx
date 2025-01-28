@@ -6,7 +6,7 @@ import { Button, Card, CloseButton, Col, Modal, ProgressBar, Row, Table } from "
 import { CharacterEditor, CharacterEditorCore, CharacterEditorResult } from "src/routes/characters/character_editor/character_editor.tsx";
 import { saveCharacter } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
-import { Character } from "src/types/models.ts";
+import { Character, CharacterPool } from "src/types/models.ts";
 
 import './card.scss';
 
@@ -40,6 +40,19 @@ export function CharacterCard({character: char, type = 'full', showEdit = false}
 		onError: setError
 	});
 	
+	function getBar(pool: CharacterPool, variant?: 'success' | 'warning' | 'danger') {
+		return <ProgressBar variant={variant} now={pool.percent * 100}></ProgressBar>;
+	}
+	
+	function getHpBar(pool: CharacterPool) {
+		const variant = (pool.percent > 0.5)
+			? 'success'
+			: (pool.percent > 0.25)
+				? 'warning'
+				: 'danger';
+		
+		return getBar(pool, variant);
+	}
 	
 	const fullCard = () => (
 		<>
@@ -70,13 +83,13 @@ export function CharacterCard({character: char, type = 'full', showEdit = false}
 						<div>
 							HP ({hp.current}/{hp.max})
 						</div>
-						<ProgressBar variant={'success'} now={hp.percent * 100}></ProgressBar>
+						{getHpBar(hp)}
 					</div>
 					<div>
 						<div>
 							Recoveries ({recoveries.current}/{recoveries.max})
 						</div>
-						<ProgressBar now={recoveries.percent * 100}></ProgressBar>
+						{getBar(recoveries)}
 					</div>
 				</Card.Body>
 				{
@@ -104,6 +117,10 @@ export function CharacterCard({character: char, type = 'full', showEdit = false}
 				<Card.Img variant={'top'} src={char.pictureUrl} />
 				<Card.Body>
 					<Card.Title>{char.name}</Card.Title>
+					<div className={'mb-2'}>
+						{getHpBar(hp)}
+					</div>
+					{getBar(recoveries)}
 				</Card.Body>
 			</Card>
 		</>

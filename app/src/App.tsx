@@ -5,7 +5,7 @@ import { useState } from "react";
 import { CloseButton, Modal } from "react-bootstrap";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { CampaignDetail } from "src/routes/campaigns/campaign_detail/page.tsx";
+import { CampaignDetail } from "src/routes/campaign_detail/page.tsx";
 import { CampaignPage } from "src/routes/campaigns/page.tsx";
 import { CharacterPage } from "src/routes/characters/page.tsx";
 import { HomePage } from "src/routes/home/page.tsx";
