@@ -4,8 +4,8 @@ import { Button, Modal } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { Clickable } from "src/components/utility.tsx";
 import { useCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
-import { CharacterCard } from "src/routes/characters/character_card/card.tsx";
-import { CharacterEditor } from "src/routes/characters/character_editor/character_editor.tsx";
+import { CharacterCard } from "src/components/character_card/card.tsx";
+import { CharacterEditor } from "src/components/character_editor.tsx";
 import { createCharacter } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character } from "src/types/models.ts";
@@ -70,9 +70,7 @@ export function CampaignDetail() {
 				New Character
 			</Button>
 			{campaign.characters.map(c => (
-				<Clickable onClick={() => selectCharacter(c)} key={c.id}>
-					<CharacterCard character={c} type={'tile'}></CharacterCard>
-				</Clickable>
+				<CharacterCard key={c.id} character={c} type={'tile'}></CharacterCard>
 			))}
 		</>
 	}

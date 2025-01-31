@@ -44,5 +44,24 @@ export async function saveCharacter(id: number, character: Partial<Character>) {
 	if (!res.ok) {
 		throw new Error('Failed to save character');
 	}
+}
+
+export type ModifyCharacterHpUpdate = {
+	mod: number;
+	type: 'HEAL' | 'DAMAGE';
+}
+export async function modifyCharacterHp(id: number, update: ModifyCharacterHpUpdate): Promise<Character> {
+	const res = await fetch(`/api/characters/${id}/modify/health`, {
+		method: 'PATCH',
+		body: JSON.stringify(update),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
 	
+	if (!res.ok) {
+		throw new Error('Failed to modify character hp');
+	}
+	
+	return (await res.json()) as Character;
 }

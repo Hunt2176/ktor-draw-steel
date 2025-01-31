@@ -114,7 +114,7 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 			<Form.Group controlId={'char-picture'}>
 				<FormLabel>Picture</FormLabel>
 				<Form.Control
-					value={stateVars['pictureUrl'][0]}
+					value={stateVars['pictureUrl'][0] ?? undefined}
 					onChange={(e) => onEdit('pictureUrl', e.target.value)}
 				/>
 				{

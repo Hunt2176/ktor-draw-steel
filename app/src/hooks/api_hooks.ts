@@ -62,7 +62,7 @@ export function useWatchCampaign(id?: number) {
 	});
 	
 	if (lastJsonMessage.campaign != null) {
-		queryClient.setQueryData(['campaign', id], lastJsonMessage.campaign);
+		queryClient.setQueryData(['campaign', id], lastJsonMessage);
 	}
 	
 	lastJsonMessage.characters.forEach((character: Character) => {

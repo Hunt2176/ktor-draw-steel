@@ -29,10 +29,8 @@ fun Application.configureDatabases()
 	val repos = transaction(database) {
 		arrayOf(
 			CampaignRepository(database).also { repo -> getKoinModule().single { repo } },
+			CharacterRepository(database).also { repo -> getKoinModule().single { repo } },
 			BaseRepository(ExposedUser, database, BaseRepositoryEntityMapper(ExposedUser::toDTO) {
-				customizeFromJson(it)
-			}),
-			BaseRepository(ExposedCharacter, database, BaseRepositoryEntityMapper(ExposedCharacter::toDTO) {
 				customizeFromJson(it)
 			}),
 			BaseRepository(ExposedCharacterCondition, database, BaseRepositoryEntityMapper(ExposedCharacterCondition::toDTO) {

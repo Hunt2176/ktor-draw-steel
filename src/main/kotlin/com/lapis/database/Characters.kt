@@ -1,19 +1,60 @@
 package com.lapis.database
 
-import com.lapis.database.base.FromJson
-import com.lapis.database.base.HasCampaign
-import com.lapis.database.base.HasDTO
-import com.lapis.database.base.HasName
+import com.lapis.database.base.*
+import io.ktor.http.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ReferenceOption
+
+class CharacterRepository(database: Database) : BaseRepository<ExposedCharacter, ExposedCharacter.Companion>(
+	ExposedCharacter.Companion,
+	database,
+	BaseRepositoryEntityMapper(
+		{ this.toDTO() },
+		{ this.customizeFromJson(it) }
+	)
+) {
+	override fun Route.additionalRouteSetup()
+	{
+		patch("{id}/modify/health") {
+			val requestText = call.receiveText()
+			val update = Json.decodeFromString<CharacterHealthModifier>(requestText)
+			
+			val res = this@CharacterRepository.transaction {
+				val character = ExposedCharacter.findById(call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")) ?: error("Character not found")
+				val removed = character.removedHp
+				val newRemoved = when (update.type) {
+					CharacterHealthModifier.Type.HEAL -> removed - update.mod
+					CharacterHealthModifier.Type.DAMAGE -> removed + update.mod
+				}
+				
+				character.removedHp = newRemoved.coerceAtLeast(0)
+				return@transaction character.toDTO()
+			}
+			
+			call.respond(HttpStatusCode.OK, res)
+		}
+	}
+	
+	@Serializable
+	private data class CharacterHealthModifier(
+		val mod: Int,
+		val type: Type
+	) {
+		enum class Type {
+			HEAL,
+			DAMAGE
+		}
+	}
+}
 
 object Characters : IntIdTable(), HasName, HasCampaign
 {
@@ -29,7 +70,7 @@ object Characters : IntIdTable(), HasName, HasCampaign
 	val maxHp = integer("max_hp").default(0)
 	val temporaryHp = integer("temporary_hp").default(0)
 	
-	val recoveries = integer("recoveries").default(0)
+	val removedRecoveries = integer("removed_recoveries").default(0)
 	val maxRecoveries = integer("max_recoveries").default(0)
 	
 	val resources = integer("resources").default(0)
@@ -64,7 +105,7 @@ class ExposedCharacter(
 	var maxHp by Characters.maxHp
 	var temporaryHp by Characters.temporaryHp
 	
-	var recoveries by Characters.recoveries
+	var removedRecoveries by Characters.removedRecoveries
 	var maxRecoveries by Characters.maxRecoveries
 	
 	var resources by Characters.resources
@@ -97,7 +138,7 @@ class ExposedCharacter(
 		json["maxHp"]?.jsonPrimitive?.int?.let { maxHp = it }
 		json["temporaryHp"]?.jsonPrimitive?.int?.let { temporaryHp = it }
 		
-		json["recoveries"]?.jsonPrimitive?.int?.let { recoveries = it }
+		json["removedRecoveries"]?.jsonPrimitive?.int?.let { removedRecoveries = it }
 		json["maxRecoveries"]?.jsonPrimitive?.int?.let { maxRecoveries = it }
 		
 		json["resources"]?.jsonPrimitive?.int?.let { resources = it }
@@ -124,7 +165,7 @@ data class CharacterDTO (
 	val removedHp: Int,
 	val maxHp: Int,
 	val temporaryHp: Int,
-	val recoveries: Int,
+	val removedRecoveries: Int,
 	val maxRecoveries: Int,
 	val resources: Int,
 	val surges: Int,
@@ -151,7 +192,7 @@ data class CharacterDTO (
 				entity.removedHp,
 				entity.maxHp,
 				entity.temporaryHp,
-				entity.recoveries,
+				entity.removedRecoveries,
 				entity.maxRecoveries,
 				entity.resources,
 				entity.surges,
