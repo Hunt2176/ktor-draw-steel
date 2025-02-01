@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useWebSocket from "react-use-websocket";
-import { fetchCampaign, fetchCampaigns, fetchCharacter } from "src/services/api.ts";
-import { CampaignDetails, Character } from "src/types/models.ts";
+import { fetchCampaign, fetchCampaigns, fetchCharacter, fetchCombat } from "src/services/api.ts";
+import { CampaignDetails, Character, Combat } from "src/types/models.ts";
 
 export function useCharacter(id: number | undefined): Character | undefined {
 	const queryKey = useMemo(() => ['character', id], [id]);
@@ -35,6 +35,17 @@ export function useCampaignList(): CampaignDetails[] {
 	});
 	
 	return query.data ?? [];
+}
+
+export function useCombat(id?: number): Combat | undefined {
+	const queryKey = useMemo(() => ['combat', id], [id]);
+	const query = useQuery({
+		queryKey: queryKey,
+		queryFn: () => fetchCombat(id!),
+		enabled: () => id != null,
+	});
+	
+	return query.data;
 }
 
 export function useWatchCampaign(id?: number) {

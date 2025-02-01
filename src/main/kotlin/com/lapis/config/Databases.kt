@@ -30,13 +30,11 @@ fun Application.configureDatabases()
 		arrayOf(
 			CampaignRepository(database).also { repo -> getKoinModule().single { repo } },
 			CharacterRepository(database).also { repo -> getKoinModule().single { repo } },
+			CombatRepository(database).also { repo -> getKoinModule().single { repo } },
 			BaseRepository(ExposedUser, database, BaseRepositoryEntityMapper(ExposedUser::toDTO) {
 				customizeFromJson(it)
 			}),
 			BaseRepository(ExposedCharacterCondition, database, BaseRepositoryEntityMapper(ExposedCharacterCondition::toDTO) {
-				customizeFromJson(it)
-			}),
-			BaseRepository(ExposedCombat, database, BaseRepositoryEntityMapper(ExposedCombat::toDTO) {
 				customizeFromJson(it)
 			}),
 			BaseRepository(ExposedCombatant, database, BaseRepositoryEntityMapper(ExposedCombatant::toDTO) {

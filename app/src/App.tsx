@@ -8,6 +8,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { CampaignDetail } from "src/routes/campaign_detail/page.tsx";
 import { CampaignPage } from "src/routes/campaigns/page.tsx";
 import { CharacterPage } from "src/routes/characters/page.tsx";
+import { CombatPage } from "src/routes/combat/page.tsx";
 import { HomePage } from "src/routes/home/page.tsx";
 import { CampaignWatcher } from "src/services/campaign_watcher.tsx";
 import { CampaignContext, CharacterContext, ErrorContext } from "src/services/contexts.ts";
@@ -50,6 +51,7 @@ const RouterEl = () => {
 						<Route path="/campaigns/:id" element={<CampaignDetail/>}></Route>
 						<Route path="/campaigns/:id/characters" element={<CharacterPage/>}></Route>
 						<Route path="/characters/:id" element={<CharacterPage/>}></Route>
+						<Route path="/combats/:id" element={<CombatPage/>}></Route>
 					</Routes>
 				</Router>
 	)

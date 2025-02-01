@@ -86,7 +86,7 @@ export class Character {
 
 export type Combatant = HasId & {
 	available: boolean;
-	character: number;
+	character: Character;
 }
 
 export type Combat = HasId & {

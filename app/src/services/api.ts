@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import useWebSocket from "react-use-websocket";
-import { CampaignDetails, Character } from "src/types/models.ts";
+import { CampaignDetails, Character, Combat } from "src/types/models.ts";
 
 export async function fetchCampaigns(): Promise<CampaignDetails[]> {
 	const res = await fetch('/api/campaigns')
@@ -86,4 +86,68 @@ export async function modifyCharacterRecovery(id: number, update: ModifyCharacte
 	}
 	
 	return (await res.json()) as Character;
+}
+
+export async function fetchCombat(id: number): Promise<Combat> {
+	const res = await fetch(`/api/combats/${id}`)
+	return (await res.json()) as Combat
+}
+
+export type CreateCombatUpdate = {
+	campaignId: number;
+	characterIds: number[];
+}
+export async function createCombat(update: CreateCombatUpdate): Promise<Combat> {
+	const res = await fetch(`/api/combats/create`, {
+		method: 'POST',
+		body: JSON.stringify(update),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to create combat');
+	}
+	
+	return (await res.json()) as Combat;
+}
+
+export type CombatRoundUpdate = {
+	fromRound: number;
+	reset: boolean;
+}
+export async function updateCombatRound(id: number, update: CombatRoundUpdate): Promise<Combat> {
+	const res = await fetch(`/api/combats/${id}/nextRound`, {
+		method: 'PATCH',
+		body: JSON.stringify(update),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to update combat round');
+	}
+	
+	return (await res.json()) as Combat;
+}
+
+export type CombatCombatantUpdate = {
+	character: number;
+}
+export async function updateCombatCombatant(id: number, type: 'add' | 'remove', update: CombatCombatantUpdate): Promise<Combat> {
+	const res = await fetch(`/api/combats/${id}/${type}`, {
+		method: 'PATCH',
+		body: JSON.stringify(update),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to update combatant');
+	}
+	
+	return (await res.json()) as Combat;
 }
