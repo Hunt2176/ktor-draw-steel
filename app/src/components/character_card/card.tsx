@@ -1,14 +1,13 @@
 import { faPen } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useCallback, useContext, useMemo, useRef, useState } from "react";
-import { Button, ButtonGroup, Card, CardTitle, CloseButton, Col, FormControl, FormGroup, FormLabel, Modal, Overlay, OverlayProps, OverlayTrigger, Popover, PopoverBody, PopoverHeader, ProgressBar, Row, Table } from "react-bootstrap";
-import { OverlayInjectedProps } from "react-bootstrap/Overlay";
-import { CharacterEditor, CharacterEditorCore, CharacterEditorResult } from "src/components/character_editor.tsx";
+import React, { useContext, useMemo, useRef, useState } from "react";
+import { Button, ButtonGroup, Card, CloseButton, Col, FormControl, FormGroup, FormLabel, Modal, Overlay, Popover, PopoverBody, PopoverHeader, ProgressBar, Row, Table } from "react-bootstrap";
+import { CharacterEditor, CharacterEditorCore } from "src/components/character_editor.tsx";
 import { usePromise } from "src/hooks/promise_hook.ts";
-import { modifyCharacterHp, ModifyCharacterHpUpdate, saveCharacter } from "src/services/api.ts";
+import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
-import { Character, CharacterPool } from "src/types/models.ts";
+import { Character } from "src/types/models.ts";
 
 import 'src/components/character_card/card.scss';
 
@@ -22,6 +21,16 @@ type CharacterCardType = 'full' | 'tile';
 
 type CharacterCardOverlayProps = {
 	type: 'hp' | 'recoveries';
+}
+
+interface ModificationType {
+	removedHp: ModifyCharacterHpUpdate;
+	removedRecoveries: ModifyCharacterRecoveryUpdate;
+}
+type ModificationKeys = keyof ModificationType;
+type ModificationMutationUpdate<T extends ModificationKeys> = {
+	type: T;
+	update: ModificationType[T];
 }
 
 export function CharacterCard({character, type = 'full', showEdit = false}: CharacterCardProps) {
@@ -43,19 +52,22 @@ export function CharacterCard({character, type = 'full', showEdit = false}: Char
 		mutationFn: (toSave: Partial<CharacterEditorCore>) => {
 			return saveCharacter(character.id, toSave);
 		},
-		onSuccess: () =>{
-			queryClient.invalidateQueries({
-				queryKey: ['character', character.id]
-			});
+		onSuccess: (res) =>{
+			queryClient.setQueryData(['character', character.id], res);
 			
 			setEditing(false);
 		},
 		onError: setError
 	});
 	
-	const modifyHpMutation = useMutation({
-		mutationFn: (mod: ModifyCharacterHpUpdate) => {
-			return modifyCharacterHp(character.id, mod);
+	const modifyMutation = useMutation({
+		mutationFn: (mod: ModificationMutationUpdate<ModificationKeys>) => {
+			switch (mod.type) {
+				case 'removedHp':
+					return modifyCharacterHp(character.id, mod.update as ModifyCharacterHpUpdate);
+				case 'removedRecoveries':
+					return modifyCharacterRecovery(character.id, mod.update as ModifyCharacterRecoveryUpdate);
+			}
 		},
 		onSuccess: (res) => {
 			queryClient.setQueryData(['character', character.id], res);
@@ -168,16 +180,36 @@ export function CharacterCard({character, type = 'full', showEdit = false}: Char
 			setModStats({...modStats, [key]: value});
 		}
 		
-		function submitHpModification(type: 'HEAL' | 'DAMAGE') {
-			const mod = modStats['removedHp'];
+		function submitModification<K extends ModificationKeys>(key: K, type: ModificationType[K]['type']) {
+			const mod = modStats[key];
+			
 			if (mod == null) {
 				return;
 			}
 			
-			const p = modifyHpMutation.mutateAsync({
-				mod,
-				type
-			});
+			let p: Promise<Character>;
+			switch (key) {
+				case 'removedRecoveries':
+					p = modifyMutation.mutateAsync({
+						type: key,
+						update: {
+							mod: mod as number,
+							type
+						}
+					});
+					break;
+				case 'removedHp':
+					p = modifyMutation.mutateAsync({
+						type: key,
+						update: {
+							mod: mod as number,
+							type
+						}
+					});
+					break;
+				default:
+					return;
+			}
 			
 			setUpdatePromise(p);
 		}
@@ -194,8 +226,8 @@ export function CharacterCard({character, type = 'full', showEdit = false}: Char
 							             type={'number'}/>
 						</FormGroup>
 						<ButtonGroup className={'mt-2 w-100'}>
-							<Button disabled={promiseState.loading} onClick={() => submitHpModification('DAMAGE')} variant={'danger'}>Damage</Button>
-							<Button disabled={promiseState.loading} onClick={() => submitHpModification('HEAL')} variant={'success'}>Heal</Button>
+							<Button disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'DAMAGE')} variant={'danger'}>Damage</Button>
+							<Button disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'HEAL')} variant={'success'}>Heal</Button>
 						</ButtonGroup>
 					</div>
 				);
@@ -208,7 +240,10 @@ export function CharacterCard({character, type = 'full', showEdit = false}: Char
 							             onChange={(e) => setValue('removedRecoveries', e.target.value ? parseInt(e.target.value) : undefined)}
 							             type={'number'}/>
 						</FormGroup>
-						<Button className={'mt-2'}>Submit</Button>
+						<div className={'mt-2 d-flex justify-content-between'}>
+							<Button disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'INCREASE')}>Add</Button>
+							<Button disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'DECREASE')}>Remove</Button>
+						</div>
 					</div>
 				);
 		}
@@ -232,7 +267,7 @@ export function CharacterCard({character, type = 'full', showEdit = false}: Char
 				<CloseButton onClick={() => setEditing(false)}></CloseButton>
 			</Modal.Header>
 			<Modal.Body>
-				<CharacterEditor character={character} onSubmit={saveMutation.mutateAsync}></CharacterEditor>
+				<CharacterEditor character={character} onSubmit={(e) => saveMutation.mutateAsync(e) as unknown as Promise<void>}></CharacterEditor>
 			</Modal.Body>
 		</Modal>
 		<Overlay placement={'auto'} target={hpRef.current} show={showHp} rootCloseEvent={'click'} rootClose={true} onHide={() => setShowHp(false)}>

@@ -44,6 +44,8 @@ export async function saveCharacter(id: number, character: Partial<Character>) {
 	if (!res.ok) {
 		throw new Error('Failed to save character');
 	}
+	
+	return (await res.json()) as Character;
 }
 
 export type ModifyCharacterHpUpdate = {
@@ -61,6 +63,26 @@ export async function modifyCharacterHp(id: number, update: ModifyCharacterHpUpd
 	
 	if (!res.ok) {
 		throw new Error('Failed to modify character hp');
+	}
+	
+	return (await res.json()) as Character;
+}
+
+export type ModifyCharacterRecoveryUpdate = {
+	mod: number;
+	type: 'INCREASE' | 'DECREASE';
+}
+export async function modifyCharacterRecovery(id: number, update: ModifyCharacterRecoveryUpdate): Promise<Character> {
+	const res = await fetch(`/api/characters/${id}/modify/recoveries`, {
+		method: 'PATCH',
+		body: JSON.stringify(update),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to modify character recoveries');
 	}
 	
 	return (await res.json()) as Character;

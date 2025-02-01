@@ -42,6 +42,25 @@ class CharacterRepository(database: Database) : BaseRepository<ExposedCharacter,
 			
 			call.respond(HttpStatusCode.OK, res)
 		}
+		
+		patch("{id}/modify/recoveries") {
+			val requestText = call.receiveText()
+			val update = Json.decodeFromString<CharacterRecoveriesModifier>(requestText)
+			
+			val res = this@CharacterRepository.transaction {
+				val character = ExposedCharacter.findById(call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")) ?: error("Character not found")
+				val removed = character.removedRecoveries
+				val newRemoved = when (update.type) {
+					CharacterRecoveriesModifier.Type.INCREASE -> removed - update.mod
+					CharacterRecoveriesModifier.Type.DECREASE -> removed + update.mod
+				}
+				
+				character.removedRecoveries = newRemoved.coerceIn(0..character.maxRecoveries)
+				return@transaction character.toDTO()
+			}
+			
+			call.respond(HttpStatusCode.OK, res)
+		}
 	}
 	
 	@Serializable
@@ -52,6 +71,17 @@ class CharacterRepository(database: Database) : BaseRepository<ExposedCharacter,
 		enum class Type {
 			HEAL,
 			DAMAGE
+		}
+	}
+	
+	@Serializable
+	private data class CharacterRecoveriesModifier(
+		val mod: Int,
+		val type: Type
+	) {
+		enum class Type {
+			INCREASE,
+			DECREASE
 		}
 	}
 }
