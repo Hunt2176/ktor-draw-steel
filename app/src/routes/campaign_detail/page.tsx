@@ -1,14 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useContext, useState } from "react";
-import { Button, Modal } from "react-bootstrap";
+import { useCallback, useContext, useMemo, useState } from "react";
+import { Button, Modal, Navbar, NavbarText } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
-import { Clickable } from "src/components/utility.tsx";
 import { useCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
 import { CharacterCard } from "src/components/character_card/card.tsx";
 import { CharacterEditor } from "src/components/character_editor.tsx";
 import { createCharacter } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character } from "src/types/models.ts";
+import Element = React.JSX.Element;
 
 export function CampaignDetail() {
 	const queryClient = useQueryClient();
@@ -49,7 +49,7 @@ export function CampaignDetail() {
 	const campaign = useCampaign(id);
 	useWatchCampaign(id);
 	
-	function newCharacterModal() {
+	const newCharacterModal = useMemo(() => {
 		const model = Character.new();
 		
 		return <Modal show={newCharacter} onHide={() => setNewCharacter(false)}>
@@ -60,18 +60,60 @@ export function CampaignDetail() {
 				<CharacterEditor character={model} onSubmit={saveCharacterMutation.mutateAsync}></CharacterEditor>
 			</Modal.Body>
 		</Modal>;
-	}
+	}, [newCharacter, saveCharacterMutation.mutateAsync]);
+	
+	const characterElements = useMemo(() => {
+		return campaign && campaign.characters.reduce((acc, character, index) => {
+			const characterEl = (
+				<CharacterCard key={character.id} character={character} type={'tile'}/>
+			)
+			
+			if (index % 5 == 0) {
+				acc.push([characterEl]);
+			}
+			else {
+				acc[acc.length - 1].push(characterEl);
+			}
+			
+			return acc;
+		}, new Array<Element[]>())
+			.map((row, index) => (
+				<div className={'d-flex flex-column flex-1'} key={index}>
+					{row.map((el) => (el))}
+				</div>
+			));
+	}, [campaign]);
+	
+	const campaignDisplay = useMemo(() => (
+		campaign &&
+	    <div className={'d-flex flex-column vh-100'}>
+	      <div className={'flex-1'}>
+          <Navbar>
+              <NavbarText>{campaign.campaign.name}</NavbarText>
+          </Navbar>
+	      </div>
+	      <div className={'flex-2'}>
+	
+	      </div>
+	      <div className={'flex-3 d-flex flex-column flex-wrap'}>
+			      <div className={'d-flex justify-content-center my-2'}>
+				      <Button onClick={() => setNewCharacter(true)}>Add Character</Button>
+			      </div>
+	          <div className={'d-flex'}>
+							{characterElements?.map((row) => (
+								row
+							))}
+	          </div>
+	      </div>
+	    </div>
+	), [campaign, characterElements]);
 	
 	if (campaign) {
-		return <>
-			{newCharacterModal()}
-			<h1>{campaign.campaign.name}</h1>
-			<Button onClick={() => setNewCharacter(true)}>
-				New Character
-			</Button>
-			{campaign.characters.map(c => (
-				<CharacterCard key={c.id} character={c} type={'tile'}></CharacterCard>
-			))}
-		</>
+		return (
+			<>
+				{newCharacterModal}
+				{campaignDisplay}
+			</>
+		);
 	}
 }
