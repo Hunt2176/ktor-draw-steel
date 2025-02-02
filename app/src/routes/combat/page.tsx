@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import { Button, Card, CardTitle, Modal, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { CharacterCard } from "src/components/character_card/card.tsx";
 import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/hooks/api_hooks.ts";
 import { updateCombatantActive, updateCombatRound } from "src/services/api.ts";
@@ -144,9 +144,9 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 					
 					</div>
 					<div className={'col-4 d-flex flex-column justify-content-center align-items-center'}>
-						<span>
+						<Link to={`/campaigns/${campaign.campaign.id}`}>
 							{campaign.campaign.name}
-						</span>
+						</Link>
 						<span>
 							Round {combat.round}
 						</span>

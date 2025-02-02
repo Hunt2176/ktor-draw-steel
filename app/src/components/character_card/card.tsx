@@ -186,12 +186,12 @@ export function CharacterCard({character, type = 'full', showEdit = false, child
 					<div className={'mb-2'}>
 						{hpBar}
 					</div>
-					{recoveriesBar}
+					{character.maxRecoveries > 0 && recoveriesBar}
 				</Card.Body>
 				{childPosition === 'right' ? createChildren() : <></>}
 			</Card>
 		);
-}, [character.pictureUrl, character.name, hpBar, recoveriesBar, children, childPosition]);
+}, [character.pictureUrl, character.name, hpBar, recoveriesBar, children, childPosition, character.maxRecoveries]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modStats, setModStats] = useState<Partial<CharacterEditorCore>>({});
