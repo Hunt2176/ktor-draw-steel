@@ -8,16 +8,24 @@ import { usePromise } from "src/hooks/promise_hook.ts";
 import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character } from "src/types/models.ts";
+import { toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "src/utils.ts";
 
 import 'src/components/character_card/card.scss';
 
+
 export interface CharacterCardProps {
 	character: Character;
-	showEdit?: boolean;
 	type: CharacterCardType | undefined;
-	childPosition?: 'left' | 'right';
-	children?: React.ReactElement | React.ReactElement[];
+	children?: CharacterCardChildren;
 }
+
+export interface CharacterCardChildren {
+	left?: CharacterCardElement;
+	right?: CharacterCardElement;
+	bottom?: CharacterCardElement;
+}
+
+type CharacterCardElement = React.ReactElement<CharacterCardExtraProps, typeof CharacterCardExtra>;
 
 type CharacterCardType = 'full' | 'tile';
 
@@ -35,7 +43,7 @@ type ModificationMutationUpdate<T extends ModificationKeys> = {
 	update: ModificationType[T];
 }
 
-export function CharacterCard({character, type = 'full', showEdit = false, children, childPosition}: CharacterCardProps) {
+export function CharacterCard({character, type = 'full', children}: CharacterCardProps) {
 	const queryClient = useQueryClient();
 	
 	const [showHp, setShowHp] = useState(false);
@@ -134,52 +142,19 @@ export function CharacterCard({character, type = 'full', showEdit = false, child
 						{recoveriesBar}
 					</div>
 				</Card.Body>
-				{
-					(!showEdit) ? <></>
-					: <Card.Footer>
-							<Row style={{justifyContent: 'end'}}>
-								{(showEdit)
-									? <Col sm={4} style={{textAlign: 'right'}}>
-											<Button onClick={() => setEditing(true)}>
-												<FontAwesomeIcon icon={faPen}></FontAwesomeIcon>
-											</Button>
-										</Col>
-									: <></>
-								}
-							</Row>
-						</Card.Footer>
+				{ children?.bottom &&
+					<Card.Footer>
+						{children.bottom}
+					</Card.Footer>
 				}
 			</Card>
 		</>
-	), [hp.current, hp.max, recoveries.current, recoveries.max, character.pictureUrl, character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, showEdit]);
+	), [hp.current, hp.max, recoveries.current, recoveries.max, character.pictureUrl, character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom]);
 	
 	const tileCard = useMemo(() => {
-		function createChildren() {
-			if (children == null) {
-				return <></>;
-			}
-			
-			if (!Array.isArray(children)) {
-				children = [children];
-			}
-			
-			if (children.length == 0) {
-				return <></>;
-			}
-			return (
-				<div className={'d-flex flex-column justify-content-between align-items-center m-1'}>
-					{children.map((child, i) => (
-						<React.Fragment key={i}>
-							{child}
-						</React.Fragment>
-					))}
-				</div>
-			);
-		}
-		
 		return (
 			<Card className={'character-card-tile'}>
-				{childPosition === 'left' ? createChildren() : <></>}
+				{children?.left}
 				<Card.Img variant={'top'} src={character.pictureUrl ?? undefined} />
 				<Card.Body>
 					<Card.Title>{character.name}</Card.Title>
@@ -188,10 +163,10 @@ export function CharacterCard({character, type = 'full', showEdit = false, child
 					</div>
 					{character.maxRecoveries > 0 && recoveriesBar}
 				</Card.Body>
-				{childPosition === 'right' ? createChildren() : <></>}
+				{children?.right}
 			</Card>
 		);
-}, [character.pictureUrl, character.name, hpBar, recoveriesBar, children, childPosition, character.maxRecoveries]);
+}, [character.pictureUrl, character.name, hpBar, recoveriesBar, character.maxRecoveries, children?.left, children?.right]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modStats, setModStats] = useState<Partial<CharacterEditorCore>>({});
@@ -287,40 +262,81 @@ export function CharacterCard({character, type = 'full', showEdit = false, child
 		}
 	}, [type, fullCard, tileCard]);
 	
+	const extraParams: CharacterCardExtras = useMemo(() => {
+		return {
+			edit: () => setEditing(true)
+		};
+	}, [setEditing]);
+	
+	return (
+		<>
+			<CharacterCardExtrasContext.Provider value={extraParams}>
+				<Modal show={editing}>
+					<Modal.Header>
+						<Modal.Title>Edit</Modal.Title>
+						<CloseButton onClick={() => setEditing(false)}></CloseButton>
+					</Modal.Header>
+					<Modal.Body>
+						<CharacterEditor character={character} onSubmit={(e) => { saveMutation.mutate(e) }}></CharacterEditor>
+					</Modal.Body>
+				</Modal>
+				<Overlay placement={'auto'} target={hpRef.current} show={showHp} rootCloseEvent={'click'} rootClose={true} onHide={() => setShowHp(false)}>
+					{(props) => {
+						return (
+							<Popover {...props}>
+								<PopoverHeader>HP</PopoverHeader>
+								<PopoverBody>
+									<OverlayDisplay type={'hp'}></OverlayDisplay>
+								</PopoverBody>
+							</Popover>
+						);
+					}}
+				</Overlay>
+				<Overlay placement={'auto'} target={recoveriesRef.current} show={showRecoveries} rootCloseEvent={'click'} rootClose={true} onHide={() => setShowRecoveries(false)}>
+					{(props) => {
+						return (
+							<Popover {...props}>
+								<PopoverHeader>Recoveries</PopoverHeader>
+								<PopoverBody>
+									<OverlayDisplay type={'recoveries'}></OverlayDisplay>
+								</PopoverBody>
+							</Popover>
+						);
+					}}
+				</Overlay>
+				{card}
+				
+			</CharacterCardExtrasContext.Provider>
+		</>
+	);
+}
+
+const CharacterCardExtrasContext = React.createContext<CharacterCardExtras | undefined>(undefined);
+
+export interface CharacterCardExtras {
+	edit: () => void;
+}
+
+export interface CharacterCardExtraProps {
+	children: TypeOrProvider<Vararg<React.ReactElement>, CharacterCardExtras>;
+}
+
+export function CharacterCardExtra({ children }: CharacterCardExtraProps) {
+	const extras = useContext(CharacterCardExtrasContext);
+	if (extras == null) {
+		throw new Error('VisitorCardExtra must be used within a CharacterCardExtrasContext');
+	}
+	
+	const results = useMemo(() =>
+		toVararg(toTypeOrProvider(children)(extras)),
+		[children, extras]
+	);
+	
 	return <>
-		<Modal show={editing}>
-			<Modal.Header>
-				<Modal.Title>Edit</Modal.Title>
-				<CloseButton onClick={() => setEditing(false)}></CloseButton>
-			</Modal.Header>
-			<Modal.Body>
-				<CharacterEditor character={character} onSubmit={(e) => saveMutation.mutateAsync(e) as unknown as Promise<void>}></CharacterEditor>
-			</Modal.Body>
-		</Modal>
-		<Overlay placement={'auto'} target={hpRef.current} show={showHp} rootCloseEvent={'click'} rootClose={true} onHide={() => setShowHp(false)}>
-			{(props) => {
-				return (
-					<Popover {...props}>
-						<PopoverHeader>HP</PopoverHeader>
-						<PopoverBody>
-							<OverlayDisplay type={'hp'}></OverlayDisplay>
-						</PopoverBody>
-					</Popover>
-				);
-			}}
-		</Overlay>
-		<Overlay placement={'auto'} target={recoveriesRef.current} show={showRecoveries} rootCloseEvent={'click'} rootClose={true} onHide={() => setShowRecoveries(false)}>
-			{(props) => {
-				return (
-					<Popover {...props}>
-						<PopoverHeader>Recoveries</PopoverHeader>
-						<PopoverBody>
-							<OverlayDisplay type={'recoveries'}></OverlayDisplay>
-						</PopoverBody>
-					</Popover>
-				);
-			}}
-		</Overlay>
-		{card}
+		{results.map((el, index) => (
+			<React.Fragment key={index}>
+				{el}
+			</React.Fragment>
+		))}
 	</>;
 }

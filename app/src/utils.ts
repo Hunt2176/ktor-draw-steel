@@ -31,3 +31,21 @@ export function parseFloatOrUndefined(val: any): number | undefined {
 	
 	return parsed;
 }
+
+export type Vararg<T> = T | T[];
+export function toVararg<T>(val: Vararg<T>): T[] {
+	if (Array.isArray(val)) {
+		return val;
+	}
+	
+	return [val];
+}
+
+export type TypeOrProvider<Type, ParamType = unknown> = Type | ((params: ParamType) => Type);
+export function toTypeOrProvider<Type, ParamType = unknown>(val: TypeOrProvider<Type, ParamType>): (params: ParamType) => Type {
+	if (typeof val === 'function') {
+		return val as (params: ParamType) => Type;
+	}
+	
+	return () => val;
+}

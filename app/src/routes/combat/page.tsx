@@ -1,10 +1,10 @@
-import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import { Button, Card, CardTitle, Modal, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { CharacterCard } from "src/components/character_card/card.tsx";
+import { CharacterCard, CharacterCardExtra } from "src/components/character_card/card.tsx";
 import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/hooks/api_hooks.ts";
 import { updateCombatantActive, updateCombatRound } from "src/services/api.ts";
 import { Character, Combatant } from "src/types/models.ts";
@@ -97,15 +97,21 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				</Card>
 				{availableMap?.get(available)?.map(c => {
 					const combatant = combatantMap.get(c.id);
-					return (
-						<CharacterCard key={c.id} character={c} type={'tile'} childPosition={available ? 'right' : 'left'}>
-							{combatant && (
-								<Button onClick={() => {
-									activeCombatantMutation.mutate({ combatant, active: !combatant.available });
-								}}>
-									<FontAwesomeIcon icon={ combatant.available ? faArrowRight : faArrowLeft }/>
-								</Button>
-							)}
+					return combatant && (
+						<CharacterCard key={c.id} character={c} type={'tile'}>
+							{{
+								[available ? 'right' : 'left']: (
+									<CharacterCardExtra>
+										{(props) => (
+											<div className={'d-flex flex-column justify-content-between align-content-center m-1'}>
+												<Button onClick={() => activeCombatantMutation.mutate({ combatant, active: !combatant.available })}>
+													<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft} />
+												</Button>
+											</div>
+										)}
+									</CharacterCardExtra>
+								)
+							}}
 						</CharacterCard>
 					)}
 				)}
