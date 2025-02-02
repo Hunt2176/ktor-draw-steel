@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import useWebSocket from "react-use-websocket";
 import { fetchCampaign, fetchCampaigns, fetchCharacter, fetchCombat } from "src/services/api.ts";
 import { CampaignDetails, Character, Combat } from "src/types/models.ts";
+import { parseIntOrUndefined } from "src/utils.ts";
 
 export function useCharacter(id: number | undefined): Character | undefined {
 	const queryKey = useMemo(() => ['character', id], [id]);
@@ -79,4 +80,28 @@ export function useWatchCampaign(id?: number) {
 	lastJsonMessage.characters.forEach((character: Character) => {
 		queryClient.setQueryData(['character', character.id], character);
 	});
+}
+
+export function useWatchCombat(id?: number) {
+	const queryClient = useQueryClient();
+	const [lastMessageTime, setLastMessageTime] = useState(0);
+	const parsedId = useMemo(() => parseIntOrUndefined(id), [id]);
+	
+	const wsRes = useWebSocket<Combat | undefined>(`/watch/combats/${parsedId}`, {
+		reconnectAttempts: 5,
+		retryOnError: true
+	}, parsedId != null);
+	
+	if (!wsRes || parsedId == null) {
+		return;
+	}
+	
+	const { lastJsonMessage, lastMessage } = wsRes;
+	if (lastMessage == null || lastJsonMessage == null || lastMessage.timeStamp === lastMessageTime) {
+		return;
+	}
+	
+	setLastMessageTime(lastMessage.timeStamp);
+	
+	queryClient.setQueryData(['combat', parsedId], lastJsonMessage);
 }

@@ -93,7 +93,10 @@ abstract class SocketService<EntityType : Entity<Int>> : KoinComponent, ScopedTr
 			// Copy sockets so we can iterate later without being synchronized
 			sockets = HashSet(foundSockets)
 			
-			val jsonObj = toJsonObject(getEntityFromId(entityId) ?: return)
+			val jsonObj = transaction {
+				getEntityFromId(entityId)?.let { toJsonObject(it) }
+			}
+			
 			if (jsonObj == null) {
 				return
 			}

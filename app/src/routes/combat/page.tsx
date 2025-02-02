@@ -5,7 +5,7 @@ import React, { useMemo, useState } from "react";
 import { Button, Card, CardTitle, Modal, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { CharacterCard } from "src/components/character_card/card.tsx";
-import { useCampaign, useCombat, useWatchCampaign } from "src/hooks/api_hooks.ts";
+import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/hooks/api_hooks.ts";
 import { updateCombatRound } from "src/services/api.ts";
 import { Character } from "src/types/models.ts";
 import { parseIntOrUndefined } from "src/utils.ts";
@@ -33,6 +33,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	const combat = useCombat(id);
 	const campaign = useCampaign(combat?.campaign);
 	useWatchCampaign(campaign?.campaign.id);
+	useWatchCombat(id);
 	
 	const nextRoundMutation = useMutation({
 		mutationFn: () => {
