@@ -15,6 +15,8 @@ export interface CharacterCardProps {
 	character: Character;
 	showEdit?: boolean;
 	type: CharacterCardType | undefined;
+	childPosition?: 'left' | 'right';
+	children?: React.ReactElement | React.ReactElement[];
 }
 
 type CharacterCardType = 'full' | 'tile';
@@ -33,7 +35,7 @@ type ModificationMutationUpdate<T extends ModificationKeys> = {
 	update: ModificationType[T];
 }
 
-export function CharacterCard({character, type = 'full', showEdit = false}: CharacterCardProps) {
+export function CharacterCard({character, type = 'full', showEdit = false, children, childPosition}: CharacterCardProps) {
 	const queryClient = useQueryClient();
 	
 	const [showHp, setShowHp] = useState(false);
@@ -151,9 +153,33 @@ export function CharacterCard({character, type = 'full', showEdit = false}: Char
 		</>
 	), [hp.current, hp.max, recoveries.current, recoveries.max, character.pictureUrl, character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, showEdit]);
 	
-	const tileCard = useMemo(() => (
-		<>
+	const tileCard = useMemo(() => {
+		function createChildren() {
+			if (children == null) {
+				return <></>;
+			}
+			
+			if (!Array.isArray(children)) {
+				children = [children];
+			}
+			
+			if (children.length == 0) {
+				return <></>;
+			}
+			return (
+				<div className={'d-flex flex-column justify-content-between align-items-center m-1'}>
+					{children.map((child, i) => (
+						<React.Fragment key={i}>
+							{child}
+						</React.Fragment>
+					))}
+				</div>
+			);
+		}
+		
+		return (
 			<Card className={'character-card-tile'}>
+				{childPosition === 'left' ? createChildren() : <></>}
 				<Card.Img variant={'top'} src={character.pictureUrl ?? undefined} />
 				<Card.Body>
 					<Card.Title>{character.name}</Card.Title>
@@ -162,9 +188,10 @@ export function CharacterCard({character, type = 'full', showEdit = false}: Char
 					</div>
 					{recoveriesBar}
 				</Card.Body>
+				{childPosition === 'right' ? createChildren() : <></>}
 			</Card>
-		</>
-	), [character.pictureUrl, character.name, hpBar, recoveriesBar]);
+		);
+}, [character.pictureUrl, character.name, hpBar, recoveriesBar, children, childPosition]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modStats, setModStats] = useState<Partial<CharacterEditorCore>>({});

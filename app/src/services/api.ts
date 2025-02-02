@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import useWebSocket from "react-use-websocket";
-import { CampaignDetails, Character, Combat } from "src/types/models.ts";
+import { CampaignDetails, Character, Combat, Combatant } from "src/types/models.ts";
 
 export async function fetchCampaigns(): Promise<CampaignDetails[]> {
 	const res = await fetch('/api/campaigns')
@@ -150,4 +150,20 @@ export async function updateCombatCombatant(id: number, type: 'add' | 'remove', 
 	}
 	
 	return (await res.json()) as Combat;
+}
+
+export async function updateCombatantActive(id: number, available: boolean): Promise<Combatant> {
+	const res = await fetch(`/api/combatants/${id}`, {
+		method: 'PATCH',
+		body: JSON.stringify({ available }),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to update combatant active');
+	}
+	
+	return (await res.json()) as Combatant;
 }

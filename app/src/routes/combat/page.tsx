@@ -1,4 +1,4 @@
-import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
@@ -6,8 +6,8 @@ import { Button, Card, CardTitle, Modal, ModalFooter, ModalHeader, ModalTitle } 
 import { useNavigate, useParams } from "react-router-dom";
 import { CharacterCard } from "src/components/character_card/card.tsx";
 import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/hooks/api_hooks.ts";
-import { updateCombatRound } from "src/services/api.ts";
-import { Character } from "src/types/models.ts";
+import { updateCombatantActive, updateCombatRound } from "src/services/api.ts";
+import { Character, Combatant } from "src/types/models.ts";
 import { parseIntOrUndefined } from "src/utils.ts";
 
 import './page.scss';
@@ -49,6 +49,31 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		}
 	});
 	
+	const activeCombatantMutation = useMutation({
+		mutationFn: ({combatant, active}: { combatant: Combatant, active: boolean }) => {
+			return updateCombatantActive(combatant.id, active);
+		},
+		onSuccess: () => {
+			if (combat != null) {
+				return queryClient.invalidateQueries({
+					queryKey: ['combat', combat.id]
+				});
+			}
+		}
+	});
+	
+	// Maps Character ID to Combatant
+	const combatantMap = useMemo(() => {
+		const map = new Map<number, Combatant>();
+		if (combat == null) {
+			return map;
+		}
+		return combat?.combatants.reduce((acc, combatant) => {
+			acc.set(combatant.character.id, combatant);
+			return acc;
+		}, map);
+	}, [combat]);
+	
 	const availableMap = useMemo(() => {
 		return campaign?.characters.reduce((acc, character) => {
 			const c = combat?.combatants.find(c => c.character.id == character.id);
@@ -70,9 +95,20 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				<Card>
 					<CardTitle className={'d-flex justify-content-center my-2'}>{available ? 'Available' : 'Unavailable'}</CardTitle>
 				</Card>
-				{availableMap?.get(available)?.map(c => (
-					<CharacterCard key={c.id} character={c} type={'tile'}></CharacterCard>
-				))}
+				{availableMap?.get(available)?.map(c => {
+					const combatant = combatantMap.get(c.id);
+					return (
+						<CharacterCard key={c.id} character={c} type={'tile'} childPosition={available ? 'right' : 'left'}>
+							{combatant && (
+								<Button onClick={() => {
+									activeCombatantMutation.mutate({ combatant, active: !combatant.available });
+								}}>
+									<FontAwesomeIcon icon={ combatant.available ? faArrowRight : faArrowLeft }/>
+								</Button>
+							)}
+						</CharacterCard>
+					)}
+				)}
 			</div>
 		);
 		
@@ -82,7 +118,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				{getDisplay(false)}
 			</div>
 		);
-	}, [availableMap]);
+	}, [availableMap, activeCombatantMutation, combatantMap]);
 	
 	if (combat == null || campaign == null) {
 		return;
