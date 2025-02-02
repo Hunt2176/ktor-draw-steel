@@ -17,7 +17,11 @@ fun Application.configureHTTP()
 		isLenient = true
 	}
 	
-	getKoinModule().single { jsonBuilder }
+	getKoinApplication().modules(
+		KoinModule().apply {
+			single { jsonBuilder }
+		}
+	)
 	
 	install(ContentNegotiation) {
 		json(json = jsonBuilder)

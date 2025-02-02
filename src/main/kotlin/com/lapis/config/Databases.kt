@@ -3,17 +3,16 @@ package com.lapis.config
 import com.lapis.database.*
 import com.lapis.database.base.BaseRepository
 import com.lapis.database.base.BaseRepositoryEntityMapper
-import com.lapis.services.SocketCampaignService
+import com.lapis.services.base.SocketService
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.dao.EntityHook
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.koin.ktor.ext.inject
 
 fun Application.configureDatabases()
 {
-	val campaignService by inject<SocketCampaignService>()
+	val socketServices = getKoinApplication().koin.getAll<SocketService<*>>()
 	
 	val database = Database.connect(
 		url = "jdbc:sqlite:draw_steel.sqlite",
@@ -24,13 +23,19 @@ fun Application.configureDatabases()
 		}
 	)
 	
-	getKoinModule().single { database }
+	getKoinApplication().modules(
+		KoinModule().apply {
+			single { database }
+		}
+	)
+	
+	val repoModule = KoinModule()
 	
 	val repos = transaction(database) {
 		arrayOf(
-			CampaignRepository(database).also { repo -> getKoinModule().single { repo } },
-			CharacterRepository(database).also { repo -> getKoinModule().single { repo } },
-			CombatRepository(database).also { repo -> getKoinModule().single { repo } },
+			CampaignRepository(database).also { repo -> repoModule.single { repo } },
+			CharacterRepository(database).also { repo -> repoModule.single { repo } },
+			CombatRepository(database).also { repo -> repoModule.single { repo } },
 			BaseRepository(ExposedUser, database, BaseRepositoryEntityMapper(ExposedUser::toDTO) {
 				customizeFromJson(it)
 			}),
@@ -42,6 +47,8 @@ fun Application.configureDatabases()
 			}),
 		)
 	}
+	
+	getKoinApplication().modules(repoModule)
 	
 	routing {
 		route("/api") {
@@ -55,6 +62,8 @@ fun Application.configureDatabases()
 			return@subscribe
 		}
 		
-		campaignService.updateFromEntityChange(event, id)
+		socketServices.forEach {
+			it.updateFromEntityChange(event)
+		}
 	}
 }

@@ -10,10 +10,10 @@ fun main(args: Array<String>)
 
 fun Application.module()
 {
+	configureInjection()
 	configureHTTP()
 	configureDatabases()
 	configureSockets()
 	configureMonitoring()
 	configureRouting()
-	configureInjection()
 }

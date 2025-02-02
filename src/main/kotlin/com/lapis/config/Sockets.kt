@@ -1,15 +1,11 @@
 package com.lapis.config
 
-import com.lapis.database.ExposedCampaign
-import com.lapis.services.SocketCampaignService
+import com.lapis.database.base.toCamelCase
+import com.lapis.services.base.SocketService
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.koin.ktor.ext.inject
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureSockets()
@@ -21,51 +17,20 @@ fun Application.configureSockets()
 		masking = false
 	}
 	
+	val socketServices = getKoinApplication().koin.getAll<SocketService<*>>()
+	
 	routing {
-		webSocket("/ws") { // websocketSession
-			for (frame in incoming)
-			{
-				if (frame is Frame.Text)
-				{
-					val text = frame.readText()
-					outgoing.send(Frame.Text("YOU SAID: $text"))
-					if (text.equals("bye", ignoreCase = true))
-					{
-						close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
-					}
+		socketServices.forEach {
+			val tableName = it.typeEntity.table.tableName.toCamelCase()
+			val endPoint = "/watch/$tableName/{id}"
+			
+			webSocket(endPoint) {
+				val id = call.parameters["id"]?.toIntOrNull()
+				if (id == null) {
+					close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "The id of the entity is invalid"))
+					return@webSocket
 				}
-			}
-		}
-		
-		webSocket("/watch/campaigns/{id}") {
-			val id = call.parameters["id"]?.toIntOrNull()
-			if (id == null) {
-				close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "The id of the campaign is invalid"))
-				return@webSocket
-			}
-			val socketCampaignService by call.inject<SocketCampaignService>()
-			socketCampaignService.addConnection(id, this@webSocket)
-		}
-		
-		webSocket("/campaigns") {
-			for (frame in incoming)
-			{
-				if (frame is Frame.Text)
-				{
-					val text = frame.readText()
-					if (text == "next") {
-						val c = transaction {
-							ExposedCampaign.all().map { it.toDTO() }
-							
-						}
-						val str = Json.encodeToString(c)
-						outgoing.send(Frame.Text(str))
-					}
-					else if (text == "bye")
-					{
-						close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
-					}
-				}
+				it.addConnection(id, this@webSocket)
 			}
 		}
 	}
