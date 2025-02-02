@@ -5,6 +5,7 @@ import React, { useMemo, useState } from "react";
 import { Button, Card, CardTitle, Modal, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CharacterCard, CharacterCardExtra } from "src/components/character_card/card.tsx";
+import { CharacterConditions } from "src/components/character_conditions.tsx";
 import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/hooks/api_hooks.ts";
 import { updateCombatantActive, updateCombatRound } from "src/services/api.ts";
 import { Character, Combatant } from "src/types/models.ts";
@@ -102,13 +103,18 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 							{{
 								[available ? 'right' : 'left']: (
 									<CharacterCardExtra>
-										{(props) => (
-											<div className={'d-flex flex-column justify-content-between align-content-center m-1'}>
-												<Button onClick={() => activeCombatantMutation.mutate({ combatant, active: !combatant.available })}>
-													<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft} />
-												</Button>
-											</div>
-										)}
+										<div className={'d-flex flex-column justify-content-between align-content-center m-1'}>
+											<Button onClick={() => activeCombatantMutation.mutate({ combatant, active: !combatant.available })}>
+												<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft} />
+											</Button>
+										</div>
+									</CharacterCardExtra>
+								),
+								bottom: (
+									<CharacterCardExtra>
+										<div className="m-1">
+											<CharacterConditions editing={true} character={c} />
+										</div>
 									</CharacterCardExtra>
 								)
 							}}

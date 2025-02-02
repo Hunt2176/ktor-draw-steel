@@ -20,8 +20,18 @@ object CharacterConditions : IntIdTable(), HasName
 		onUpdate = ReferenceOption.CASCADE
 	)
 	
-	override val name = varchar("name", 50)
+	override val name = text("name", "NOCASE")
 	val endType = enumeration<EndType>("end_type")
+	
+	init {
+		uniqueIndex("character_condition_name_index", character, name)
+	}
+	
+	@Serializable
+	enum class EndType {
+		endOfTurn,
+		save
+	}
 }
 
 class ExposedCharacterCondition(id: EntityID<Int>) : IntEntity(id), HasDTO<CharacterConditionDTO>, FromJson<ExposedCharacterCondition>
@@ -38,7 +48,7 @@ class ExposedCharacterCondition(id: EntityID<Int>) : IntEntity(id), HasDTO<Chara
 	
 	override fun ExposedCharacterCondition.customizeFromJson(json: JsonObject)
 	{
-		json["endType"]?.jsonPrimitive?.content?.let { endType = EndType.valueOf(it) }
+		json["endType"]?.jsonPrimitive?.content?.let { endType = CharacterConditions.EndType.valueOf(it) }
 		json["name"]?.jsonPrimitive?.content?.let { name = it }
 		
 		json["character"]?.jsonPrimitive?.int?.let { character = ExposedCharacter.findById(it) ?: error("Character not found") }
@@ -50,7 +60,7 @@ data class CharacterConditionDTO(
 	val id: Int,
 	val character: Int,
 	val name: String,
-	val endType: EndType
+	val endType: CharacterConditions.EndType
 ) {
 	companion object {
 		fun fromEntity(entity: ExposedCharacterCondition): CharacterConditionDTO {
@@ -62,10 +72,4 @@ data class CharacterConditionDTO(
 			)
 		}
 	}
-}
-
-@Serializable
-enum class EndType {
-	endOfTurn,
-	save
 }

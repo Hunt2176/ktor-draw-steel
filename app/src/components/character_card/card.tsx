@@ -154,19 +154,26 @@ export function CharacterCard({character, type = 'full', children}: CharacterCar
 	const tileCard = useMemo(() => {
 		return (
 			<Card className={'character-card-tile'}>
-				{children?.left}
-				<Card.Img variant={'top'} src={character.pictureUrl ?? undefined} />
-				<Card.Body>
-					<Card.Title>{character.name}</Card.Title>
-					<div className={'mb-2'}>
-						{hpBar}
+				<div className={'d-flex flex-column'}>
+					<div className={'d-flex'}>
+						{children?.left}
+						<Card.Img variant={'top'} src={character.pictureUrl ?? undefined} />
+						<Card.Body>
+							<Card.Title>{character.name}</Card.Title>
+							<div className={'mb-2'}>
+								{hpBar}
+							</div>
+							{character.maxRecoveries > 0 && recoveriesBar}
+						</Card.Body>
+						{children?.right}
 					</div>
-					{character.maxRecoveries > 0 && recoveriesBar}
-				</Card.Body>
-				{children?.right}
+					{ children?.bottom && (
+						<div>{children.bottom}</div>
+					)}
+				</div>
 			</Card>
 		);
-}, [character.pictureUrl, character.name, hpBar, recoveriesBar, character.maxRecoveries, children?.left, children?.right]);
+}, [character.pictureUrl, character.name, hpBar, recoveriesBar, character.maxRecoveries, children?.left, children?.right, children?.bottom]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modStats, setModStats] = useState<Partial<CharacterEditorCore>>({});

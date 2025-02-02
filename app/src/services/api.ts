@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import useWebSocket from "react-use-websocket";
-import { CampaignDetails, Character, Combat, Combatant } from "src/types/models.ts";
+import { CampaignDetails, Character, CharacterCondition, Combat, Combatant } from "src/types/models.ts";
 
 export async function fetchCampaigns(): Promise<CampaignDetails[]> {
 	const res = await fetch('/api/campaigns')
@@ -86,6 +86,38 @@ export async function modifyCharacterRecovery(id: number, update: ModifyCharacte
 	}
 	
 	return (await res.json()) as Character;
+}
+
+
+export type CharacterConditionUpdate = {
+	name: string;
+	character: number;
+	endType: 'endOfTurn' | 'save';
+}
+export async function addCharacterCondition(update: CharacterConditionUpdate): Promise<CharacterCondition> {
+	const res = await fetch(`/api/characterConditions`, {
+		method: 'POST',
+		body: JSON.stringify(update),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to add character condition');
+	}
+	
+	return (await res.json()) as CharacterCondition;
+}
+
+export async function deleteCharacterCondition(id: number): Promise<void> {
+	const res = await fetch(`/api/characterConditions/${id}`, {
+		method: 'DELETE'
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to delete character condition');
+	}
 }
 
 export async function fetchCombat(id: number): Promise<Combat> {

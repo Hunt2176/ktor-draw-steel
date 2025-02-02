@@ -23,8 +23,7 @@ div.card.character-card {
 }
 
 .card.character-card-tile {
-  flex-direction: row;
-  > img {
+  .card-img-top {
     width: 100px;
     height: 100px;
     object-fit: cover;
