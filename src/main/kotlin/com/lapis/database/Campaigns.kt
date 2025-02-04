@@ -75,6 +75,28 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 	
 	override fun Route.additionalRouteSetup()
 	{
+		get("{id}/combats") {
+			val id = call.parameters["id"]?.toIntOrNull()
+			if (id == null) {
+				call.respond(HttpStatusCode.BadRequest, "Invalid ID")
+				return@get
+			}
+			
+			val callback = transaction {
+				ExposedCampaign.findById(id)
+					?: return@transaction suspend {
+						call.respond(HttpStatusCode.NotFound, "Campaign not found")
+					}
+				
+				val combats = ExposedCombat.find { Combats.campaign eq id }.map { it.toDTO() }
+				return@transaction suspend {
+					call.respond(HttpStatusCode.OK, combats)
+				}
+			}
+			
+			callback()
+		}
+		
 		get("/{id}/characters") {
 			val id = call.parameters["id"]?.toIntOrNull()
 			if (id == null) {

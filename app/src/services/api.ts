@@ -120,6 +120,11 @@ export async function deleteCharacterCondition(id: number): Promise<void> {
 	}
 }
 
+export async function fetchCombatsFor(id: number): Promise<Combat[]> {
+	const res = await fetch(`/api/campaigns/${id}/combats`);
+	return (await res.json()) as Combat[]
+}
+
 export async function fetchCombat(id: number): Promise<Combat> {
 	const res = await fetch(`/api/combats/${id}`)
 	return (await res.json()) as Combat

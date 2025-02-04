@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useContext, useMemo, useState } from "react";
-import { Button, Modal, Navbar, NavbarText } from "react-bootstrap";
+import { Fragment, useCallback, useContext, useMemo, useState } from "react";
+import { Button, Card, CardFooter, CardTitle, Modal, Navbar, NavbarText } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
-import { useCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
+import { useCampaign, useCombatsForCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
 import { CharacterCard } from "src/components/character_card/card.tsx";
 import { CharacterEditor } from "src/components/character_editor.tsx";
 import { createCharacter } from "src/services/api.ts";
@@ -47,6 +47,7 @@ export function CampaignDetail() {
 	}
 	
 	const campaign = useCampaign(id);
+	const combats = useCombatsForCampaign(campaign?.campaign.id);
 	useWatchCampaign(id);
 	
 	const newCharacterModal = useMemo(() => {
@@ -61,6 +62,32 @@ export function CampaignDetail() {
 			</Modal.Body>
 		</Modal>;
 	}, [newCharacter, saveCharacterMutation.mutateAsync]);
+	
+	const combatElements = useMemo(() => {
+		if (!combats.length) {
+			return <></>;
+		}
+		
+		return <>
+			<div>
+				<h3>Combats</h3>
+				{combats.map((combat) => {
+					return <>
+						<div className="w-25" key={combat.id}>
+							<Card>
+								<CardTitle className="d-flex justify-content-between m-2">
+									Round: {combat.round}
+									<Button onClick={() => navigate(`/combats/${combat.id}`)}>
+										View
+									</Button>
+								</CardTitle>
+							</Card>
+						</div>
+					</>
+				})}
+			</div>
+		</>;
+	}, [combats, navigate]);
 	
 	const characterElements = useMemo(() => {
 		return campaign && campaign.characters.reduce((acc, character, index) => {
@@ -93,7 +120,7 @@ export function CampaignDetail() {
           </Navbar>
 	      </div>
 	      <div className={'flex-2'}>
-	
+		      {combatElements}
 	      </div>
 	      <div className={'flex-3 d-flex flex-column flex-wrap'}>
 			      <div className={'d-flex justify-content-center my-2'}>
@@ -106,7 +133,7 @@ export function CampaignDetail() {
 	          </div>
 	      </div>
 	    </div>
-	), [campaign, characterElements]);
+	), [campaign, characterElements, combatElements]);
 	
 	if (campaign) {
 		return (
