@@ -72,8 +72,8 @@ export function CampaignDetail() {
 			<div>
 				<h3>Combats</h3>
 				{combats.map((combat) => {
-					return <>
-						<div className="w-25" key={combat.id}>
+					return <Fragment key={combat.id}>
+						<div className="w-25">
 							<Card>
 								<CardTitle className="d-flex justify-content-between m-2">
 									Round: {combat.round}
@@ -83,7 +83,7 @@ export function CampaignDetail() {
 								</CardTitle>
 							</Card>
 						</div>
-					</>
+					</Fragment>
 				})}
 			</div>
 		</>;
