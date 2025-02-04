@@ -4,7 +4,13 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      babel: {
+        plugins: [
+          ['module:@preact/signals-react-transform']
+        ]
+      }
+    }),
     tsconfigPaths()
   ],
   build: {
