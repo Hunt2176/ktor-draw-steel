@@ -1,11 +1,14 @@
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useCallback, useContext, useMemo, useState } from "react";
+import { Fragment, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { Button, Card, CardFooter, CardTitle, Modal, Navbar, NavbarText } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
+import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
 import { useCampaign, useCombatsForCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
 import { CharacterCard } from "src/components/character_card/card.tsx";
 import { CharacterEditor } from "src/components/character_editor.tsx";
-import { createCharacter } from "src/services/api.ts";
+import { createCharacter, createCombat, CreateCombatUpdate } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character } from "src/types/models.ts";
 import Element = React.JSX.Element;
@@ -14,6 +17,10 @@ export function CampaignDetail() {
 	const queryClient = useQueryClient();
 	
 	const [newCharacter, setNewCharacter] = useState(false);
+	const [newCombat, setNewCombat] = useState(false);
+	
+	const combatSelected = useRef<Record<number, boolean>>({});
+	
 	const [_, setError] = useContext(ErrorContext);
 	
 	const params = useParams();
@@ -24,6 +31,10 @@ export function CampaignDetail() {
 		navigate('/');
 		return <></>;
 	}
+	
+	useWatchCampaign(id);
+	const campaign = useCampaign(id);
+	const combats = useCombatsForCampaign(campaign?.campaign.id);
 	
 	const saveCharacterMutation = useMutation({
 		mutationFn: (character: Partial<Character>) => {
@@ -42,13 +53,21 @@ export function CampaignDetail() {
 		onError: setError
 	})
 	
-	function selectCharacter(character: Character) {
-		navigate(`/characters/${character.id}`);
-	}
+	const createCombatMutation = useMutation({
+		mutationFn: (update: CreateCombatUpdate) => {
+			return createCombat(update);
+		},
+		onSuccess: async (data) => {
+			setNewCombat(false);
+			await queryClient.invalidateQueries({
+				queryKey: ['combats', id]
+			});
+			
+			navigate(`/combats/${data.id}`);
+		},
+	});
 	
-	const campaign = useCampaign(id);
-	const combats = useCombatsForCampaign(campaign?.campaign.id);
-	useWatchCampaign(id);
+	
 	
 	const newCharacterModal = useMemo(() => {
 		const model = Character.new();
@@ -63,14 +82,52 @@ export function CampaignDetail() {
 		</Modal>;
 	}, [newCharacter, saveCharacterMutation.mutateAsync]);
 	
-	const combatElements = useMemo(() => {
-		if (!combats.length) {
+	const newCombatModal = useMemo(() => {
+		if (!campaign) {
 			return <></>;
 		}
 		
+		const onCreate = () => {
+			const selected = Object.entries(combatSelected.current)
+				.filter(([, value]) => value)
+				.map(([key]) => parseInt(key));
+			
+			createCombatMutation.mutate({
+				campaign: campaign.campaign.id,
+				characters: selected
+			});
+		}
+		
+		return <>
+			<Modal show={newCombat}
+			       onShow={() => combatSelected.current = {}}
+			       onHide={() => setNewCombat(false)}>
+				<Modal.Header>
+					<Modal.Title>New Combat</Modal.Title>
+				</Modal.Header>
+				<Modal.Body>
+					<CharacterSelector onChange={(e) => combatSelected.current = e}
+					                   characters={campaign.characters}/>
+				</Modal.Body>
+				<Modal.Footer>
+					<Button variant="secondary" onClick={() => setNewCombat(false)}>Cancel</Button>
+					<Button disabled={createCombatMutation.isPending} onClick={() => onCreate()}>Create</Button>
+				</Modal.Footer>
+			</Modal>
+		</>;
+	}, [campaign, newCombat, createCombatMutation]);
+	
+	const combatElements = useMemo(() => {
 		return <>
 			<div>
-				<h3>Combats</h3>
+				<div className="d-flex align-items-center mb-2">
+					<h3 className="m-0">Combats</h3>
+					<Button size="sm"
+					        className="ms-2"
+					        onClick={() => setNewCombat(true)}>
+						<FontAwesomeIcon icon={faPlus}/>
+					</Button>
+				</div>
 				{combats.map((combat) => {
 					return <Fragment key={combat.id}>
 						<div className="w-25">
@@ -138,6 +195,7 @@ export function CampaignDetail() {
 	if (campaign) {
 		return (
 			<>
+				{newCombatModal}
 				{newCharacterModal}
 				{campaignDisplay}
 			</>

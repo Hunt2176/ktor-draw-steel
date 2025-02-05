@@ -131,8 +131,8 @@ export async function fetchCombat(id: number): Promise<Combat> {
 }
 
 export type CreateCombatUpdate = {
-	campaignId: number;
-	characterIds: number[];
+	campaign: number;
+	characters: number[];
 }
 export async function createCombat(update: CreateCombatUpdate): Promise<Combat> {
 	const res = await fetch(`/api/combats/create`, {
