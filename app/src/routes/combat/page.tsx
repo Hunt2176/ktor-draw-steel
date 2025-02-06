@@ -196,7 +196,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 					                   selected={modCharacterBefore.current}/>
 				</ModalBody>
 				<ModalFooter>
-					<Button onClick={() => {
+					<Button variant="secondary" onClick={() => {
 						setShowModifyCharacters(false);
 					}}>Cancel</Button>
 					<Button onClick={() => submit()}>Submit</Button>

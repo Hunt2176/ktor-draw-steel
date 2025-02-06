@@ -1,16 +1,16 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useCallback, useContext, useMemo, useRef, useState } from "react";
-import { Button, Card, CardFooter, CardTitle, Modal, Navbar, NavbarText } from "react-bootstrap";
+import { Fragment, useContext, useMemo, useRef, useState } from "react";
+import { Button, Card, CardTitle, Modal, Navbar, NavbarText } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
 import { useCampaign, useCombatsForCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
 import { CharacterCard } from "src/components/character_card/card.tsx";
 import { CharacterEditor } from "src/components/character_editor.tsx";
-import { createCharacter, createCombat, CreateCombatUpdate } from "src/services/api.ts";
+import { createCharacter, createCombat, CreateCombatUpdate, deleteCombat } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
-import { Character } from "src/types/models.ts";
+import { Character, Combat } from "src/types/models.ts";
 import Element = React.JSX.Element;
 
 export function CampaignDetail() {
@@ -18,6 +18,7 @@ export function CampaignDetail() {
 	
 	const [newCharacter, setNewCharacter] = useState(false);
 	const [newCombat, setNewCombat] = useState(false);
+	const [combatToDelete, setCombatToDelete] = useState<Combat | null>(null);
 	
 	const combatSelected = useRef<Record<number, boolean>>({});
 	
@@ -36,6 +37,23 @@ export function CampaignDetail() {
 	const campaign = useCampaign(id);
 	const combats = useCombatsForCampaign(campaign?.campaign.id);
 	
+	const deleteCombatMutation = useMutation({
+		mutationFn: (id: number) => {
+			return deleteCombat(id);
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: ['combat', id]
+			});
+			
+			await queryClient.invalidateQueries({
+				queryKey: ['combats', id]
+			});
+			
+			setCombatToDelete(null);
+		}
+	});
+	
 	const saveCharacterMutation = useMutation({
 		mutationFn: (character: Partial<Character>) => {
 			character.campaign = id;
@@ -43,8 +61,8 @@ export function CampaignDetail() {
 			
 			return createCharacter(character);
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
 				queryKey: ['campaign', id]
 			});
 			
@@ -117,6 +135,27 @@ export function CampaignDetail() {
 		</>;
 	}, [campaign, newCombat, createCombatMutation]);
 	
+	const deleteCombatModal = useMemo(() => {
+		return <>
+			<Modal show={!!combatToDelete}>
+				<Modal.Header>
+					<Modal.Title>Delete Combat</Modal.Title>
+				</Modal.Header>
+				<Modal.Body>
+					Are you sure you want to delete this combat?
+				</Modal.Body>
+				<Modal.Footer>
+					<Button variant="secondary" onClick={() => setCombatToDelete(null)}>Cancel</Button>
+					<Button variant="danger" onClick={() => {
+						if (combatToDelete) {
+							deleteCombatMutation.mutate(combatToDelete.id);
+						}
+					}}>Delete</Button>
+				</Modal.Footer>
+			</Modal>
+		</>
+	}, [combatToDelete, deleteCombatMutation]);
+	
 	const combatElements = useMemo(() => {
 		return <>
 			<div>
@@ -130,13 +169,18 @@ export function CampaignDetail() {
 				</div>
 				{combats.map((combat) => {
 					return <Fragment key={combat.id}>
-						<div className="w-25">
+						<div className="w-50">
 							<Card>
 								<CardTitle className="d-flex justify-content-between m-2">
 									Round: {combat.round}
-									<Button onClick={() => navigate(`/combats/${combat.id}`)}>
-										View
-									</Button>
+									<div className="d-flex flex-column justify-content-center">
+										<Button className="mb-2" onClick={() => navigate(`/combats/${combat.id}`)}>
+											View
+										</Button>
+										<Button variant="danger" onClick={() => setCombatToDelete(combat)}>
+											Delete
+										</Button>
+									</div>
 								</CardTitle>
 							</Card>
 						</div>
@@ -195,6 +239,7 @@ export function CampaignDetail() {
 	if (campaign) {
 		return (
 			<>
+				{deleteCombatModal}
 				{newCombatModal}
 				{newCharacterModal}
 				{campaignDisplay}

@@ -150,6 +150,16 @@ export async function createCombat(update: CreateCombatUpdate): Promise<Combat> 
 	return (await res.json()) as Combat;
 }
 
+export async function deleteCombat(id: number): Promise<void> {
+	const res = await fetch(`/api/combats/${id}`, {
+		method: 'DELETE'
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to delete combat');
+	}
+}
+
 export type CombatRoundUpdate = {
 	fromRound: number;
 	reset: boolean;
