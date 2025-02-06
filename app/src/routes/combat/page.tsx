@@ -1,8 +1,8 @@
 import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useMemo, useRef, useState } from "react";
-import { Button, Card, CardTitle, CloseButton, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
+import React, { useId, useMemo, useRef, useState } from "react";
+import { Button, Card, CardTitle, CloseButton, FormCheck, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CharacterCard, CharacterCardExtra } from "src/components/character_card/card.tsx";
 import { CharacterConditions } from "src/components/character_conditions.tsx";
@@ -26,6 +26,9 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	const [showNextRound, setShowNextRound] = useState(false);
 	const [showModifyCharacters, setShowModifyCharacters] = useState(false);
 	
+	const clearRoundId = useId();
+	const [clearRoundOnly, setClearRoundOnly] = useState(false);
+	
 	const modCharacterBefore = useRef<Record<number, boolean>>({});
 	const modCharacterAfter = useRef<Record<number, boolean>>({});
 	
@@ -47,11 +50,14 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				return Promise.reject('No combat');
 			}
 			
-			return updateCombatRound(combat.id, { fromRound: combat.round, reset: true });
+			return updateCombatRound(combat.id, { fromRound: combat.round, reset: true, updateConditions: clearRoundOnly });
 		},
-		onSuccess: (update) => {
+		onSuccess: async (update) => {
 			setShowNextRound(false);
 			queryClient.setQueryData(['combat', id], update);
+			await queryClient.invalidateQueries({
+				queryKey: ['campaign', campaign?.campaign.id]
+			});
 		}
 	});
 	
@@ -213,10 +219,18 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		{modifyCharacterModal}
 		<Modal show={showNextRound}>
 			<ModalHeader>
-				<ModalTitle>Advance to round {combat.round + 1}</ModalTitle>
+				<ModalTitle>
+					Advance to round {combat.round + 1}
+				</ModalTitle>
 			</ModalHeader>
+			<ModalBody>
+					<FormCheck label="Clear round only conditions"
+					           id={clearRoundId}
+					           checked={clearRoundOnly}
+					           onChange={(e) => setClearRoundOnly(e.target.checked)}/>
+			</ModalBody>
 			<ModalFooter>
-				<Button onClick={() => setShowNextRound(false)}>Cancel</Button>
+				<Button variant="secondary" onClick={() => setShowNextRound(false)}>Cancel</Button>
 				<Button onClick={() => {
 					nextRoundMutation.mutate();
 				}}>Continue</Button>

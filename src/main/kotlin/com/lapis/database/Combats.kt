@@ -71,6 +71,18 @@ class CombatRepository(database: Database) : BaseRepository<ExposedCombat, Expos
 					combat.combatants.forEach { it.available = true }
 				}
 				
+				val toDelete = mutableListOf<ExposedCharacterCondition>()
+				if (body.updateConditions) {
+					combat.combatants.forEach { combatant ->
+						combatant.character.conditions.forEach { condition ->
+							if (condition.endType == CharacterConditions.EndType.endOfTurn) {
+								toDelete.add(condition)
+							}
+						}
+					}
+				}
+				
+				toDelete.forEach { it.delete() }
 				combat.toDTO()
 			}
 			
@@ -153,7 +165,8 @@ class CombatRepository(database: Database) : BaseRepository<ExposedCombat, Expos
 	@Serializable
 	private data class NextRoundRequest(
 		val fromRound: Int,
-		val reset: Boolean
+		val reset: Boolean,
+		val updateConditions: Boolean
 	)
 	
 	@Serializable

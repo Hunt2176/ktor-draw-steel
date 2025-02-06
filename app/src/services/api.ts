@@ -163,6 +163,7 @@ export async function deleteCombat(id: number): Promise<void> {
 export type CombatRoundUpdate = {
 	fromRound: number;
 	reset: boolean;
+	updateConditions: boolean;
 }
 export async function updateCombatRound(id: number, update: CombatRoundUpdate): Promise<Combat> {
 	const res = await fetch(`/api/combats/${id}/nextRound`, {
