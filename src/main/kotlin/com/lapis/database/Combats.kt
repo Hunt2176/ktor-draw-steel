@@ -112,6 +112,36 @@ class CombatRepository(database: Database) : BaseRepository<ExposedCombat, Expos
 			
 			call.respond(HttpStatusCode.OK, response)
 		}
+		
+		patch("{id}/modify") {
+			val id = call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")
+			val body = call.receive<CombatantModificationRequest>()
+			
+			val response = transaction {
+				val combat = ExposedCombat.findById(id) ?: error("Combat not found")
+				
+				body.add?.forEach { charId ->
+					val character = ExposedCharacter.find { (Characters.id eq charId) and (Characters.campaign eq combat.campaign.id) }
+						.firstOrNull() ?: error("Character $charId belonging to ${combat.campaign.id} not found")
+					
+					ExposedCombatant.new {
+						this.character = character
+						this.combat = combat
+					}
+				}
+				
+				body.remove?.forEach { charId ->
+					val combatant = ExposedCombatant.find { (Combatants.character eq charId) and (Combatants.combat eq combat.id) }
+						.firstOrNull() ?: error("Combatant $charId not found in ${combat.id}")
+					
+					combatant.delete()
+				}
+				
+				combat.toDTO()
+			}
+			
+			call.respond(HttpStatusCode.OK, response)
+		}
 	}
 	
 	@Serializable
@@ -129,6 +159,12 @@ class CombatRepository(database: Database) : BaseRepository<ExposedCombat, Expos
 	@Serializable
 	private data class CombatantRequest(
 		val character: Int
+	)
+	
+	@Serializable
+	private data class CombatantModificationRequest(
+		val add: Set<Int>? = null,
+		val remove: Set<Int>? = null
 	)
 }
 

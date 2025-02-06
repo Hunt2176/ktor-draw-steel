@@ -1,13 +1,14 @@
 import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useMemo, useState } from "react";
-import { Button, Card, CardTitle, Modal, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
+import React, { useMemo, useRef, useState } from "react";
+import { Button, Card, CardTitle, CloseButton, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CharacterCard, CharacterCardExtra } from "src/components/character_card/card.tsx";
 import { CharacterConditions } from "src/components/character_conditions.tsx";
+import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
 import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/hooks/api_hooks.ts";
-import { updateCombatantActive, updateCombatRound } from "src/services/api.ts";
+import { CombatModificationUpdate, updateCombatantActive, updateCombatModification, updateCombatRound } from "src/services/api.ts";
 import { Character, Combatant } from "src/types/models.ts";
 import { parseIntOrUndefined } from "src/utils.ts";
 
@@ -23,6 +24,10 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	const queryClient = useQueryClient();
 	
 	const [showNextRound, setShowNextRound] = useState(false);
+	const [showModifyCharacters, setShowModifyCharacters] = useState(false);
+	
+	const modCharacterBefore = useRef<Record<number, boolean>>({});
+	const modCharacterAfter = useRef<Record<number, boolean>>({});
 	
 	const id = useMemo(() => parseIntOrUndefined(params.id), [params.id]);
 	
@@ -60,6 +65,20 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 					queryKey: ['combat', combat.id]
 				});
 			}
+		}
+	});
+	
+	const combatModificationMutation = useMutation({
+		mutationFn: (mod: CombatModificationUpdate) => {
+			if (combat == null) {
+				return Promise.reject('No combat');
+			}
+			
+			return updateCombatModification(combat.id, mod);
+		},
+		onSuccess: (update) => {
+			setShowModifyCharacters(false);
+			queryClient.setQueryData(['combat', id], update);
 		}
 	});
 	
@@ -132,11 +151,66 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		);
 	}, [availableMap, activeCombatantMutation, combatantMap]);
 	
+	const modifyCharacterModal = useMemo(() => {
+		if (combat == null || campaign == null) {
+			return;
+		}
+		
+		modCharacterBefore.current = campaign.characters.reduce((acc, character) => {
+			acc[character.id] = combatantMap?.get(character.id) != null;
+			return acc;
+		}, {} as Record<number, boolean>);
+		
+		modCharacterAfter.current = {...modCharacterBefore.current};
+		
+		function submit() {
+			const add = Object.entries(modCharacterAfter.current)
+				.filter(([id, selected]) => selected && !modCharacterBefore.current[parseInt(id)])
+				.map(([id]) => parseInt(id));
+			
+			const remove = Object.entries(modCharacterAfter.current)
+				.filter(([id, selected]) => !selected && modCharacterBefore.current[parseInt(id)])
+				.map(([id]) => parseInt(id));
+			
+			const update: CombatModificationUpdate = {};
+			if (add.length > 0) {
+				update.add = add;
+			}
+			
+			if (remove.length > 0) {
+				update.remove = remove;
+			}
+			
+			combatModificationMutation.mutate(update);
+		}
+		
+		return <>
+			<Modal show={showModifyCharacters}>
+				<ModalHeader>
+					<ModalTitle>Modify</ModalTitle>
+					<CloseButton onClick={() => setShowModifyCharacters(false)}></CloseButton>
+				</ModalHeader>
+				<ModalBody>
+					<CharacterSelector onChange={(e) => modCharacterAfter.current = e}
+					                   characters={campaign.characters}
+					                   selected={modCharacterBefore.current}/>
+				</ModalBody>
+				<ModalFooter>
+					<Button onClick={() => {
+						setShowModifyCharacters(false);
+					}}>Cancel</Button>
+					<Button onClick={() => submit()}>Submit</Button>
+				</ModalFooter>
+			</Modal>
+		</>;
+	}, [combat, campaign, showModifyCharacters]);
+	
 	if (combat == null || campaign == null) {
 		return;
 	}
 	
 	return <>
+		{modifyCharacterModal}
 		<Modal show={showNextRound}>
 			<ModalHeader>
 				<ModalTitle>Advance to round {combat.round + 1}</ModalTitle>
@@ -153,7 +227,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 			<Card className={'mb-2'}>
 				<CardTitle className={'d-flex justify-content-between m-2'}>
 					<div className={'col-4 d-flex justify-content-start align-items-center'}>
-					
+						<Button onClick={() => setShowModifyCharacters(true)} variant="outline-secondary">Modify</Button>
 					</div>
 					<div className={'col-4 d-flex flex-column justify-content-center align-items-center'}>
 						<Link to={`/campaigns/${campaign.campaign.id}`}>

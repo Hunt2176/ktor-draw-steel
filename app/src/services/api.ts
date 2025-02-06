@@ -189,6 +189,26 @@ export async function updateCombatCombatant(id: number, type: 'add' | 'remove', 
 	return (await res.json()) as Combat;
 }
 
+export type CombatModificationUpdate = {
+	add?: number[];
+	remove?: number[];
+}
+export async function updateCombatModification(id: number, update: CombatModificationUpdate): Promise<Combat> {
+	const res = await fetch(`/api/combats/${id}/modify`, {
+		method: 'PATCH',
+		body: JSON.stringify(update),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to update combat modification');
+	}
+	
+	return (await res.json()) as Combat;
+}
+
 export async function updateCombatantActive(id: number, available: boolean): Promise<Combatant> {
 	const res = await fetch(`/api/combatants/${id}`, {
 		method: 'PATCH',

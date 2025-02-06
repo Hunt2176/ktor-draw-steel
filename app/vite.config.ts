@@ -8,7 +8,7 @@ export default defineConfig({
       babel: {
         plugins: [
           ['module:@preact/signals-react-transform'],
-          ["babel-plugin-react-compiler"]
+          ["babel-plugin-react-compiler"],
         ]
       }
     }),

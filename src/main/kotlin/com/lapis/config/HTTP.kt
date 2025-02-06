@@ -13,6 +13,8 @@ import kotlinx.serialization.json.Json
 fun Application.configureHTTP()
 {
 	val jsonBuilder = Json {
+		coerceInputValues = true
+		explicitNulls = true
 		ignoreUnknownKeys = true
 		isLenient = true
 	}
