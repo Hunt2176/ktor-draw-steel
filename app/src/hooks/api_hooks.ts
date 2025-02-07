@@ -82,7 +82,11 @@ export function useWatchCampaign(id?: number) {
 	
 	queryClient.invalidateQueries({
 		queryKey: ['campaigns']
-	});
+	}).finally();
+	
+	queryClient.invalidateQueries({
+		queryKey: ['combats', id]
+	}).finally()
 	
 	if (lastJsonMessage.campaign != null) {
 		queryClient.setQueryData(['campaign', id], lastJsonMessage);

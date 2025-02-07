@@ -1,9 +1,6 @@
 package com.lapis.services
 
-import com.lapis.database.CampaignRepository
-import com.lapis.database.ExposedCampaign
-import com.lapis.database.ExposedCharacter
-import com.lapis.database.ExposedCharacterCondition
+import com.lapis.database.*
 import com.lapis.database.base.ScopedTransactionProvider
 import com.lapis.services.base.SocketService
 import kotlinx.serialization.json.JsonObject
@@ -24,6 +21,7 @@ class SocketCampaignService : SocketService<ExposedCampaign>(), ScopedTransactio
 			val ids = arrayListOf<Int>()
 			
 			when (entity) {
+				is ExposedCombat -> ids.add(entity.campaign.id.value)
 				is ExposedCampaign -> ids.add(entity.id.value)
 				is ExposedCharacter, is ExposedCharacterCondition -> {
 					val character = if (entity is ExposedCharacter) {

@@ -210,7 +210,7 @@ export function CampaignDetail() {
 					{row.map((el) => (el))}
 				</div>
 			));
-	}, [campaign]);
+	}, [campaign, navigate]);
 	
 	const campaignDisplay = useMemo(() => (
 		campaign &&
