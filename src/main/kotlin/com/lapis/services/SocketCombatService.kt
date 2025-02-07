@@ -13,7 +13,7 @@ class SocketCombatService : SocketService<ExposedCombat>()
 {
 	override val typeEntity = ExposedCombat
 	
-	override suspend fun getEntityIdsToUpdate(event: EntityChange): List<Int> =
+	override fun getEntityIdsToUpdate(event: EntityChange): List<Int> =
 		transaction {
 			val entity = event.toEntity<Int, Entity<Int>>()
 			
@@ -36,7 +36,7 @@ class SocketCombatService : SocketService<ExposedCombat>()
 			ids
 		}
 	
-	override fun toJsonObject(entity: ExposedCombat): JsonObject?
+	override fun toJsonObject(entity: ExposedCombat): JsonObject
 	{
 		return json.encodeToJsonElement(entity.toDTO()).jsonObject
 	}

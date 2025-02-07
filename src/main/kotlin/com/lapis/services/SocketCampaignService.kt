@@ -18,7 +18,7 @@ class SocketCampaignService : SocketService<ExposedCampaign>(), ScopedTransactio
 	override val typeEntity = ExposedCampaign
 	private val campaignRepo by inject<CampaignRepository>()
 	
-	override suspend fun getEntityIdsToUpdate(event: EntityChange): Collection<Int> =
+	override fun getEntityIdsToUpdate(event: EntityChange): Collection<Int> =
 		transaction {
 			val entity = event.toEntity<Int, Entity<Int>>()
 			val ids = arrayListOf<Int>()

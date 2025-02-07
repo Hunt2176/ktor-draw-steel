@@ -1,6 +1,7 @@
 package com.lapis.services.base
 
 import com.lapis.database.base.ScopedTransactionProvider
+import io.ktor.util.logging.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,14 +16,16 @@ import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.slf4j.LoggerFactory
 
 abstract class SocketService<EntityType : Entity<Int>> : KoinComponent, ScopedTransactionProvider
 {
+	protected open val logger: Logger = LoggerFactory.getLogger(this::class.java)
 	
 	/**
 	 * Returns the id of the entity to broadcast an update for, or null if no update is needed
 	 */
-	protected abstract suspend fun getEntityIdsToUpdate(event: EntityChange): Collection<Int>
+	protected abstract fun getEntityIdsToUpdate(event: EntityChange): Collection<Int>
 	protected abstract fun toJsonObject(entity: EntityType): JsonObject?
 	
 	abstract val typeEntity: EntityClass<Int, EntityType>
@@ -73,9 +76,24 @@ abstract class SocketService<EntityType : Entity<Int>> : KoinComponent, ScopedTr
 		val job = Job()
 		val activityScope = CoroutineScope(job + context)
 		
+		val ids = mutableListOf<Int>()
+		
+		try {
+			ids.addAll(getEntityIdsToUpdate(event))
+		} catch (e: Exception) {
+			logger.error(e)
+			job.completeExceptionally(e)
+			
+			return job
+		}
+		
+		if (ids.isEmpty()) {
+			return job.apply { complete() }
+		}
+		
 		return activityScope.launch {
-			getEntityIdsToUpdate(event).forEach {
-				sendUpdate(it)
+			ids.forEach { id ->
+				sendUpdate(id)
 			}
 		}
 	}
