@@ -14,6 +14,7 @@ import 'src/components/character_card/card.scss';
 
 
 export interface CharacterCardProps {
+	onPortraitClick?: () => void;
 	character: Character;
 	type: CharacterCardType | undefined;
 	children?: CharacterCardChildren;
@@ -43,7 +44,7 @@ type ModificationMutationUpdate<T extends ModificationKeys> = {
 	update: ModificationType[T];
 }
 
-export function CharacterCard({character, type = 'full', children}: CharacterCardProps) {
+export function CharacterCard({ character, type = 'full', children, onPortraitClick }: CharacterCardProps) {
 	const queryClient = useQueryClient();
 	
 	const [showHp, setShowHp] = useState(false);
@@ -104,11 +105,17 @@ export function CharacterCard({character, type = 'full', children}: CharacterCar
 		);
 	}, [recoveries.percent]);
 	
+	const portrait = useMemo(() => {
+		return <>
+			<Card.Img onClick={onPortraitClick} className={onPortraitClick ? 'clickable' : undefined} variant={'top'} src={character.pictureUrl ?? undefined} />
+		</>;
+	}, [onPortraitClick, character.pictureUrl]);
+	
 	const fullCard = useMemo(() => (
 		<>
 			<Card className={'character-card'} style={{width: '15rem'}}>
 				<div style={{position: 'relative'}}>
-					<Card.Img variant={'top'} src={character.pictureUrl ?? undefined} />
+					{portrait}
 					<div style={{position: 'absolute', width: '100%', bottom: '0px'}}>
 						<div>
 							<Table className={'character-card-table'}>
@@ -149,7 +156,7 @@ export function CharacterCard({character, type = 'full', children}: CharacterCar
 				}
 			</Card>
 		</>
-	), [hp.current, hp.max, recoveries.current, recoveries.max, character.pictureUrl, character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom]);
+	), [hp.current, hp.max, recoveries.current, recoveries.max, character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, portrait]);
 	
 	const tileCard = useMemo(() => {
 		return (
@@ -157,7 +164,7 @@ export function CharacterCard({character, type = 'full', children}: CharacterCar
 				<div className={'d-flex flex-column'}>
 					<div className={'d-flex'}>
 						{children?.left}
-						<Card.Img variant={'top'} src={character.pictureUrl ?? undefined} />
+						{portrait}
 						<Card.Body>
 							<Card.Title>{character.name}</Card.Title>
 							<div className={'mb-2'}>
@@ -173,7 +180,7 @@ export function CharacterCard({character, type = 'full', children}: CharacterCar
 				</div>
 			</Card>
 		);
-}, [character.pictureUrl, character.name, hpBar, recoveriesBar, character.maxRecoveries, children?.left, children?.right, children?.bottom]);
+}, [character.name, hpBar, recoveriesBar, character.maxRecoveries, children?.left, children?.right, children?.bottom, portrait]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modStats, setModStats] = useState<Partial<CharacterEditorCore>>({});

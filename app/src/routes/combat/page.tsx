@@ -124,7 +124,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				{availableMap?.get(available)?.map(c => {
 					const combatant = combatantMap.get(c.id);
 					return combatant && (
-						<CharacterCard key={c.id} character={c} type={'tile'}>
+						<CharacterCard key={c.id} onPortraitClick={() => navigate(`/characters/${c.id}`)} character={c} type={'tile'}>
 							{{
 								[available ? 'right' : 'left']: (
 									<CharacterCardExtra>

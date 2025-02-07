@@ -193,7 +193,7 @@ export function CampaignDetail() {
 	const characterElements = useMemo(() => {
 		return campaign && campaign.characters.reduce((acc, character, index) => {
 			const characterEl = (
-				<CharacterCard key={character.id} character={character} type={'tile'}/>
+				<CharacterCard onPortraitClick={() => navigate(`/characters/${character.id}`)} key={character.id} character={character} type={'tile'}/>
 			)
 			
 			if (index % 5 == 0) {
