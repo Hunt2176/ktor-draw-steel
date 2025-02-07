@@ -183,7 +183,7 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 }, [character.name, hpBar, recoveriesBar, character.maxRecoveries, children?.left, children?.right, children?.bottom, portrait]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
-		const [modStats, setModStats] = useState<Partial<CharacterEditorCore>>({});
+		const [modStats, setModStats] = useState<Partial<CharacterEditorCore>>({ temporaryHp: character.temporaryHp });
 		const [updatePromise, setUpdatePromise] = useState<Promise<unknown>>();
 		
 		const promiseState = usePromise(updatePromise);
@@ -194,6 +194,16 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 			}
 			
 			setModStats({...modStats, [key]: value});
+		}
+		
+		function saveTempHp() {
+			const tempHp = modStats['temporaryHp'];
+			if (tempHp == null || isNaN(tempHp) || tempHp === character.temporaryHp || tempHp < 0) {
+				return;
+			}
+			
+			const p = saveMutation.mutateAsync({ temporaryHp: tempHp });
+			setUpdatePromise(p);
 		}
 		
 		function submitModification<K extends ModificationKeys>(key: K, type: ModificationType[K]['type']) {
@@ -230,20 +240,35 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 			setUpdatePromise(p);
 		}
 		
+		const tempHpButtonDisabled = useMemo(() => {
+			const tempHp = modStats['temporaryHp']
+			return tempHp == null || isNaN(tempHp) || tempHp === character.temporaryHp || tempHp < 0;
+		}, [modStats, character.temporaryHp])
+		
 		switch (type) {
 			case 'hp':
 				return (
 					<div>
 						<FormGroup controlId={'modHp'}>
 							<FormLabel>Modify HP</FormLabel>
-							<FormControl value={modStats['removedHp']}
+							<FormControl value={modStats['removedHp'] ?? ''}
 							             min={0}
 							             onChange={(e) => setValue('removedHp', e.target.value ? parseInt(e.target.value) : undefined)}
 							             type={'number'}/>
 						</FormGroup>
 						<ButtonGroup className={'mt-2 w-100'}>
-							<Button disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'DAMAGE')} variant={'danger'}>Damage</Button>
-							<Button disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'HEAL')} variant={'success'}>Heal</Button>
+							<Button className="w-50" disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'DAMAGE')} variant={'danger'}>Damage</Button>
+							<Button className="w-50" disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'HEAL')} variant={'success'}>Heal</Button>
+						</ButtonGroup>
+						<hr/>
+						<FormGroup controlId={'tempHp'}>
+							<FormLabel>Modify Temp HP</FormLabel>
+							<FormControl value={modStats['temporaryHp'] ?? ''}
+							             min={0}
+							             onChange={(e) => setValue('temporaryHp', e.target.value ? parseInt(e.target.value) : undefined)}/>
+						</FormGroup>
+						<ButtonGroup className="mt-2 w-100">
+							<Button disabled={tempHpButtonDisabled} onClick={() => saveTempHp()}>Submit</Button>
 						</ButtonGroup>
 					</div>
 				);
