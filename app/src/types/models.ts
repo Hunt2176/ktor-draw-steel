@@ -3,7 +3,10 @@ export type HasName = { name: string };
 
 export type User = HasId;
 
-export interface Campaign extends HasId, HasName {}
+export interface Campaign extends HasId, HasName {
+	background?: string;
+}
+
 export interface CampaignDetails {
 	campaign: Campaign;
 	characters: Character[];

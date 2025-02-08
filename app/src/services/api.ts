@@ -1,5 +1,11 @@
-import { CampaignDetails, Character, CharacterCondition, Combat, Combatant } from "src/types/models.ts";
+import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant } from "src/types/models.ts";
 import axios from 'axios';
+
+export async function updateCampaign(id: number, campaign: Partial<Campaign>) {
+	const res = await axios.patch(`/api/campaigns/${id}`, campaign);
+	
+	return (await res.data) as CampaignDetails;
+}
 
 export async function fetchCampaigns(): Promise<CampaignDetails[]> {
 	const res = await fetch('/api/campaigns')

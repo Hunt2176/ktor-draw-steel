@@ -1,14 +1,15 @@
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faFile, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useContext, useMemo, useRef, useState } from "react";
-import { Button, Card, CardTitle, Modal, Navbar, NavbarText } from "react-bootstrap";
+import { Button, Card, CardTitle, Image, Modal, Navbar, NavbarText } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
+import { UploadModal } from "src/components/upload-modal.tsx";
 import { useCampaign, useCombatsForCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
 import { CharacterCard } from "src/components/character_card/card.tsx";
 import { CharacterEditor } from "src/components/character_editor/character_editor.tsx";
-import { createCharacter, createCombat, CreateCombatUpdate, deleteCombat } from "src/services/api.ts";
+import { createCharacter, createCombat, CreateCombatUpdate, deleteCombat, updateCampaign } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character, Combat } from "src/types/models.ts";
 import Element = React.JSX.Element;
@@ -19,6 +20,8 @@ export function CampaignDetail() {
 	const [newCharacter, setNewCharacter] = useState(false);
 	const [newCombat, setNewCombat] = useState(false);
 	const [combatToDelete, setCombatToDelete] = useState<Combat | null>(null);
+	
+	const [showBackgroundUpload, setShowBackgroundUpload] = useState(false);
 	
 	const combatSelected = useRef<Record<number, boolean>>({});
 	
@@ -36,6 +39,18 @@ export function CampaignDetail() {
 	useWatchCampaign(id);
 	const campaign = useCampaign(id);
 	const combats = useCombatsForCampaign(campaign?.campaign.id);
+	
+	const updateCampaignBackgroundMutation = useMutation({
+		mutationFn: (url?: string) => {
+			return updateCampaign(id, { background: url });
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: ['campaign', id]
+			});
+			setShowBackgroundUpload(false);
+		},
+	});
 	
 	const deleteCombatMutation = useMutation({
 		mutationFn: (id: number) => {
@@ -217,7 +232,12 @@ export function CampaignDetail() {
 	    <div className={'d-flex flex-column vh-100'}>
 	      <div className={'flex-1'}>
           <Navbar>
-              <NavbarText>{campaign.campaign.name}</NavbarText>
+		          <div className="d-flex justify-content-between w-100">
+	              <NavbarText>{campaign.campaign.name}</NavbarText>
+			          <Button onClick={() => setShowBackgroundUpload(true)} variant={'outline-info'}>
+					          <FontAwesomeIcon icon={faFile} />
+			          </Button>
+		          </div>
           </Navbar>
 	      </div>
 	      <div className={'flex-2'}>
@@ -239,6 +259,15 @@ export function CampaignDetail() {
 	if (campaign) {
 		return (
 			<>
+				<UploadModal show={showBackgroundUpload}
+				             accept=".png,.jpg,.jpeg,.webp"
+				             onHide={() => setShowBackgroundUpload(false)}
+				             onComplete={(e) => updateCampaignBackgroundMutation.mutate(e ? `/files/${e}` : undefined)}>
+					{(file) => {
+						if (file == null) return <></>;
+						return <Image style={{width: '100%', objectFit: 'contain'}} src={URL.createObjectURL(file)} thumbnail/>;
+					}}
+				</UploadModal>
 				{deleteCombatModal}
 				{newCombatModal}
 				{newCharacterModal}

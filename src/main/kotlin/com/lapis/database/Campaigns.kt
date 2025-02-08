@@ -141,6 +141,7 @@ class ExposedCampaign(
 	override fun ExposedCampaign.customizeFromJson(json: JsonObject)
 	{
 		json["name"]?.jsonPrimitive?.content?.let { name = it }
+		json["background"]?.jsonPrimitive?.content?.let { background = it }
 	}
 }
 
