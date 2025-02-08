@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useContext, useMemo, useRef, useState } from "react";
 import { Button, ButtonGroup, Card, CloseButton, Col, FormControl, FormGroup, FormLabel, Modal, Overlay, Popover, PopoverBody, PopoverHeader, ProgressBar, Row, Table } from "react-bootstrap";
-import { CharacterEditor, CharacterEditorCore } from "src/components/character_editor.tsx";
+import { CharacterEditor, CharacterEditorCore } from "src/components/character_editor/character_editor.tsx";
 import { usePromise } from "src/hooks/promise_hook.ts";
 import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";

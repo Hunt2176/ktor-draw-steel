@@ -7,7 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
 import { useCampaign, useCombatsForCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
 import { CharacterCard } from "src/components/character_card/card.tsx";
-import { CharacterEditor } from "src/components/character_editor.tsx";
+import { CharacterEditor } from "src/components/character_editor/character_editor.tsx";
 import { createCharacter, createCombat, CreateCombatUpdate, deleteCombat } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character, Combat } from "src/types/models.ts";

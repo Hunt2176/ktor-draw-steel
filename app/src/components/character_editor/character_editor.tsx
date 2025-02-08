@@ -1,5 +1,8 @@
+import './character_editor.scss';
+
 import { useRef, useState } from "react";
-import { Button, Col, Form, FormLabel, Row } from "react-bootstrap";
+import { Button, Col, Form, FormLabel, Image, Row } from "react-bootstrap";
+import { UploadModal } from "src/components/upload-modal.tsx";
 import { usePromise } from "src/hooks/promise_hook.ts";
 import { Character } from "src/types/models.ts";
 
@@ -10,6 +13,7 @@ export interface CharacterEditorProps {
 
 export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 	const [submitPromise, setSubmitPromise] = useState<Promise<void>>();
+	const [showUploadFile, setShowUploadFile] = useState(false);
 	
 	const stateVars = Object.entries(character)
 		.reduce((eState, [key, value]) => {
@@ -67,6 +71,21 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 	}
 	
 	return <>
+		<UploadModal show={showUploadFile}
+		             accept=".png,.jpg,.jpeg,.webp"
+		             onHide={() => setShowUploadFile(false)}
+		             onComplete={(e) => {
+			             onEdit('pictureUrl', `/files/${e}`);
+			             setShowUploadFile(false);
+		             }}>
+			{(file) => {
+				if (file == null) {
+					return <></>;
+				}
+				
+				return <Image thumbnail className="modal-image" src={URL.createObjectURL(file)}/>
+			}}
+		</UploadModal>
 		<Form>
 			<Form.Group controlId={'char-name'}>
 				<FormLabel>Name</FormLabel>
@@ -113,10 +132,17 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 			</Form.Group>
 			<Form.Group controlId={'char-picture'}>
 				<FormLabel>Picture</FormLabel>
-				<Form.Control
-					value={stateVars['pictureUrl'][0] ?? undefined}
-					onChange={(e) => onEdit('pictureUrl', e.target.value)}
-				/>
+				<Row>
+					<Col xs={9}>
+						<Form.Control
+							value={stateVars['pictureUrl'][0] ?? undefined}
+							onChange={(e) => onEdit('pictureUrl', e.target.value)}
+						/>
+					</Col>
+					<Col xs={3} className="d-flex justify-content-center">
+						<Button onClick={() => setShowUploadFile(true)}>Upload</Button>
+					</Col>
+				</Row>
 				{
 					stateVars['pictureUrl'][0] ?
 						<img style={{maxWidth: '100%', objectFit: 'contain'}} src={stateVars['pictureUrl'][0]!} alt={stateVars['pictureUrl'][0]!}/>

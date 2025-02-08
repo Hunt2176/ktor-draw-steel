@@ -1,7 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useRef } from "react";
-import useWebSocket from "react-use-websocket";
 import { CampaignDetails, Character, CharacterCondition, Combat, Combatant } from "src/types/models.ts";
+import axios from 'axios';
 
 export async function fetchCampaigns(): Promise<CampaignDetails[]> {
 	const res = await fetch('/api/campaigns')
@@ -234,4 +232,18 @@ export async function updateCombatantActive(id: number, available: boolean): Pro
 	}
 	
 	return (await res.json()) as Combatant;
+}
+
+export async function listFiles() {
+	const res = await fetch('/files');
+	return (await res.json()) as { files: string[] };
+}
+
+export async function uploadFile(file: File) {
+	const formData = new FormData();
+	formData.append('file', file);
+
+	const res = await axios.postForm('/files', formData);
+	
+	return res.data as { fileName: string };
 }
