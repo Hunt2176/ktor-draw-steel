@@ -8,6 +8,7 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.resources.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import java.io.File
 
 fun Application.configureRouting()
 {
@@ -18,11 +19,13 @@ fun Application.configureRouting()
 			call.respondText(text = "500: $cause", status = HttpStatusCode.InternalServerError)
 		}
 	}
+	
+	setupFileHandling()
+	
 	routing {
-		// Static plugin. Try to access `/static/index.html`
-		staticResources("/static", "static") {
+		staticResources("/static", "static")
 		
-		}
+		staticFiles("/files", File("files"))
 		
 		singlePageApplication {
 			useResources = true
