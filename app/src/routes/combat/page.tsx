@@ -2,13 +2,13 @@ import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useId, useMemo, useRef, useState } from "react";
-import { Button, Card, CardTitle, CloseButton, FormCheck, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
+import { Button, Card, CardTitle, CloseButton, FormCheck, FormControl, FormGroup, FormLabel, FormText, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CharacterCard, CharacterCardExtra } from "src/components/character_card/card.tsx";
 import { CharacterConditions } from "src/components/character_conditions.tsx";
 import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
 import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/hooks/api_hooks.ts";
-import { CombatModificationUpdate, updateCombatantActive, updateCombatModification, updateCombatRound } from "src/services/api.ts";
+import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatModification, updateCombatRound } from "src/services/api.ts";
 import { Character, Combatant } from "src/types/models.ts";
 import { parseIntOrUndefined } from "src/utils.ts";
 
@@ -25,6 +25,9 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	
 	const [showNextRound, setShowNextRound] = useState(false);
 	const [showModifyCharacters, setShowModifyCharacters] = useState(false);
+	
+	const [showQuickAdd, setShowQuickAdd] = useState(false);
+	const [quickAddConfig, setQuickAddConfig] = useState<Partial<Character>>({});
 	
 	const clearRoundId = useId();
 	const [clearRoundOnly, setClearRoundOnly] = useState(false);
@@ -43,6 +46,22 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	const campaign = useCampaign(combat?.campaign);
 	useWatchCampaign(campaign?.campaign.id);
 	useWatchCombat(id);
+	
+	const quickAddMutation = useMutation({
+		mutationFn: (character: Partial<Character>) => {
+			return quickAddCombatant(id, { character: {name: character.name!, maxHp: character.maxHp!, user: 1} });
+		},
+		onSuccess: async (combat) => {
+			await queryClient.invalidateQueries({
+				queryKey: ['campaign', campaign?.campaign.id]
+			});
+			await queryClient.invalidateQueries({
+				queryKey: ['combat', id]
+			});
+			
+			setShowQuickAdd(false);
+		}
+	});
 	
 	const nextRoundMutation = useMutation({
 		mutationFn: () => {
@@ -155,7 +174,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				{getDisplay(false)}
 			</div>
 		);
-	}, [availableMap, activeCombatantMutation, combatantMap]);
+	}, [availableMap, activeCombatantMutation, combatantMap, navigate]);
 	
 	const modifyCharacterModal = useMemo(() => {
 		if (combat == null || campaign == null) {
@@ -217,6 +236,34 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	
 	return <>
 		{modifyCharacterModal}
+		<Modal show={showQuickAdd} onShow={() => setQuickAddConfig({})}>
+			<ModalHeader>
+				<ModalTitle>Quick Add</ModalTitle>
+				<CloseButton onClick={() => setShowQuickAdd(false)}></CloseButton>
+			</ModalHeader>
+			<ModalBody>
+				<FormGroup controlId={`${id}-quickAdd-name`}>
+					<FormLabel>
+						Name
+					</FormLabel>
+					<FormControl value={quickAddConfig['name'] ?? ''}
+					             onChange={(e) => setQuickAddConfig({...quickAddConfig, name: e.target.value})}></FormControl>
+				</FormGroup>
+				<FormGroup>
+					<FormLabel>
+						Max HP
+					</FormLabel>
+					<FormControl type={'number'} min={0} value={quickAddConfig['maxHp'] ?? ''}
+					             onChange={(e) => setQuickAddConfig({...quickAddConfig, maxHp: parseIntOrUndefined(e.target.value)})}></FormControl>
+				</FormGroup>
+			</ModalBody>
+			<ModalFooter>
+				<Button disabled={quickAddConfig['name'] == null || quickAddConfig['maxHp'] == null}
+					onClick={() => {
+					quickAddMutation.mutate(quickAddConfig);
+				}}>Submit</Button>
+			</ModalFooter>
+		</Modal>
 		<Modal show={showNextRound}>
 			<ModalHeader>
 				<ModalTitle>
@@ -242,6 +289,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				<CardTitle className={'d-flex justify-content-between m-2'}>
 					<div className={'col-4 d-flex justify-content-start align-items-center'}>
 						<Button onClick={() => setShowModifyCharacters(true)} variant="outline-secondary">Modify</Button>
+						<Button onClick={() => setShowQuickAdd(true)} variant="outline-secondary" className={'ms-2'}>Quick Add</Button>
 					</div>
 					<div className={'col-4 d-flex flex-column justify-content-center align-items-center'}>
 						<Link to={`/campaigns/${campaign.campaign.id}`}>

@@ -185,6 +185,19 @@ export async function updateCombatRound(id: number, update: CombatRoundUpdate): 
 	return (await res.json()) as Combat;
 }
 
+export type CombatantQuickAddUpdate = {
+	character: {
+		name: string,
+		maxHp: number,
+		user: number
+	}
+}
+export async function quickAddCombatant(id: number, update: CombatantQuickAddUpdate): Promise<Combat> {
+	const res = await axios.patch(`/api/combats/${id}/quickAdd`, update);
+	
+	return (await res.data) as Combat;
+}
+
 export type CombatCombatantUpdate = {
 	character: number;
 }

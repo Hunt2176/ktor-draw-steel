@@ -125,6 +125,30 @@ class CombatRepository(database: Database) : BaseRepository<ExposedCombat, Expos
 			call.respond(HttpStatusCode.OK, response)
 		}
 		
+		patch("{id}/quickAdd") {
+			val id = call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")
+			val body = call.receive<CombatantQuickAddRequest>()
+			
+			val response = transaction {
+				val combat = ExposedCombat.findById(id) ?: error("Combat not found")
+				val character = ExposedCharacter.new {
+					this.name = body.character["name"]?.jsonPrimitive?.content ?: error("Name not found")
+					this.maxHp = body.character["maxHp"]?.jsonPrimitive?.int ?: error("Max HP not found")
+					this.user = body.character["user"]?.jsonPrimitive?.int?.let { ExposedUser.findById(it) } ?: error("User not found")
+					this.campaign = combat.campaign
+				}
+				
+				ExposedCombatant.new {
+					this.character = character
+					this.combat = combat
+				}
+				
+				combat.toDTO()
+			}
+			
+			call.respond(HttpStatusCode.OK, response)
+		}
+		
 		patch("{id}/modify") {
 			val id = call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")
 			val body = call.receive<CombatantModificationRequest>()
@@ -178,6 +202,11 @@ class CombatRepository(database: Database) : BaseRepository<ExposedCombat, Expos
 	private data class CombatantModificationRequest(
 		val add: Set<Int>? = null,
 		val remove: Set<Int>? = null
+	)
+	
+	@Serializable
+	private data class CombatantQuickAddRequest(
+		val character: JsonObject
 	)
 }
 
