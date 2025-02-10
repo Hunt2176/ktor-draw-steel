@@ -169,8 +169,13 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 							<Card.Title>{character.name}</Card.Title>
 							<div className={'mb-2'}>
 								{hpBar}
+								<span>{hp.current}/{hp.max}</span>
 							</div>
-							{character.maxRecoveries > 0 && recoveriesBar}
+							{character.maxRecoveries > 0 && <>
+								{recoveriesBar}
+								{recoveries.current}/{recoveries.max}
+							</>}
+							
 						</Card.Body>
 						{children?.right}
 					</div>
@@ -180,7 +185,7 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 				</div>
 			</Card>
 		);
-}, [character.name, hpBar, recoveriesBar, character.maxRecoveries, children?.left, children?.right, children?.bottom, portrait]);
+}, [character.name, hpBar, recoveriesBar, character.maxRecoveries, children?.left, children?.right, children?.bottom, portrait, hp.current, hp.max, recoveries.current, recoveries.max]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modStats, setModStats] = useState<Partial<CharacterEditorCore>>({ temporaryHp: character.temporaryHp });
