@@ -48,7 +48,7 @@ export interface CharacterPool {
 
 export class Character {
 	static getHp(char: Character): CharacterPool {
-		const current = Math.max(char.maxHp + char.temporaryHp - char.removedHp, 0);
+		const current = char.maxHp + char.temporaryHp - char.removedHp;
 		const percent = current / char.maxHp;
 		return { current, max: char.maxHp, percent };
 	}
