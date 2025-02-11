@@ -1,8 +1,8 @@
-import { faPen } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Image, Grid, GridCol, Popover as MantinePopover, RingProgress, Text, Button, NumberInput, Divider, Stack, Paper } from "@mantine/core";
+import { useInputState } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useContext, useMemo, useRef, useState } from "react";
-import { Button, ButtonGroup, Card, CloseButton, Col, FormControl, FormGroup, FormLabel, Modal, Overlay, Popover, PopoverBody, PopoverHeader, ProgressBar, Row, Table } from "react-bootstrap";
+import { Card, CloseButton, Modal, Overlay, Popover, PopoverBody, PopoverHeader, Table } from "react-bootstrap";
 import { CharacterEditor, CharacterEditorCore } from "src/components/character_editor/character_editor.tsx";
 import { usePromise } from "src/hooks/promise_hook.ts";
 import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "src/services/api.ts";
@@ -88,22 +88,43 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 	});
 	
 	const hpBar = useMemo(() => {
-		const variant = (hp.percent > 0.5)
-			? 'success'
+		const color = (hp.percent > 0.5)
+			? 'green'
 			: (hp.percent > 0.25)
-				? 'warning'
-				: 'danger';
+				? 'orange'
+				: 'red';
+		
+		const label = <>
+			<Text c={color} ta="center" fw={700} size={'xl'} ref={hpRef}>
+				{hp.current}/{hp.max}
+			</Text>
+		</>
 		
 		return (
-			<ProgressBar onClick={() => setShowHp(true)} ref={hpRef} variant={variant} now={hp.percent * 100}></ProgressBar>
-		);
-	}, [hp.percent]);
+			<RingProgress label={label}
+			              transitionDuration={250}
+			              sections={[
+				              {
+					              value: hp.percent * 100,
+					              color: color
+				              }
+			              ]}></RingProgress>);
+	}, [hp.percent, hp.current, hp.max]);
 	
 	const recoveriesBar = useMemo(() => {
 		return (
-			<ProgressBar onClick={() => setShowRecoveries(true)} ref={recoveriesRef} now={recoveries.percent * 100}/>
+			<RingProgress
+				label={<Text c={'blue'} ta="center" fw={700} size={'xl'}>{recoveries.current}/{recoveries.max}</Text>}
+				transitionDuration={250}
+				sections={[
+					{
+						value: recoveries.percent * 100,
+						color: 'blue'
+					}
+				]}
+			/>
 		);
-	}, [recoveries.percent]);
+	}, [recoveries.percent, recoveries.current, recoveries.max]);
 	
 	const portrait = useMemo(() => {
 		return <>
@@ -160,49 +181,73 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 	
 	const tileCard = useMemo(() => {
 		return (
-			<Card className={'character-card-tile'}>
-				<div className={'d-flex flex-column'}>
-					<div className={'d-flex'}>
-						{children?.left}
-						{portrait}
-						<Card.Body>
-							<Card.Title>{character.name}</Card.Title>
-							<div className={'mb-2'}>
-								{hpBar}
-								<span>{hp.current}/{hp.max}</span>
-							</div>
-							{character.maxRecoveries > 0 && <>
-								{recoveriesBar}
-								{recoveries.current}/{recoveries.max}
-							</>}
-							
-						</Card.Body>
-						{children?.right}
-					</div>
-					{ children?.bottom && (
-						<div>{children.bottom}</div>
-					)}
-				</div>
-			</Card>
+			<Paper>
+				<Stack gap={'xs'}>
+					<Grid>
+						{ children?.left &&
+							<GridCol span={'content'}>
+								{children.left}
+							</GridCol>
+						}
+						<GridCol span={'content'}>
+							<Image radius={'xs'} w={100} fit={'cover'} style={{objectPosition: 'top'}} src={character.pictureUrl ?? undefined}></Image>
+						</GridCol>
+						<GridCol span={'content'}>
+							<Stack gap={0}>
+								<Text size={'xl'} fw={700}>
+									{character.name}
+								</Text>
+								<Grid>
+									<GridCol span={'content'}>
+										<MantinePopover trapFocus withArrow arrowSize={12}>
+											<MantinePopover.Target>
+												{hpBar}
+											</MantinePopover.Target>
+											<MantinePopover.Dropdown>
+												<OverlayDisplay type={'hp'}/>
+											</MantinePopover.Dropdown>
+										</MantinePopover>
+									</GridCol>
+									
+									<GridCol span={'content'}>
+										<MantinePopover trapFocus withArrow arrowSize={12}>
+											<MantinePopover.Target>
+												{recoveriesBar}
+											</MantinePopover.Target>
+											<MantinePopover.Dropdown>
+												<OverlayDisplay type={'recoveries'}/>
+											</MantinePopover.Dropdown>
+										</MantinePopover>
+									</GridCol>
+								</Grid>
+							</Stack>
+						</GridCol>
+						{
+							children?.right &&
+							<GridCol span={'content'}>
+								{children.right}
+							</GridCol>
+						}
+					</Grid>
+					{ children?.bottom &&
+						children.bottom
+					}
+				</Stack>
+			</Paper>
 		);
-}, [character.name, hpBar, recoveriesBar, character.maxRecoveries, children?.left, children?.right, children?.bottom, portrait, hp.current, hp.max, recoveries.current, recoveries.max]);
+}, [hpBar, recoveriesBar, children?.left, children?.right, character.pictureUrl, character.name, children?.bottom]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
-		const [modStats, setModStats] = useState<Partial<CharacterEditorCore>>({ temporaryHp: character.temporaryHp });
+		const [modHp, setModHp] = useInputState<number | string>(0);
+		const [tempHp, setTempHp] = useInputState<number | string>(character.temporaryHp);
+		const [modRecoveries, setModRecoveries] = useInputState<number | string>(0);
+		
 		const [updatePromise, setUpdatePromise] = useState<Promise<unknown>>();
 		
 		const promiseState = usePromise(updatePromise);
 		
-		function setValue<K extends keyof CharacterEditorCore>(key: K, value: CharacterEditorCore[K] | undefined) {
-			if (value == null || (typeof value == 'number' && isNaN(value))) {
-				value = undefined;
-			}
-			
-			setModStats({...modStats, [key]: value});
-		}
-		
 		function saveTempHp() {
-			const tempHp = modStats['temporaryHp'];
+			const tempHp = parseInt(modHp as string);
 			if (tempHp == null || isNaN(tempHp) || tempHp === character.temporaryHp || tempHp < 0) {
 				return;
 			}
@@ -212,9 +257,18 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 		}
 		
 		function submitModification<K extends ModificationKeys>(key: K, type: ModificationType[K]['type']) {
-			const mod = modStats[key];
+			let mod: number = NaN;
 			
-			if (mod == null) {
+			switch (key) {
+				case 'removedRecoveries':
+					mod = parseInt(modRecoveries as string);
+					break;
+				case 'removedHp':
+					mod = parseInt(modHp as string);
+					break;
+			}
+			
+			if (mod == null || isNaN(mod)) {
 				return;
 			}
 			
@@ -246,51 +300,50 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 		}
 		
 		const tempHpButtonDisabled = useMemo(() => {
-			const tempHp = modStats['temporaryHp']
-			return tempHp == null || isNaN(tempHp) || tempHp === character.temporaryHp || tempHp < 0;
-		}, [modStats, character.temporaryHp])
+			const tHp = parseInt(tempHp as string);
+			return tHp == null || isNaN(tHp) || tempHp === character.temporaryHp || tHp < 0;
+		}, [character.temporaryHp, tempHp])
 		
 		switch (type) {
 			case 'hp':
 				return (
 					<div>
-						<FormGroup controlId={'modHp'}>
-							<FormLabel>Modify HP</FormLabel>
-							<FormControl value={modStats['removedHp'] ?? ''}
-							             min={0}
-							             onChange={(e) => setValue('removedHp', e.target.value ? parseInt(e.target.value) : undefined)}
-							             type={'number'}/>
-						</FormGroup>
-						<ButtonGroup className={'mt-2 w-100'}>
-							<Button className="w-50" disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'DAMAGE')} variant={'danger'}>Damage</Button>
-							<Button className="w-50" disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'HEAL')} variant={'success'}>Heal</Button>
-						</ButtonGroup>
-						<hr/>
-						<FormGroup controlId={'tempHp'}>
-							<FormLabel>Modify Temp HP</FormLabel>
-							<FormControl value={modStats['temporaryHp'] ?? ''}
-							             min={0}
-							             onChange={(e) => setValue('temporaryHp', e.target.value ? parseInt(e.target.value) : undefined)}/>
-						</FormGroup>
-						<ButtonGroup className="mt-2 w-100">
-							<Button disabled={tempHpButtonDisabled} onClick={() => saveTempHp()}>Submit</Button>
-						</ButtonGroup>
+						<Stack>
+							<NumberInput label={'Modify HP'}
+							             value={modHp}
+							             onChange={setModHp}
+							             min={0}/>
+							<Button.Group>
+								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'DAMAGE')} color={'red'}>Damage</Button>
+								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'HEAL')} color={'green'}>Heal</Button>
+							</Button.Group>
+						</Stack>
+						<Divider my={'sm'} />
+						<Stack>
+							<NumberInput label={'Temporary HP'}
+							             value={tempHp}
+							             onChange={setTempHp}
+							             min={0}/>
+							<Button fullWidth disabled={tempHpButtonDisabled} onClick={() => saveTempHp()}>Submit</Button>
+						</Stack>
 					</div>
 				);
 			case 'recoveries':
 				return (
-					<div>
-						<FormGroup controlId={'modRecoveries'}>
-							<FormLabel>Modify Recoveries</FormLabel>
-							<FormControl value={modStats['removedRecoveries'] ?? ''}
-							             onChange={(e) => setValue('removedRecoveries', e.target.value ? parseInt(e.target.value) : undefined)}
-							             type={'number'}/>
-						</FormGroup>
-						<div className={'mt-2 d-flex justify-content-between'}>
-							<Button disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'INCREASE')}>Add</Button>
-							<Button disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'DECREASE')}>Remove</Button>
-						</div>
-					</div>
+					<Stack>
+						<NumberInput label={'Modify Recoveries'}
+						             value={modRecoveries}
+						             onChange={setModRecoveries}
+						             min={0}/>
+						<Grid>
+							<GridCol span={6}>
+								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'INCREASE')}>Add</Button>
+							</GridCol>
+							<GridCol span={6}>
+								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'DECREASE')}>Remove</Button>
+							</GridCol>
+						</Grid>
+					</Stack>
 				);
 		}
 	}

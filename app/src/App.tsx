@@ -1,5 +1,8 @@
 import 'src/App.scss'
 import 'bootstrap/dist/css/bootstrap.min.css';
+import '@mantine/core/styles.css';
+
+import { MantineProvider } from "@mantine/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { CloseButton, Modal } from "react-bootstrap";
@@ -23,22 +26,24 @@ const App = () => {
 	const errorController = useState<Object | unknown | undefined>();
 	
 	return <>
-		<QueryClientProvider client={queryClient}>
-			<ErrorContext.Provider value={errorController}>
-				<Modal show={errorController[0] != null}>
-					<Modal.Header>
-						<Modal.Title>Error</Modal.Title>
-						<CloseButton onClick={() => errorController[1](undefined)}></CloseButton>
-					</Modal.Header>
-					<Modal.Body>{errorController[0]?.toString()}</Modal.Body>
-				</Modal>
-				<CampaignContext.Provider value={campaignController}>
-					<CharacterContext.Provider value={characterController}>
-						<RouterEl/>
-					</CharacterContext.Provider>
-				</CampaignContext.Provider>
-			</ErrorContext.Provider>
-		</QueryClientProvider>
+		<MantineProvider>
+			<QueryClientProvider client={queryClient}>
+				<ErrorContext.Provider value={errorController}>
+					<Modal show={errorController[0] != null}>
+						<Modal.Header>
+							<Modal.Title>Error</Modal.Title>
+							<CloseButton onClick={() => errorController[1](undefined)}></CloseButton>
+						</Modal.Header>
+						<Modal.Body>{errorController[0]?.toString()}</Modal.Body>
+					</Modal>
+					<CampaignContext.Provider value={campaignController}>
+						<CharacterContext.Provider value={characterController}>
+							<RouterEl/>
+						</CharacterContext.Provider>
+					</CampaignContext.Provider>
+				</ErrorContext.Provider>
+			</QueryClientProvider>
+		</MantineProvider>
 	</>;
 }
 
