@@ -1,8 +1,8 @@
-import { Image, Grid, GridCol, Popover as MantinePopover, RingProgress, Text, Button, NumberInput, Divider, Stack, Paper } from "@mantine/core";
+import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text } from "@mantine/core";
 import { useInputState } from "@mantine/hooks";
+import { modals } from "@mantine/modals";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useContext, useMemo, useRef, useState } from "react";
-import { Card, CloseButton, Modal, Overlay, Popover, PopoverBody, PopoverHeader, Table } from "react-bootstrap";
+import React, { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { CharacterEditor, CharacterEditorCore } from "src/components/character_editor/character_editor.tsx";
 import { usePromise } from "src/hooks/promise_hook.ts";
 import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "src/services/api.ts";
@@ -47,17 +47,20 @@ type ModificationMutationUpdate<T extends ModificationKeys> = {
 export function CharacterCard({ character, type = 'full', children, onPortraitClick }: CharacterCardProps) {
 	const queryClient = useQueryClient();
 	
-	const [showHp, setShowHp] = useState(false);
-	const [showRecoveries, setShowRecoveries] = useState(false);
-	
 	const hpRef = useRef<HTMLDivElement | null>(null);
-	const recoveriesRef = useRef<HTMLDivElement | null>(null);
+	
+	const editorModalId = useRef<string>();
 	
 	const hp = useMemo(() => Character.getHp(character), [character]);
 	const recoveries = useMemo(() => Character.getRecoveries(character), [character]);
 	
 	const [_, setError] = useContext(ErrorContext);
-	const [editing, setEditing] = useState(false);
+	
+	const closeEditorModal = () => {
+		if (editorModalId.current) {
+			modals.close(editorModalId.current);
+		}
+	};
 	
 	const saveMutation = useMutation({
 		mutationFn: (toSave: Partial<CharacterEditorCore>) => {
@@ -65,8 +68,7 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 		},
 		onSuccess: (res) =>{
 			queryClient.setQueryData(['character', character.id], res);
-			
-			setEditing(false);
+			closeEditorModal();
 		},
 		onError: setError
 	});
@@ -82,8 +84,6 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 		},
 		onSuccess: (res) => {
 			queryClient.setQueryData(['character', character.id], res);
-			setShowHp(false);
-			setShowRecoveries(false);
 		},
 	});
 	
@@ -95,13 +95,14 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 				: 'red';
 		
 		const label = <>
-			<Text c={color} ta="center" fw={700} size={'xl'} ref={hpRef}>
+			<Text c={color} ta="center" fw={700} size={'lg'} ref={hpRef}>
 				{hp.current}/{hp.max}
 			</Text>
 		</>
 		
-		return (
+		const ring = (
 			<RingProgress label={label}
+			              size={100}
 			              transitionDuration={250}
 			              sections={[
 				              {
@@ -109,12 +110,24 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 					              color: color
 				              }
 			              ]}></RingProgress>);
+		
+		return (
+			<Popover trapFocus withArrow arrowSize={12}>
+				<Popover.Target>
+					{ring}
+				</Popover.Target>
+				<Popover.Dropdown>
+					<OverlayDisplay type={'hp'}/>
+				</Popover.Dropdown>
+			</Popover>
+		);
 	}, [hp.percent, hp.current, hp.max]);
 	
 	const recoveriesBar = useMemo(() => {
-		return (
+		const ring = (
 			<RingProgress
-				label={<Text c={'blue'} ta="center" fw={700} size={'xl'}>{recoveries.current}/{recoveries.max}</Text>}
+				label={<Text c={'blue'} ta="center" fw={700} size={'lg'}>{recoveries.current}/{recoveries.max}</Text>}
+				size={100}
 				transitionDuration={250}
 				sections={[
 					{
@@ -124,64 +137,66 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 				]}
 			/>
 		);
+		
+		return (
+			<Popover trapFocus withArrow arrowSize={12}>
+				<Popover.Target>
+					{ring}
+				</Popover.Target>
+				<Popover.Dropdown>
+					<OverlayDisplay type={'recoveries'}/>
+				</Popover.Dropdown>
+			</Popover>
+		);
 	}, [recoveries.percent, recoveries.current, recoveries.max]);
 	
-	const portrait = useMemo(() => {
-		return <>
-			<Card.Img onClick={onPortraitClick} className={onPortraitClick ? 'clickable' : undefined} variant={'top'} src={character.pictureUrl ?? undefined} />
-		</>;
-	}, [onPortraitClick, character.pictureUrl]);
-	
 	const fullCard = useMemo(() => (
-		<>
-			<Card className={'character-card'} style={{width: '15rem'}}>
-				<div style={{position: 'relative'}}>
-					{portrait}
-					<div style={{position: 'absolute', width: '100%', bottom: '0px'}}>
-						<div>
-							<Table className={'character-card-table'}>
-								<tbody>
-								<tr>
-									<td>M {character.might}</td>
-									<td>A {character.agility}</td>
-									<td>R {character.reason}</td>
-									<td>I {character.intuition}</td>
-									<td>P {character.presence}</td>
-								</tr>
-								</tbody>
-							</Table>
+			<Card withBorder shadow={'xs'} className={'character-card'} style={{width: '15rem'}}>
+				<Card.Section withBorder>
+					<div style={{position: 'relative'}}>
+						<Image onClick={onPortraitClick} src={character.pictureUrl ?? undefined}></Image>
+						<div style={{position: 'absolute', width: '100%', bottom: '0px'}}>
+							<Group justify={'space-around'}>
+								<Text fw={600} component={'div'}>
+									M {character.might}
+								</Text>
+								<Text fw={600} component={'div'}>
+									A {character.agility}
+								</Text>
+								<Text fw={600} component={'div'}>
+									R {character.reason}
+								</Text>
+								<Text fw={600} component={'div'}>
+									I {character.intuition}
+								</Text>
+								<Text fw={600} component={'div'}>
+									P {character.presence}
+								</Text>
+							</Group>
 						</div>
 					</div>
-				</div>
-				<Card.Body>
-					<Card.Title style={{textAlign: 'center'}}>
-						{character.name}
-					</Card.Title>
-					<div>
-						<div>
-							HP ({hp.current}/{hp.max})
-						</div>
+				</Card.Section>
+				<Text fw={700} size={'xl'} ta={'center'}>
+					{character.name}
+				</Text>
+				<Card.Section>
+					<Group justify={'space-around'}>
 						{hpBar}
-					</div>
-					<div>
-						<div>
-							Recoveries ({recoveries.current}/{recoveries.max})
-						</div>
 						{recoveriesBar}
-					</div>
-				</Card.Body>
+					</Group>
+				</Card.Section>
 				{ children?.bottom &&
-					<Card.Footer>
+					<>
+						<Card.Section mb={'xs'} withBorder></Card.Section>
 						{children.bottom}
-					</Card.Footer>
+					</>
 				}
 			</Card>
-		</>
-	), [hp.current, hp.max, recoveries.current, recoveries.max, character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, portrait]);
+	), [character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, character.pictureUrl, onPortraitClick]);
 	
 	const tileCard = useMemo(() => {
 		return (
-			<Paper>
+			<Card>
 				<Stack gap={'xs'}>
 					<Grid>
 						{ children?.left &&
@@ -190,7 +205,7 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 							</GridCol>
 						}
 						<GridCol span={'content'}>
-							<Image radius={'xs'} w={100} fit={'cover'} style={{objectPosition: 'top'}} src={character.pictureUrl ?? undefined}></Image>
+							<Image onClick={onPortraitClick} radius={'xs'} w={100} fit={'cover'} style={{objectPosition: 'top'}} src={character.pictureUrl ?? undefined}></Image>
 						</GridCol>
 						<GridCol span={'content'}>
 							<Stack gap={0}>
@@ -199,25 +214,10 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 								</Text>
 								<Grid>
 									<GridCol span={'content'}>
-										<MantinePopover trapFocus withArrow arrowSize={12}>
-											<MantinePopover.Target>
-												{hpBar}
-											</MantinePopover.Target>
-											<MantinePopover.Dropdown>
-												<OverlayDisplay type={'hp'}/>
-											</MantinePopover.Dropdown>
-										</MantinePopover>
+										{hpBar}
 									</GridCol>
-									
 									<GridCol span={'content'}>
-										<MantinePopover trapFocus withArrow arrowSize={12}>
-											<MantinePopover.Target>
-												{recoveriesBar}
-											</MantinePopover.Target>
-											<MantinePopover.Dropdown>
-												<OverlayDisplay type={'recoveries'}/>
-											</MantinePopover.Dropdown>
-										</MantinePopover>
+										{recoveriesBar}
 									</GridCol>
 								</Grid>
 							</Stack>
@@ -233,9 +233,9 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 						children.bottom
 					}
 				</Stack>
-			</Paper>
+			</Card>
 		);
-}, [hpBar, recoveriesBar, children?.left, children?.right, character.pictureUrl, character.name, children?.bottom]);
+		}, [hpBar, recoveriesBar, children?.left, children?.right, character.pictureUrl, character.name, children?.bottom, onPortraitClick]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modHp, setModHp] = useInputState<number | string>(0);
@@ -359,50 +359,33 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 		}
 	}, [type, fullCard, tileCard]);
 	
+	const openEditorModal = useCallback(() => {
+		if (editorModalId.current) {
+			modals.close(editorModalId.current);
+		}
+		
+		return editorModalId.current = modals.open({
+			title: <span>Edit</span>,
+			withCloseButton: true,
+			closeOnClickOutside: false,
+			children: (
+				<CharacterEditor character={character} onSubmit={(e) => {
+					saveMutation.mutate(e)
+				}}></CharacterEditor>
+			)
+		});
+	}, [character, saveMutation]);
+	
 	const extraParams: CharacterCardExtras = useMemo(() => {
 		return {
-			edit: () => setEditing(true)
+			edit: () => openEditorModal()
 		};
-	}, [setEditing]);
+	}, [openEditorModal]);
 	
 	return (
 		<>
 			<CharacterCardExtrasContext.Provider value={extraParams}>
-				<Modal show={editing}>
-					<Modal.Header>
-						<Modal.Title>Edit</Modal.Title>
-						<CloseButton onClick={() => setEditing(false)}></CloseButton>
-					</Modal.Header>
-					<Modal.Body>
-						<CharacterEditor character={character} onSubmit={(e) => { saveMutation.mutate(e) }}></CharacterEditor>
-					</Modal.Body>
-				</Modal>
-				<Overlay placement={'auto'} target={hpRef.current} show={showHp} rootCloseEvent={'click'} rootClose={true} onHide={() => setShowHp(false)}>
-					{(props) => {
-						return (
-							<Popover {...props}>
-								<PopoverHeader>HP</PopoverHeader>
-								<PopoverBody>
-									<OverlayDisplay type={'hp'}></OverlayDisplay>
-								</PopoverBody>
-							</Popover>
-						);
-					}}
-				</Overlay>
-				<Overlay placement={'auto'} target={recoveriesRef.current} show={showRecoveries} rootCloseEvent={'click'} rootClose={true} onHide={() => setShowRecoveries(false)}>
-					{(props) => {
-						return (
-							<Popover {...props}>
-								<PopoverHeader>Recoveries</PopoverHeader>
-								<PopoverBody>
-									<OverlayDisplay type={'recoveries'}></OverlayDisplay>
-								</PopoverBody>
-							</Popover>
-						);
-					}}
-				</Overlay>
 				{card}
-				
 			</CharacterCardExtrasContext.Provider>
 		</>
 	);

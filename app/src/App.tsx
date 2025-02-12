@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '@mantine/core/styles.css';
 
 import { MantineProvider } from "@mantine/core";
+import { ModalsProvider } from "@mantine/modals";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { CloseButton, Modal } from "react-bootstrap";
@@ -18,7 +19,6 @@ import { CampaignContext, CharacterContext, ErrorContext } from "src/services/co
 import { CampaignDetails, Character } from "src/types/models.ts";
 
 const queryClient = new QueryClient();
-const campaignWatcher = new CampaignWatcher(queryClient);
 
 const App = () => {
 	const campaignController = useState<CampaignDetails>();
@@ -28,20 +28,22 @@ const App = () => {
 	return <>
 		<MantineProvider>
 			<QueryClientProvider client={queryClient}>
-				<ErrorContext.Provider value={errorController}>
-					<Modal show={errorController[0] != null}>
-						<Modal.Header>
-							<Modal.Title>Error</Modal.Title>
-							<CloseButton onClick={() => errorController[1](undefined)}></CloseButton>
-						</Modal.Header>
-						<Modal.Body>{errorController[0]?.toString()}</Modal.Body>
-					</Modal>
-					<CampaignContext.Provider value={campaignController}>
-						<CharacterContext.Provider value={characterController}>
-							<RouterEl/>
-						</CharacterContext.Provider>
-					</CampaignContext.Provider>
-				</ErrorContext.Provider>
+				<ModalsProvider>
+					<ErrorContext.Provider value={errorController}>
+						<Modal show={errorController[0] != null}>
+							<Modal.Header>
+								<Modal.Title>Error</Modal.Title>
+								<CloseButton onClick={() => errorController[1](undefined)}></CloseButton>
+							</Modal.Header>
+							<Modal.Body>{errorController[0]?.toString()}</Modal.Body>
+						</Modal>
+						<CampaignContext.Provider value={campaignController}>
+							<CharacterContext.Provider value={characterController}>
+								<RouterEl/>
+							</CharacterContext.Provider>
+						</CampaignContext.Provider>
+					</ErrorContext.Provider>
+				</ModalsProvider>
 			</QueryClientProvider>
 		</MantineProvider>
 	</>;
