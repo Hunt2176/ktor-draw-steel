@@ -1,10 +1,10 @@
 import { faPencilAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ReactNode } from "react";
-import { Button } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCharacter, useWatchCampaign } from "src/hooks/api_hooks.ts";
 import { CharacterCard, CharacterCardExtra } from "src/components/character_card/card.tsx";
+import { ActionIcon } from "@mantine/core";
 
 export function CharacterPage(): ReactNode {
 	const params = useParams();
@@ -28,9 +28,9 @@ export function CharacterPage(): ReactNode {
 						<CharacterCardExtra>
 							{(props) => (
 								<div className="d-flex justify-content-end">
-									<Button onClick={() => props.edit()} size={'sm'}>
+									<ActionIcon onClick={() => props.edit()} size={'lg'}>
 										<FontAwesomeIcon icon={faPencilAlt}></FontAwesomeIcon>
-									</Button>
+									</ActionIcon>
 								</div>
 							)}
 						</CharacterCardExtra>
