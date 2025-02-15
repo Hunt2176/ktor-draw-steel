@@ -2,11 +2,10 @@ import 'src/App.scss'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@mantine/core/styles.css';
 
-import { Card, createTheme, MantineProvider } from "@mantine/core";
+import { Card, createTheme, MantineProvider, Modal } from "@mantine/core";
 import { ModalsProvider } from "@mantine/modals";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import { CloseButton, Modal } from "react-bootstrap";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { CampaignDetail } from "src/routes/campaign_detail/page.tsx";
@@ -14,7 +13,6 @@ import { CampaignPage } from "src/routes/campaigns/page.tsx";
 import { CharacterPage } from "src/routes/characters/page.tsx";
 import { CombatPage } from "src/routes/combat/page.tsx";
 import { HomePage } from "src/routes/home/page.tsx";
-import { CampaignWatcher } from "src/services/campaign_watcher.tsx";
 import { CampaignContext, CharacterContext, ErrorContext } from "src/services/contexts.ts";
 import { CampaignDetails, Character } from "src/types/models.ts";
 
@@ -40,18 +38,14 @@ const App = () => {
 			<QueryClientProvider client={queryClient}>
 				<ModalsProvider>
 					<ErrorContext.Provider value={errorController}>
-						<Modal show={errorController[0] != null}>
-							<Modal.Header>
-								<Modal.Title>Error</Modal.Title>
-								<CloseButton onClick={() => errorController[1](undefined)}></CloseButton>
-							</Modal.Header>
-							<Modal.Body>{errorController[0]?.toString()}</Modal.Body>
+						<Modal title={'Error'}
+						       opened={errorController[0] != null}
+						       onClose={() => errorController[1](undefined)}>
+							{errorController[0]?.toString()}
 						</Modal>
-						<CampaignContext.Provider value={campaignController}>
-							<CharacterContext.Provider value={characterController}>
-								<RouterEl/>
-							</CharacterContext.Provider>
-						</CampaignContext.Provider>
+						<Modal.Stack>
+							<RouterEl/>
+						</Modal.Stack>
 					</ErrorContext.Provider>
 				</ModalsProvider>
 			</QueryClientProvider>

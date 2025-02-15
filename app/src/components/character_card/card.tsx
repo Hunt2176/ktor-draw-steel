@@ -1,8 +1,7 @@
-import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text } from "@mantine/core";
-import { useInputState } from "@mantine/hooks";
-import { modals } from "@mantine/modals";
+import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal } from "@mantine/core";
+import { useDisclosure, useInputState } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useCallback, useContext, useMemo, useRef, useState } from "react";
+import React, { useContext, useMemo, useRef, useState } from "react";
 import { CharacterEditor, CharacterEditorCore } from "src/components/character_editor/character_editor.tsx";
 import { usePromise } from "src/hooks/promise_hook.ts";
 import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "src/services/api.ts";
@@ -12,6 +11,8 @@ import { toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "src/utils.ts
 
 
 export interface CharacterCardProps {
+	stackId?: string,
+	uploadStackId?: string,
 	onPortraitClick?: () => void;
 	character: Character;
 	type: CharacterCardType | undefined;
@@ -42,23 +43,16 @@ type ModificationMutationUpdate<T extends ModificationKeys> = {
 	update: ModificationType[T];
 }
 
-export function CharacterCard({ character, type = 'full', children, onPortraitClick }: CharacterCardProps) {
+export function CharacterCard({ stackId, uploadStackId, character, type = 'full', children, onPortraitClick }: CharacterCardProps) {
 	const queryClient = useQueryClient();
 	
 	const hpRef = useRef<HTMLDivElement | null>(null);
-	
-	const editorModalId = useRef<string>();
+	const [editorOpened, editorOpenedHandler] = useDisclosure(false);
 	
 	const hp = useMemo(() => Character.getHp(character), [character]);
 	const recoveries = useMemo(() => Character.getRecoveries(character), [character]);
 	
 	const [_, setError] = useContext(ErrorContext);
-	
-	const closeEditorModal = () => {
-		if (editorModalId.current) {
-			modals.close(editorModalId.current);
-		}
-	};
 	
 	const saveMutation = useMutation({
 		mutationFn: (toSave: Partial<CharacterEditorCore>) => {
@@ -66,7 +60,7 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 		},
 		onSuccess: (res) =>{
 			queryClient.setQueryData(['character', character.id], res);
-			closeEditorModal();
+			editorOpenedHandler.close();
 		},
 		onError: setError
 	});
@@ -357,31 +351,25 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 		}
 	}, [type, fullCard, tileCard]);
 	
-	const openEditorModal = useCallback(() => {
-		if (editorModalId.current) {
-			modals.close(editorModalId.current);
-		}
-		
-		return editorModalId.current = modals.open({
-			title: <span>Edit</span>,
-			withCloseButton: true,
-			closeOnClickOutside: false,
-			children: (
-				<CharacterEditor character={character} onSubmit={(e) => {
+	const editorModal = useMemo(() => {
+		return <>
+			<Modal stackId={stackId} opened={editorOpened} onClose={editorOpenedHandler.close}>
+				<CharacterEditor uploadStackId={uploadStackId} character={character} onSubmit={(e) => {
 					saveMutation.mutate(e)
 				}}></CharacterEditor>
-			)
-		});
-	}, [character, saveMutation]);
+			</Modal>
+		</>;
+	}, [character, saveMutation, stackId, uploadStackId, editorOpened]);
 	
 	const extraParams: CharacterCardExtras = useMemo(() => {
 		return {
-			edit: () => openEditorModal()
+			edit: editorOpenedHandler.open
 		};
-	}, [openEditorModal]);
+	}, [editorOpenedHandler.open]);
 	
 	return (
 		<>
+			{editorModal}
 			<CharacterCardExtrasContext.Provider value={extraParams}>
 				{card}
 			</CharacterCardExtrasContext.Provider>

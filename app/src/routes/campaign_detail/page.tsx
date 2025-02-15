@@ -1,7 +1,7 @@
 import { faFile, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useContext, useMemo, useRef, useState } from "react";
+import { Fragment, useContext, useId, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Anchored } from "src/components/anchored.tsx";
 import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
@@ -12,11 +12,13 @@ import { CharacterEditor } from "src/components/character_editor/character_edito
 import { createCharacter, createCombat, CreateCombatUpdate, deleteCombat, updateCampaign } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character, Combat } from "src/types/models.ts";
-import { ActionIcon, Button, Card, Flex, Modal, Text, Image, Title, Stack, Group, Divider, Box } from "@mantine/core";
+import { ActionIcon, Button, Card, Flex, Modal, Text, Image, Title, Stack, Group, Divider, Box, useModalsStack } from "@mantine/core";
 import Element = React.JSX.Element;
 
 export function CampaignDetail() {
 	const queryClient = useQueryClient();
+	
+	const stack = useModalsStack(['character-editor', 'upload-modal']);
 	
 	const [newCharacter, setNewCharacter] = useState(false);
 	const [newCombat, setNewCombat] = useState(false);
@@ -107,9 +109,11 @@ export function CampaignDetail() {
 		const model = Character.new();
 		
 		return (
-			<Modal opened={newCharacter} title={'New Character'} onClose={() => setNewCharacter(false)}>
-				<CharacterEditor character={model} onSubmit={saveCharacterMutation.mutateAsync}></CharacterEditor>
-			</Modal>
+			<Modal.Stack>
+				<Modal stackId={'character-editor'} opened={newCharacter} title={'New Character'} onClose={() => setNewCharacter(false)}>
+					<CharacterEditor uploadStackId={'upload-modal'} character={model} onSubmit={saveCharacterMutation.mutateAsync}></CharacterEditor>
+				</Modal>
+			</Modal.Stack>
 		);
 	}, [newCharacter, saveCharacterMutation.mutateAsync]);
 	
