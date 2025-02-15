@@ -192,7 +192,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				<Stack gap={'xs'}>
 					<Grid>
 						{ children?.left &&
-							<GridCol span={'content'}>
+							<GridCol span={'auto'}>
 								{children.left}
 							</GridCol>
 						}
@@ -216,7 +216,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 						</GridCol>
 						{
 							children?.right &&
-							<GridCol span={'content'}>
+							<GridCol span={'auto'}>
 								{children.right}
 							</GridCol>
 						}

@@ -11,7 +11,7 @@ import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/ho
 import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatModification, updateCombatRound } from "src/services/api.ts";
 import { Character, Combatant } from "src/types/models.ts";
 import { parseIntOrUndefined } from "src/utils.ts";
-import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title } from "@mantine/core";
+import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon } from "@mantine/core";
 
 export interface CombatPageProps {
 
@@ -146,11 +146,11 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 							{{
 								[available ? 'right' : 'left']: (
 									<CharacterCardExtra>
-										<Box>
-											<Button onClick={() => activeCombatantMutation.mutate({ combatant, active: !combatant.available })}>
+										<Group justify={available ? 'end' : 'start'}>
+											<ActionIcon onClick={() => activeCombatantMutation.mutate({ combatant, active: !combatant.available })}>
 												<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft} />
-											</Button>
-										</Box>
+											</ActionIcon>
+										</Group>
 									</CharacterCardExtra>
 								),
 								bottom: (
