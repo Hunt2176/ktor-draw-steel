@@ -2,7 +2,7 @@ import 'src/App.scss'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@mantine/core/styles.css';
 
-import { MantineProvider } from "@mantine/core";
+import { Card, createTheme, MantineProvider } from "@mantine/core";
 import { ModalsProvider } from "@mantine/modals";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
@@ -25,8 +25,18 @@ const App = () => {
 	const characterController = useState<Character>();
 	const errorController = useState<Object | unknown | undefined>();
 	
+	const theme = createTheme({
+		components: {
+			Card: Card.extend({
+				classNames: {
+					root: 'blur'
+				}
+			})
+		}
+	});
+	
 	return <>
-		<MantineProvider>
+		<MantineProvider theme={theme}>
 			<QueryClientProvider client={queryClient}>
 				<ModalsProvider>
 					<ErrorContext.Provider value={errorController}>

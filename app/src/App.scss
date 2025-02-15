@@ -1,19 +1,28 @@
+@use 'mantine' as mantine;
+
 .clickable {
   cursor: pointer;
 }
 
-.flex-1 {
-  flex: 1 !important;
+.blur {
+  @include mantine.light {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  @include mantine.dark {
+    background: rgba(28, 28, 30, 0.7);
+  }
+
+  backdrop-filter: blur(10px);
 }
 
-.flex-2 {
-  flex: 2 !important;
+$anchor-radius: 8px;
+
+.left-anchored {
+  border-top-right-radius: $anchor-radius;
+  border-bottom-right-radius: $anchor-radius;
 }
 
-.flex-3 {
-  flex: 3 !important;
-}
-
-.flex-4 {
-  flex: 4 !important;
+.right-anchored {
+  border-top-left-radius: $anchor-radius;
+  border-bottom-left-radius: $anchor-radius;
 }

@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useContext, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Anchored } from "src/components/anchored.tsx";
 import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
 import { UploadModal } from "src/components/upload-modal.tsx";
 import { useCampaign, useCombatsForCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
@@ -11,7 +12,7 @@ import { CharacterEditor } from "src/components/character_editor/character_edito
 import { createCharacter, createCombat, CreateCombatUpdate, deleteCombat, updateCampaign } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character, Combat } from "src/types/models.ts";
-import { ActionIcon, Button, Card, Flex, Modal, Text, Image, Title, Stack, Group, Divider } from "@mantine/core";
+import { ActionIcon, Button, Card, Flex, Modal, Text, Image, Title, Stack, Group, Divider, Box } from "@mantine/core";
 import Element = React.JSX.Element;
 
 export function CampaignDetail() {
@@ -174,12 +175,12 @@ export function CampaignDetail() {
 	const combatElements = useMemo(() => {
 		return <>
 			<Stack>
-				<Group align={'center'} mb={2}>
-					<Title order={3}>Combats</Title>
+				<Anchored position={'left'}>
+					<Title display={'inline-block'} pr={8} order={3}>Combats</Title>
 					<ActionIcon onClick={() => setNewCombat(true)}>
 						<FontAwesomeIcon icon={faPlus}/>
 					</ActionIcon>
-				</Group>
+				</Anchored>
 				<Flex>
 					{combats.map((combat) => {
 						return (
@@ -223,9 +224,9 @@ export function CampaignDetail() {
 			return acc;
 		}, new Array<Element[]>())
 			.map((row, index) => (
-				<Flex flex={1} direction={'column'} key={index}>
+				<Stack key={index}>
 					{row.map((el) => (el))}
-				</Flex>
+				</Stack>
 			));
 	}, [campaign, navigate]);
 	
@@ -233,26 +234,26 @@ export function CampaignDetail() {
 		campaign &&
 	    <Stack>
 	      <Flex flex={1}>
-          <Flex justify={'space-between'} w={'100%'}>
-            <Title order={2}>{campaign.campaign.name}</Title>
+          <Anchored position={'left'}>
+            <Title display={'inline-block'} pr={8} order={2}>{campaign.campaign.name}</Title>
 	          <ActionIcon onClick={() => setShowBackgroundUpload(true)} variant={'outline'}>
 			          <FontAwesomeIcon icon={faFile} />
 	          </ActionIcon>
-          </Flex>
+          </Anchored>
 	      </Flex>
 	      {combatElements}
 	      <Stack flex={3}>
-		      <Group>
-			      <Title order={3}>Characters</Title>
+		      <Anchored position={'left'}>
+			      <Title display={'inline-block'} pr={8} order={3}>Characters</Title>
 			      <ActionIcon onClick={() => setNewCharacter(true)}>
 					      <FontAwesomeIcon icon={faPlus} />
 			      </ActionIcon>
-		      </Group>
-          <Flex>
+		      </Anchored>
+          <Group align={'start'}>
 						{characterElements?.map((row) => (
 							row
 						))}
-          </Flex>
+          </Group>
 	      </Stack>
 	    </Stack>
 	), [campaign, characterElements, combatElements]);

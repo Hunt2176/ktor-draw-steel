@@ -10,8 +10,6 @@ import { ErrorContext } from "src/services/contexts.ts";
 import { Character } from "src/types/models.ts";
 import { toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "src/utils.ts";
 
-import 'src/components/character_card/card.scss';
-
 
 export interface CharacterCardProps {
 	onPortraitClick?: () => void;
@@ -151,7 +149,7 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 	}, [recoveries.percent, recoveries.current, recoveries.max]);
 	
 	const fullCard = useMemo(() => (
-			<Card withBorder shadow={'xs'} className={'character-card'} style={{width: '15rem'}}>
+			<Card withBorder shadow={'xs'} style={{width: '15rem'}}>
 				<Card.Section withBorder>
 					<div style={{position: 'relative'}}>
 						<Image onClick={onPortraitClick} src={character.pictureUrl ?? undefined}></Image>
@@ -196,7 +194,7 @@ export function CharacterCard({ character, type = 'full', children, onPortraitCl
 	
 	const tileCard = useMemo(() => {
 		return (
-			<Card>
+			<Card classNames={{root: 'blur'}}>
 				<Stack gap={'xs'}>
 					<Grid>
 						{ children?.left &&
