@@ -1,9 +1,9 @@
-import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useDisclosure } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useId, useMemo, useRef, useState } from "react";
-import { Button, Card, CardTitle, CloseButton, FormCheck, FormControl, FormGroup, FormLabel, FormText, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { CharacterCard, CharacterCardExtra } from "src/components/character_card/card.tsx";
 import { CharacterConditions } from "src/components/character_conditions.tsx";
 import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
@@ -11,8 +11,7 @@ import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/ho
 import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatModification, updateCombatRound } from "src/services/api.ts";
 import { Character, Combatant } from "src/types/models.ts";
 import { parseIntOrUndefined } from "src/utils.ts";
-
-import './page.scss';
+import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title } from "@mantine/core";
 
 export interface CombatPageProps {
 
@@ -23,10 +22,10 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	
-	const [showNextRound, setShowNextRound] = useState(false);
-	const [showModifyCharacters, setShowModifyCharacters] = useState(false);
+	const [showNextRound, showNextRoundHandler] = useDisclosure(false);
+	const [showModifyCharacters, showModifyCharactersHandler] = useDisclosure(false);
 	
-	const [showQuickAdd, setShowQuickAdd] = useState(false);
+	const [showQuickAdd, showQuickAddHandler] = useDisclosure(false);
 	const [quickAddConfig, setQuickAddConfig] = useState<Partial<Character>>({});
 	
 	const clearRoundId = useId();
@@ -51,7 +50,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		mutationFn: (character: Partial<Character>) => {
 			return quickAddCombatant(id, { character: {name: character.name!, maxHp: character.maxHp!, user: 1} });
 		},
-		onSuccess: async (combat) => {
+		onSuccess: async () => {
 			await queryClient.invalidateQueries({
 				queryKey: ['campaign', campaign?.campaign.id]
 			});
@@ -59,7 +58,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				queryKey: ['combat', id]
 			});
 			
-			setShowQuickAdd(false);
+			showQuickAddHandler.close();
 		}
 	});
 	
@@ -72,7 +71,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 			return updateCombatRound(combat.id, { fromRound: combat.round, reset: true, updateConditions: clearRoundOnly });
 		},
 		onSuccess: async (update) => {
-			setShowNextRound(false);
+			showNextRoundHandler.close();
 			queryClient.setQueryData(['combat', id], update);
 			await queryClient.invalidateQueries({
 				queryKey: ['campaign', campaign?.campaign.id]
@@ -102,7 +101,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 			return updateCombatModification(combat.id, mod);
 		},
 		onSuccess: (update) => {
-			setShowModifyCharacters(false);
+			showModifyCharactersHandler.close();
 			queryClient.setQueryData(['combat', id], update);
 		}
 	});
@@ -136,9 +135,9 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	const characterDisplay = useMemo(() => {
 		
 		const getDisplay = (available: boolean) => (
-			<div className={'d-flex flex-column flex-1'}>
+			<Stack gap={2}>
 				<Card>
-					<CardTitle className={'d-flex justify-content-center my-2'}>{available ? 'Available' : 'Unavailable'}</CardTitle>
+					<Title ta={'center'} order={3}>{available ? 'Available' : 'Unavailable'}</Title>
 				</Card>
 				{availableMap?.get(available)?.map(c => {
 					const combatant = combatantMap.get(c.id);
@@ -147,32 +146,36 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 							{{
 								[available ? 'right' : 'left']: (
 									<CharacterCardExtra>
-										<div className={'d-flex flex-column justify-content-between align-content-center m-1'}>
+										<Box>
 											<Button onClick={() => activeCombatantMutation.mutate({ combatant, active: !combatant.available })}>
 												<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft} />
 											</Button>
-										</div>
+										</Box>
 									</CharacterCardExtra>
 								),
 								bottom: (
 									<CharacterCardExtra>
-										<div className="m-1">
+										<Box>
 											<CharacterConditions editing={true} character={c} />
-										</div>
+										</Box>
 									</CharacterCardExtra>
 								)
 							}}
 						</CharacterCard>
 					)}
 				)}
-			</div>
+			</Stack>
 		);
 		
 		return (
-			<div className={'d-flex combatant-container'}>
-				{getDisplay(true)}
-				{getDisplay(false)}
-			</div>
+			<Grid align={'start'} variant={'fluid'} gutter={2}>
+				<GridCol span={'auto'}>
+					{getDisplay(true)}
+				</GridCol>
+				<GridCol span={'auto'}>
+					{getDisplay(false)}
+				</GridCol>
+			</Grid>
 		);
 	}, [availableMap, activeCombatantMutation, combatantMap, navigate]);
 	
@@ -210,22 +213,18 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		}
 		
 		return <>
-			<Modal show={showModifyCharacters}>
-				<ModalHeader>
-					<ModalTitle>Modify</ModalTitle>
-					<CloseButton onClick={() => setShowModifyCharacters(false)}></CloseButton>
-				</ModalHeader>
-				<ModalBody>
-					<CharacterSelector onChange={(e) => modCharacterAfter.current = e}
-					                   characters={campaign.characters}
-					                   selected={modCharacterBefore.current}/>
-				</ModalBody>
-				<ModalFooter>
-					<Button variant="secondary" onClick={() => {
-						setShowModifyCharacters(false);
+			<Modal title={'Modify'} opened={showModifyCharacters} onClose={showModifyCharactersHandler.close}>
+				<CharacterSelector onChange={(e) => modCharacterAfter.current = e}
+				                   characters={campaign.characters}
+				                   selected={modCharacterBefore.current}/>
+				
+				<Divider my={'md'} />
+				<Group justify={'end'}>
+					<Button color="gray" onClick={() => {
+						showModifyCharactersHandler.close();
 					}}>Cancel</Button>
 					<Button onClick={() => submit()}>Submit</Button>
-				</ModalFooter>
+				</Group>
 			</Modal>
 		</>;
 	}, [combat, campaign, showModifyCharacters]);
@@ -236,78 +235,66 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	
 	return <>
 		{modifyCharacterModal}
-		<Modal show={showQuickAdd} onShow={() => setQuickAddConfig({})}>
-			<ModalHeader>
-				<ModalTitle>Quick Add</ModalTitle>
-				<CloseButton onClick={() => setShowQuickAdd(false)}></CloseButton>
-			</ModalHeader>
-			<ModalBody>
-				<FormGroup controlId={`${id}-quickAdd-name`}>
-					<FormLabel>
-						Name
-					</FormLabel>
-					<FormControl value={quickAddConfig['name'] ?? ''}
-					             onChange={(e) => setQuickAddConfig({...quickAddConfig, name: e.target.value})}></FormControl>
-				</FormGroup>
-				<FormGroup>
-					<FormLabel>
-						Max HP
-					</FormLabel>
-					<FormControl type={'number'} min={0} value={quickAddConfig['maxHp'] ?? ''}
-					             onChange={(e) => setQuickAddConfig({...quickAddConfig, maxHp: parseIntOrUndefined(e.target.value)})}></FormControl>
-				</FormGroup>
-			</ModalBody>
-			<ModalFooter>
+		<Modal title={'Quick Add'} opened={showQuickAdd} onClose={showQuickAddHandler.close} onEnterTransitionEnd={() => setQuickAddConfig({})}>
+			<TextInput label="Name" value={quickAddConfig['name'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, name: e.target.value})} />
+			<TextInput label={'Max HP'} type={'number'} min={0} value={quickAddConfig['maxHp'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, maxHp: parseIntOrUndefined(e.target.value)})} />
+			<Divider my={'md'} />
+			<Group justify={'end'}>
 				<Button disabled={quickAddConfig['name'] == null || quickAddConfig['maxHp'] == null}
 					onClick={() => {
 					quickAddMutation.mutate(quickAddConfig);
 				}}>Submit</Button>
-			</ModalFooter>
+			</Group>
 		</Modal>
-		<Modal show={showNextRound}>
-			<ModalHeader>
-				<ModalTitle>
-					Advance to round {combat.round + 1}
-				</ModalTitle>
-			</ModalHeader>
-			<ModalBody>
-					<FormCheck label="Clear round only conditions"
-					           id={clearRoundId}
-					           checked={clearRoundOnly}
-					           onChange={(e) => setClearRoundOnly(e.target.checked)}/>
-			</ModalBody>
-			<ModalFooter>
-				<Button variant="secondary" onClick={() => setShowNextRound(false)}>Cancel</Button>
+		
+		<Modal title={`Advance to round ${combat.round + 1}`} opened={showNextRound} onClose={showNextRoundHandler.close}>
+			<Checkbox label={'Clear round only conditions'} id={clearRoundId} checked={clearRoundOnly} onChange={(e) => setClearRoundOnly(e.target.checked)} />
+			
+			<Divider my={'md'} />
+			<Group justify={'end'}>
+				<Button color="gray" onClick={showNextRoundHandler.close}>Cancel</Button>
 				<Button onClick={() => {
 					nextRoundMutation.mutate();
 				}}>Continue</Button>
-			</ModalFooter>
+			</Group>
 		</Modal>
 		
-		<div className={'m-2'}>
-			<Card className={'mb-2'}>
-				<CardTitle className={'d-flex justify-content-between m-2'}>
-					<div className={'col-4 d-flex justify-content-start align-items-center'}>
-						<Button onClick={() => setShowModifyCharacters(true)} variant="outline-secondary">Modify</Button>
-						<Button onClick={() => setShowQuickAdd(true)} variant="outline-secondary" className={'ms-2'}>Quick Add</Button>
-					</div>
-					<div className={'col-4 d-flex flex-column justify-content-center align-items-center'}>
-						<Link to={`/campaigns/${campaign.campaign.id}`}>
+		<Box m={2}>
+			<Card mb={2}>
+				<Group justify={'space-between'}>
+					<Stack gap={2} justify={'stretch'}>
+						<Button variant={'outline'} color={'dark'} onClick={showModifyCharactersHandler.open}>Modify</Button>
+						<Button variant={'outline'} color={'dark'} onClick={showQuickAddHandler.open}>Quick Add</Button>
+					</Stack>
+					<Stack justify={'center'} gap={2}>
+						<Button component={'a'}
+						        size={'lg'}
+						        color={'dark'}
+						        variant={'subtle'}
+						        href={`/campaigns/${campaign.campaign.id}`}
+						        onClick={(e) => {
+											e.preventDefault();
+											
+											const url = `/campaigns/${campaign.campaign.id}`;
+											if (e.metaKey || e.ctrlKey) {
+												window.open(url, '_blank');
+												return;
+											}
+							        navigate(url);
+						        }}>
 							{campaign.campaign.name}
-						</Link>
-						<span>
-							Round {combat.round}
-						</span>
-					</div>
-					<div className={'col-4 d-flex justify-content-end alight-items-center'}>
-						<Button onClick={() => setShowNextRound(true)}>
-							<span className={'me-2'}>Next Round</span>
+						</Button>
+						<Text ta={'center'} fw={700}>Round {combat.round}</Text>
+					</Stack>
+					<Box>
+						<Button onClick={showNextRoundHandler.open}>
+							<Text mr={2}>Next Round</Text>
 							<FontAwesomeIcon icon={faArrowRight}></FontAwesomeIcon>
 						</Button>
-					</div>
-				</CardTitle>
+					</Box>
+				</Group>
 			</Card>
 			{characterDisplay}
-		</div>
+		</Box>
 	</>
 }
