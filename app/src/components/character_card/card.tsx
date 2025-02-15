@@ -7,7 +7,7 @@ import { usePromise } from "src/hooks/promise_hook.ts";
 import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character } from "src/types/models.ts";
-import { toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "src/utils.ts";
+import { parseIntOrUndefined, toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "src/utils.ts";
 
 
 export interface CharacterCardProps {
@@ -230,21 +230,21 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 		}, [hpBar, recoveriesBar, children?.left, children?.right, character.pictureUrl, character.name, children?.bottom, onPortraitClick]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
-		const [modHp, setModHp] = useInputState<number | string>(0);
-		const [tempHp, setTempHp] = useInputState<number | string>(character.temporaryHp);
-		const [modRecoveries, setModRecoveries] = useInputState<number | string>(0);
+		const [modHp, setModHp] = useInputState<number | string>('');
+		const [tempHp, setTempHp] = useInputState<number | string>(character.temporaryHp == 0 ? '' : character.temporaryHp);
+		const [modRecoveries, setModRecoveries] = useInputState<number | string>('');
 		
 		const [updatePromise, setUpdatePromise] = useState<Promise<unknown>>();
 		
 		const promiseState = usePromise(updatePromise);
 		
 		function saveTempHp() {
-			const tempHp = parseInt(modHp as string);
-			if (tempHp == null || isNaN(tempHp) || tempHp === character.temporaryHp || tempHp < 0) {
+			const toSet = parseIntOrUndefined(tempHp);
+			if (toSet == null || toSet === character.temporaryHp || toSet < 0) {
 				return;
 			}
 			
-			const p = saveMutation.mutateAsync({ temporaryHp: tempHp });
+			const p = saveMutation.mutateAsync({ temporaryHp: toSet });
 			setUpdatePromise(p);
 		}
 		
