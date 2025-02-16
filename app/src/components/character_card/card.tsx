@@ -87,7 +87,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				: 'red';
 		
 		const label = <>
-			<Text c={color} ta="center" fw={700} size={'lg'} ref={hpRef}>
+			<Text c={color} ta="center" fw={700} size={'lg'} ref={hpRef} style={{textShadow: '0px 0px 2px rgba(0,0,0,0.3)'}}>
 				{hp.current}/{hp.max}
 			</Text>
 		</>
@@ -118,7 +118,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 	const recoveriesBar = useMemo(() => {
 		const ring = (
 			<RingProgress
-				label={<Text c={'blue'} ta="center" fw={700} size={'lg'}>{recoveries.current}/{recoveries.max}</Text>}
+				label={<Text style={{textShadow: '0px 0px 2px rgba(0,0,0,0.3)'}} c={'blue'} ta="center" fw={700} size={'lg'}>{recoveries.current}/{recoveries.max}</Text>}
 				size={100}
 				transitionDuration={250}
 				sections={[
@@ -188,7 +188,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 	
 	const tileCard = useMemo(() => {
 		return (
-			<Card classNames={{root: 'blur'}}>
+			<Card>
 				<Stack gap={'xs'}>
 					<Grid>
 						{ children?.left &&
