@@ -2,7 +2,7 @@ import 'src/App.scss'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@mantine/core/styles.css';
 
-import { Card, createTheme, MantineProvider, Modal } from "@mantine/core";
+import { Card, ColorSchemeScript, createTheme, MantineProvider, Modal, Popover, useMantineColorScheme } from "@mantine/core";
 import { ModalsProvider } from "@mantine/modals";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
@@ -13,14 +13,11 @@ import { CampaignPage } from "src/routes/campaigns/page.tsx";
 import { CharacterPage } from "src/routes/characters/page.tsx";
 import { CombatPage } from "src/routes/combat/page.tsx";
 import { HomePage } from "src/routes/home/page.tsx";
-import { CampaignContext, CharacterContext, ErrorContext } from "src/services/contexts.ts";
-import { CampaignDetails, Character } from "src/types/models.ts";
+import { ErrorContext } from "src/services/contexts.ts";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-	const campaignController = useState<CampaignDetails>();
-	const characterController = useState<Character>();
 	const errorController = useState<Object | unknown | undefined>();
 	
 	const theme = createTheme({
@@ -29,12 +26,18 @@ const App = () => {
 				classNames: {
 					root: 'blur'
 				}
+			}),
+			Popover: Popover.extend({
+				classNames: {
+					dropdown: 'blur'
+				}
 			})
 		}
 	});
 	
 	return <>
-		<MantineProvider theme={theme}>
+		<ColorSchemeScript defaultColorScheme={'dark'}/>
+		<MantineProvider defaultColorScheme={'dark'} theme={theme}>
 			<QueryClientProvider client={queryClient}>
 				<ModalsProvider>
 					<ErrorContext.Provider value={errorController}>

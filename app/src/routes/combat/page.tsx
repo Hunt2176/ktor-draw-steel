@@ -11,7 +11,7 @@ import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/ho
 import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatModification, updateCombatRound } from "src/services/api.ts";
 import { Character, Combatant } from "src/types/models.ts";
 import { parseIntOrUndefined } from "src/utils.ts";
-import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon } from "@mantine/core";
+import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme } from "@mantine/core";
 
 export interface CombatPageProps {
 
@@ -21,6 +21,8 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	const params = useParams();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
+	
+	const { colorScheme } = useMantineColorScheme();
 	
 	const [showNextRound, showNextRoundHandler] = useDisclosure(false);
 	const [showModifyCharacters, showModifyCharactersHandler] = useDisclosure(false);
@@ -263,13 +265,13 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 			<Card mb={2}>
 				<Group justify={'space-between'}>
 					<Stack gap={2} justify={'stretch'}>
-						<Button variant={'outline'} color={'dark'} onClick={showModifyCharactersHandler.open}>Modify</Button>
-						<Button variant={'outline'} color={'dark'} onClick={showQuickAddHandler.open}>Quick Add</Button>
+						<Button variant={'outline'} color={colorScheme === 'dark' ? 'gray' : 'dark'} onClick={showModifyCharactersHandler.open}>Modify</Button>
+						<Button variant={'outline'} color={colorScheme === 'dark' ? 'gray' : 'dark'} onClick={showQuickAddHandler.open}>Quick Add</Button>
 					</Stack>
 					<Stack justify={'center'} gap={2}>
 						<Button component={'a'}
 						        size={'lg'}
-						        color={'dark'}
+						        color={colorScheme === 'dark' ? 'gray' : 'dark'}
 						        variant={'subtle'}
 						        href={`/campaigns/${campaign.campaign.id}`}
 						        onClick={(e) => {
