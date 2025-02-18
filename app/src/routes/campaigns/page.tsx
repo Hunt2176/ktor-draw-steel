@@ -1,4 +1,4 @@
-import { Button, Table } from "react-bootstrap";
+import { Button, Table } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { useCampaignList } from "src/hooks/api_hooks.ts";
 import { CampaignDetails } from "src/types/models.ts";

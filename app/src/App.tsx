@@ -1,5 +1,4 @@
 import 'src/App.scss'
-import 'bootstrap/dist/css/bootstrap.min.css';
 import '@mantine/core/styles.css';
 
 import { Card, ColorSchemeScript, createTheme, MantineProvider, Modal, Popover, useMantineColorScheme } from "@mantine/core";
