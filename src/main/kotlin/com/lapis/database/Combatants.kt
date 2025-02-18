@@ -1,7 +1,12 @@
 package com.lapis.database
 
+import com.lapis.database.base.BaseRepository
+import com.lapis.database.base.BaseRepositoryEntityMapper
 import com.lapis.database.base.FromJson
 import com.lapis.database.base.HasDTO
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
@@ -11,7 +16,61 @@ import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ReferenceOption
+
+class CombatantRepository(database: Database) : BaseRepository<ExposedCombatant, ExposedCombatant.Companion>(
+	ExposedCombatant, database, BaseRepositoryEntityMapper(
+		{ this.toDTO() },
+		{ this.customizeFromJson(it) }
+	)
+) {
+	override fun Route.additionalRouteSetup()
+	{
+		patch("{id}/resources") {
+			call.respond(consumeModification(ModifyType.RESOURCES))
+		}
+		
+		patch("{id}/surges") {
+			call.respond(consumeModification(ModifyType.SURGES))
+		}
+	}
+	
+	private suspend fun RoutingContext.consumeModification(type: ModifyType): CombatantDTO {
+		val id = call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")
+		val request = call.receive<CombatantValueModificationRequest>()
+		val modifyBy = when (request.type) {
+			CombatantValueModificationRequest.Type.INCREASE -> request.value
+			CombatantValueModificationRequest.Type.DECREASE -> -request.value
+		}
+		
+		return transaction {
+			val combatant = ExposedCombatant.findById(id) ?: error("Combatant not found")
+			when (type) {
+				ModifyType.RESOURCES -> combatant.resources = (combatant.resources + modifyBy).coerceAtLeast(0)
+				ModifyType.SURGES -> combatant.surges = (combatant.surges + modifyBy).coerceAtLeast(0)
+			}
+			
+			combatant.toDTO()
+		}
+	}
+	
+	@Serializable
+	private data class CombatantValueModificationRequest(
+		val value: Int,
+		val type: Type
+	) {
+		enum class Type {
+			INCREASE,
+			DECREASE
+		}
+	}
+	
+	enum class ModifyType {
+		RESOURCES,
+		SURGES
+	}
+}
 
 object Combatants : IntIdTable()
 {

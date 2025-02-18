@@ -1,6 +1,6 @@
 import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useFocusTrap, useInputState, useMap } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useId, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,10 +8,10 @@ import { CharacterCard, CharacterCardExtra } from "src/components/character_card
 import { CharacterConditions } from "src/components/character_conditions.tsx";
 import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
 import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/hooks/api_hooks.ts";
-import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatModification, updateCombatRound } from "src/services/api.ts";
+import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "src/services/api.ts";
 import { Character, Combatant } from "src/types/models.ts";
 import { parseIntOrUndefined } from "src/utils.ts";
-import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme } from "@mantine/core";
+import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput } from "@mantine/core";
 
 export interface CombatPageProps {
 
@@ -108,6 +108,17 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		}
 	});
 	
+	const combatantUpdateMutation = useMutation({
+		mutationFn: (update: Parameters<typeof updateCombatantValue>) => {
+			return updateCombatantValue(...update);
+		},
+		onSuccess: async (update) => {
+			await queryClient.invalidateQueries({
+				queryKey: ['combat', combat?.id]
+			})
+		}
+	});
+	
 	// Maps Character ID to Combatant
 	const combatantMap = useMemo(() => {
 		const map = new Map<number, Combatant>();
@@ -134,6 +145,39 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		}, new Map<boolean, Character[]>());
 	}, [campaign?.characters, combat?.combatants]);
 	
+	function CombatantValueUpdate({combatantId, name, valueKey}: { combatantId: number, name?: string, valueKey: 'resources' | 'surges' }) {
+		const [value, setValue] = useInputState<number | string>('');
+		
+		const toDisplay = useMemo(() => valueKey === 'resources' ? name ?? 'Resources' : 'Surges', [valueKey, name]);
+		
+		const execute = (type: 'increase' | 'decrease') => {
+			const toUpdate = parseIntOrUndefined(value);
+			if (toUpdate == null) return;
+			
+			combatantUpdateMutation.mutate([combatantId, { type, value: toUpdate, key: valueKey }]);
+		}
+		
+		return <>
+			<Stack>
+				<Stack>
+					<NumberInput label={`Modify ${toDisplay}`}
+					             value={value}
+					             min={0}
+					             autoFocus
+					             onChange={setValue}/>
+					<Button.Group>
+						<Button onClick={() => execute('increase')} color={'green'}>
+							Increase
+						</Button>
+						<Button onClick={() => execute('decrease')} color={'red'}>
+							Decrease
+						</Button>
+					</Button.Group>
+				</Stack>
+			</Stack>
+		</>
+	}
+	
 	const characterDisplay = useMemo(() => {
 		
 		const getDisplay = (available: boolean) => (
@@ -148,11 +192,53 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 							{{
 								[available ? 'right' : 'left']: (
 									<CharacterCardExtra>
-										<Group justify={available ? 'end' : 'start'}>
+										<Group mr={available ? 0 : 'xs'} ml={available ? 'xs' : 0} flex={available ? 1 : undefined} align={'start'} justify={available ? 'end' : 'start'}>
 											<ActionIcon onClick={() => activeCombatantMutation.mutate({ combatant, active: !combatant.available })}>
 												<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft} />
 											</ActionIcon>
 										</Group>
+									</CharacterCardExtra>
+								),
+								gauges: (
+									<CharacterCardExtra>
+										<Box style={{alignSelf: 'stretch'}}>
+											<Popover trapFocus withArrow>
+												<Popover.Target>
+													<Button color={'indigo'} variant={'subtle'} h={'auto'} fw={700}>
+														<Stack gap={0}>
+															<Text size={'lg'} fw={700}>
+																{c.resourceName ?? 'Resources'}
+															</Text>
+															<Text size={'lg'} fw={700}>
+																{combatant.resources}
+															</Text>
+														</Stack>
+													</Button>
+												</Popover.Target>
+												<Popover.Dropdown>
+													<CombatantValueUpdate combatantId={combatant.id} name={c.resourceName ?? undefined} valueKey={'resources'} />
+												</Popover.Dropdown>
+											</Popover>
+										</Box>
+										<Box style={{alignSelf: 'stretch'}}>
+											<Popover trapFocus withArrow>
+												<Popover.Target>
+													<Button style={{alignSelf: 'stretch'}} color={'blue'} variant={'subtle'} h={'auto'} fw={700}>
+														<Stack gap={0}>
+															<Text size={'lg'} fw={700}>
+																Surges
+															</Text>
+															<Text size={'lg'} fw={700}>
+																{combatant.surges}
+															</Text>
+														</Stack>
+													</Button>
+												</Popover.Target>
+												<Popover.Dropdown>
+													<CombatantValueUpdate combatantId={combatant.id} valueKey={'surges'} />
+												</Popover.Dropdown>
+											</Popover>
+										</Box>
 									</CharacterCardExtra>
 								),
 								bottom: (

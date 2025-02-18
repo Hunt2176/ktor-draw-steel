@@ -23,6 +23,7 @@ export interface CharacterCardChildren {
 	left?: CharacterCardElement;
 	right?: CharacterCardElement;
 	bottom?: CharacterCardElement;
+	gauges?: CharacterCardElement;
 }
 
 type CharacterCardElement = React.ReactElement<CharacterCardExtraProps, typeof CharacterCardExtra>;
@@ -175,6 +176,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 					<Group justify={'space-around'}>
 						{hpBar}
 						{recoveriesBar}
+						{ children?.gauges && children.gauges }
 					</Group>
 				</Card.Section>
 				{ children?.bottom &&
@@ -184,50 +186,41 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 					</>
 				}
 			</Card>
-	), [character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, character.pictureUrl, onPortraitClick]);
+	), [character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, children?.gauges, character.pictureUrl, onPortraitClick]);
 	
 	const tileCard = useMemo(() => {
 		return (
 			<Card>
 				<Stack gap={'xs'}>
-					<Grid>
+					<Group align={'stretch'} justify={'stretch'} wrap={'nowrap'} gap={0}>
 						{ children?.left &&
-							<GridCol span={'auto'}>
-								{children.left}
-							</GridCol>
+							children.left
 						}
-						<GridCol span={'content'}>
-							<Image onClick={onPortraitClick} radius={'xs'} w={100} fit={'cover'} style={{objectPosition: 'top'}} src={character.pictureUrl ?? undefined}></Image>
-						</GridCol>
-						<GridCol span={'content'}>
-							<Stack gap={0}>
-								<Text size={'xl'} fw={700}>
-									{character.name}
-								</Text>
-								<Grid>
-									<GridCol span={'content'}>
-										{hpBar}
-									</GridCol>
-									<GridCol span={'content'}>
-										{recoveriesBar}
-									</GridCol>
-								</Grid>
-							</Stack>
-						</GridCol>
+						<Image onClick={onPortraitClick} radius={'xs'} w={100} fit={'cover'} style={{objectPosition: 'top'}} src={character.pictureUrl ?? undefined}></Image>
+						<Stack gap={0}>
+							<Text size={'xl'} fw={700} pl={'xs'}>
+								{character.name}
+							</Text>
+							<Group gap={0}>
+								{hpBar}
+								{recoveriesBar}
+								{ children?.gauges &&
+									children.gauges
+								}
+							</Group>
+						</Stack>
 						{
 							children?.right &&
-							<GridCol span={'auto'}>
-								{children.right}
-							</GridCol>
+								children.right
 						}
-					</Grid>
+					</Group>
 					{ children?.bottom &&
 						children.bottom
 					}
 				</Stack>
 			</Card>
 		);
-		}, [hpBar, recoveriesBar, children?.left, children?.right, character.pictureUrl, character.name, children?.bottom, onPortraitClick]);
+		}, [hpBar, recoveriesBar, children?.left, children?.right, character.pictureUrl, character.name, children?.bottom, children?.gauges, onPortraitClick]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modHp, setModHp] = useInputState<number | string>('');

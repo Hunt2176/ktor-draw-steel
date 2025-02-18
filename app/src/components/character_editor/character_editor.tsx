@@ -28,7 +28,7 @@ export function CharacterEditor({ uploadStackId, character, onSubmit }: Characte
 	const { loading: submitLoading } = usePromise(submitPromise);
 	
 	function onEdit<K extends EditorKey>(key: K, value: CharacterEditorValue<K>) {
-		if (isNaN(value as any)) {
+		if (typeof value === 'number' && isNaN(value as any)) {
 			(value as any) = null;
 		}
 		
@@ -105,6 +105,10 @@ export function CharacterEditor({ uploadStackId, character, onSubmit }: Characte
 			<NumberInput label="Recoveries"
 			             value={wrapNumberValue(stateVars['maxRecoveries'][0])}
 			             onChange={(e) => onEdit('maxRecoveries', parseIntOrUndefined(e) ?? NaN)}/>
+			
+			<TextInput label="Resource Name"
+			           value={stateVars['resourceName'][0] ?? ''}
+			           onChange={(e) => onEdit('resourceName', e.target.value)}/>
 			
 			<Divider/>
 			{ stateVars['pictureUrl'][0] &&
