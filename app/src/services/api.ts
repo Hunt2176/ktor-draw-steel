@@ -253,6 +253,22 @@ export async function updateCombatantActive(id: number, available: boolean): Pro
 	return (await res.json()) as Combatant;
 }
 
+export async function updateCombatantValue(id: number, {key, value, type}: {key: 'resources' | 'surges', value: number, type: 'increase' | 'decrease'}) {
+	const res = await fetch(`/api/combatants/${id}/${key}`, {
+		method: 'PATCH',
+		body: JSON.stringify({ type: type.toUpperCase(), value }),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error(`Failed to update combatant ${key}`);
+	}
+	
+	return (await res.json()) as Combatant;
+}
+
 export async function listFiles() {
 	const res = await fetch('/files');
 	return (await res.json()) as { files: string[] };

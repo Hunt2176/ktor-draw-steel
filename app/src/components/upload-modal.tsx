@@ -1,9 +1,10 @@
+import { Button, Divider, FileButton, Group, Modal, useModalsStack } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
-import { ReactElement, useRef, useState } from "react";
-import { Button, CloseButton, Modal } from "react-bootstrap";
+import { ReactElement, useId, useRef, useState } from "react";
 import { uploadFile } from "src/services/api.ts";
 
 export interface UploadModalProps {
+	stackId?: string;
 	show: boolean;
 	onHide?: () => void;
 	accept?: string;
@@ -11,7 +12,7 @@ export interface UploadModalProps {
 	onComplete?: (fileName: string) => void;
 }
 
-export function UploadModal({ onComplete, onHide, show, accept, children }: UploadModalProps) {
+export function UploadModal({ stackId, onComplete, onHide, show, accept, children }: UploadModalProps) {
 	const [file, setFile] = useState<File | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	
@@ -47,27 +48,26 @@ export function UploadModal({ onComplete, onHide, show, accept, children }: Uplo
 	}
 	
 	return <>
-		<Modal show={show} onHide={() => onClose()} backdrop="static">
-			<Modal.Header>
-				<Modal.Title>Upload</Modal.Title>
-				<CloseButton onClick={() => onClose()} />
-			</Modal.Header>
-			<Modal.Body>
-				<input accept={accept} onChange={() => onFileChange()} className="d-none" ref={inputRef} type="file"/>
-				<div className="d-flex flex-column justify-content-center align-items-center">
-					{children?.(file)}
-					{
-						file &&
-							<label>{file?.name}</label>
-					}
-					<Button onClick={() => inputRef.current?.click()}>
-						Select File
-					</Button>
-				</div>
-			</Modal.Body>
-			<Modal.Footer>
-				<button onClick={() => uploadMutation.mutate()} disabled={submitDisabled} className="btn btn-primary">Upload</button>
-			</Modal.Footer>
+		<Modal stackId={stackId} title={'Upload'} opened={show} onClose={onClose}>
+			<input accept={accept} onChange={() => onFileChange()} className="d-none" ref={inputRef} type="file"/>
+			<div className="d-flex flex-column justify-content-center align-items-center">
+				{children?.(file)}
+				{
+					file &&
+						<label>{file?.name}</label>
+				}
+				<FileButton onChange={(e) => setFile(e)}>
+					{(props) => {
+						return <>
+							<Button {...props}>Select File</Button>
+						</>
+					}}
+				</FileButton>
+			</div>
+			<Divider my="md"/>
+			<Group justify="end">
+				<Button onClick={() => uploadMutation.mutate()} disabled={submitDisabled} className="btn btn-primary">Upload</Button>
+			</Group>
 		</Modal>
 	</>;
 }

@@ -1,8 +1,10 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ActionIcon, Button, Modal, Pill, Select, Stack, TextInput } from "@mantine/core";
+import { useDisclosure, useInputState } from "@mantine/hooks";
+import { modals } from "@mantine/modals";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Badge, Button, CloseButton, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from "react-bootstrap";
+import { useCallback, useEffect, useRef } from "react";
 import { addCharacterCondition, CharacterConditionUpdate, deleteCharacterCondition } from "src/services/api.ts";
 import { Character, CharacterCondition } from "src/types/models.ts";
 
@@ -11,19 +13,32 @@ export interface CharacterConditionsProps {
 	editing?: boolean
 }
 
-export function CharacterConditions({ character, editing }: CharacterConditionsProps) {
-	const [showModal, setShowModal] = useState(false);
-	const [confirmDelete, setConfirmDelete] = useState<CharacterCondition>();
+export function CharacterConditions({ character }: CharacterConditionsProps) {
+	const [showModal, modalHandles] = useDisclosure(false);
+	const openModals = useRef(new Set<string>());
 	
 	const queryClient = useQueryClient();
+	
+	function closeAllModals() {
+		openModals.current.forEach((modal) => {
+			modals.close(modal);
+		});
+		openModals.current.clear();
+	}
+	
+	useEffect(() => {
+		return () => {
+			closeAllModals();
+		}
+	}, []);
 	
 	const createConditionMutation = useMutation({
 		mutationFn: (condition: CharacterConditionUpdate) => {
 			return addCharacterCondition(condition);
 		},
 		onSuccess: async () => {
-			setShowModal(false);
 			await queryClient.invalidateQueries({ queryKey: ['character', character.id] });
+			modalHandles.close();
 		}
 	});
 	
@@ -33,110 +48,72 @@ export function CharacterConditions({ character, editing }: CharacterConditionsP
 		},
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({ queryKey: ['character', character.id] });
-			setConfirmDelete(undefined);
+			closeAllModals();
 		}
 	});
 	
-	const deleteModal = useMemo(() => {
-		return <>
-			<Modal show={!!confirmDelete} onHide={() => setConfirmDelete(undefined)}>
-				<ModalHeader>
-					<ModalTitle>Remove Condition</ModalTitle>
-				</ModalHeader>
-				<ModalBody>
-					Are you sure you want to remove {confirmDelete?.name} from {character.name}?
-				</ModalBody>
-				<ModalFooter>
-					<Button variant={'secondary'}
-					        onClick={() => setConfirmDelete(undefined)}>Cancel</Button>
-					<Button onClick={() => {
-						deleteConditionMutation.mutate(confirmDelete!.id);
-					}}>Delete</Button>
-				</ModalFooter>
-			</Modal>
-		</>
-	}, [confirmDelete, deleteConditionMutation, character.name]);
-	
-	const conditionEl = useMemo(() => {
-		const cond = character.conditions.map((cond) => {
-			return (
-				<Badge onClick={() => editing && setConfirmDelete(cond)} className={`mx-1 ${editing ? 'clickable' : ''}`} key={cond.id}>
-					{cond.name}
-				</Badge>
-			);
+	const deleteCallback = useCallback((condition: CharacterCondition) => {
+		const id = modals.openConfirmModal({
+			title: 'Remove Condition',
+			children: `Are you sure you want to remove ${condition?.name} from ${character.name}?`,
+			confirmProps: {
+				color: 'red',
+				children: 'Remove'
+			},
+			cancelProps: {
+				children: 'Cancel'
+			},
+			onConfirm: () => {
+				deleteConditionMutation.mutate(condition.id);
+			}
 		});
 		
-		return (
-			<div className="d-flex flex-wrap align-items-center h-100">
-				{...cond}
-			</div>
-		);
-	}, [character.conditions, editing]);
-	
-	const toRender = useMemo(() => {
-		if (!editing) {
-			return conditionEl;
-		}
-		
-		return (
-			<div className="row">
-				<div className="col-10">
-					{conditionEl}
-				</div>
-				<div className="col-2 d-flex justify-content-end">
-					<Button onClick={() => setShowModal(true)}>
-						<FontAwesomeIcon icon={faPlus}></FontAwesomeIcon>
-					</Button>
-				</div>
-			</div>
-		);
-	}, [conditionEl, editing]);
-	
-	const editModal = useMemo(() => {
-		const obj: CharacterConditionUpdate = {
-			name: '',
-			character: character.id,
-			endType: 'endOfTurn'
-		};
-		
-		return <>
-			<Modal show={showModal} onHide={() => setShowModal(false)}>
-				<ModalHeader>
-					<ModalTitle>Add Condition</ModalTitle>
-					<CloseButton onClick={() => setShowModal(false)}></CloseButton>
-				</ModalHeader>
-				<ModalBody>
-					<div className="row">
-						<div className="col-12">
-							<input type="text"
-							       className="form-control"
-							       placeholder="Condition Name"
-							       onChange={(e) => obj.name = e.currentTarget.value}
-							/>
-						</div>
-					</div>
-					<div className="row mt-2">
-						<div className="col-12">
-							<select className="form-select"
-							        onChange={(e) => obj.endType = e.currentTarget.value as any}>
-								<option value={'endOfTurn'}>End of Turn</option>
-								<option value={'save'}>Save</option>
-							</select>
-						</div>
-					</div>
-				</ModalBody>
-				<ModalFooter>
-					<div className="d-flex justify-content-end">
-						<Button onClick={() => createConditionMutation.mutate(obj)}>Add</Button>
-					</div>
-				</ModalFooter>
-			</Modal>
-		</>
-	}, [showModal, character.id, createConditionMutation]);
+		openModals.current.add(id);
+	}, [deleteConditionMutation, character.name]);
 	
 	return <>
-		{editModal}
-		{deleteModal}
-		{toRender}
+		<Modal title={'Add Condition'} opened={showModal} onClose={modalHandles.close} trapFocus>
+			<ConditionEditor character={character.id} onSubmit={createConditionMutation.mutate} />
+		</Modal>
+		
+		<Pill.Group>
+			{character.conditions.map((c) => {
+				return <Pill key={c.id} c={'blue'} size={'md'} onRemove={() => deleteCallback(c)} withRemoveButton>{c.name}</Pill>
+			})}
+			<ActionIcon onClick={modalHandles.open}>
+				<FontAwesomeIcon icon={faPlus} />
+			</ActionIcon>
+		</Pill.Group>
 	</>;
+}
+
+interface ConditionEditorProps {
+	character: number,
+	onSubmit: (condition: CharacterConditionUpdate) => void
+}
+
+function ConditionEditor({ character, onSubmit }: ConditionEditorProps) {
+	const [name, setName] = useInputState<string>('');
+	const [type, setType] = useInputState<CharacterConditionUpdate['endType'] | string>('endOfTurn');
+	
+	const disabled = !name || (type != 'endOfTurn' && type != 'save');
+	
+	return (
+		<Stack>
+			<TextInput autoFocus={true} label={'Name'} value={name} onChange={setName} />
+			<Select label={'End Type'} value={type} data={[
+				{
+					value: 'endOfTurn',
+					label: 'End of Turn'
+				},
+				{
+					value: 'save',
+					label: 'Save'
+				}
+			]} onChange={setType}>
+			
+			</Select>
+			<Button disabled={disabled} onClick={() => onSubmit({ name, character, endType: type as any })}>Submit</Button>
+		</Stack>
+	);
 }

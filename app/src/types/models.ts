@@ -29,8 +29,7 @@ export interface Character extends HasId, HasName {
 	temporaryHp: number;
 	removedRecoveries: number;
 	maxRecoveries: number;
-	resources: number;
-	surges: number;
+	resourceName: string | null;
 	victories: number;
 	user: number;
 	pictureUrl: string | null;
@@ -73,8 +72,7 @@ export class Character {
 			temporaryHp: 0,
 			removedRecoveries: 0,
 			maxRecoveries: 0,
-			resources: 0,
-			surges: 0,
+			resourceName: null,
 			victories: 0,
 			user: -1,
 			campaign: -1,
@@ -89,6 +87,8 @@ export class Character {
 
 export type Combatant = HasId & {
 	available: boolean;
+	resources: number;
+	surges: number;
 	character: Character;
 }
 
