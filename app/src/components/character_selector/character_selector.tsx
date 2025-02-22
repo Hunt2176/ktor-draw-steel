@@ -1,6 +1,6 @@
+import { Button, Checkbox } from "@mantine/core";
 import { Fragment, useId, useState } from "react";
-import { Button, FormCheck, Row } from "react-bootstrap";
-import { CampaignDetails, Character } from "src/types/models.ts";
+import { Character } from "src/types/models.ts";
 
 type CharacterSelection = {
 	[id: number]: boolean;
@@ -35,7 +35,7 @@ export function CharacterSelector({ characters, onChange, selected }: CharacterS
 		{characters.map((c) => {
 			return (
 				<Fragment key={c.id}>
-					<FormCheck id={`${selectorId}-${c.id}`}
+					<Checkbox id={`${selectorId}-${c.id}`}
 				           label={c.name}
 				           checked={selection[c.id] ?? false}
 				           onChange={(e) => updateValue(c.id, e.target.checked)}/>

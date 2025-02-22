@@ -103,10 +103,9 @@ object Characters : IntIdTable(), HasName, HasCampaign
 	val removedRecoveries = integer("removed_recoveries").default(0)
 	val maxRecoveries = integer("max_recoveries").default(0)
 	
-	val resources = integer("resources").default(0)
-	val surges = integer("surges").default(0)
 	val victories = integer("victories").default(0)
 	
+	val resourceName = text("resource_name").nullable()
 	val pictureUrl = varchar("picture_url", 255).nullable()
 	val border = varchar("border", 255).nullable()
 	
@@ -138,10 +137,9 @@ class ExposedCharacter(
 	var removedRecoveries by Characters.removedRecoveries
 	var maxRecoveries by Characters.maxRecoveries
 	
-	var resources by Characters.resources
-	var surges by Characters.surges
 	var victories by Characters.victories
 	
+	var resourceName by Characters.resourceName
 	var pictureUrl by Characters.pictureUrl
 	var border by Characters.border
 	
@@ -171,8 +169,7 @@ class ExposedCharacter(
 		json["removedRecoveries"]?.jsonPrimitive?.int?.let { removedRecoveries = it }
 		json["maxRecoveries"]?.jsonPrimitive?.int?.let { maxRecoveries = it }
 		
-		json["resources"]?.jsonPrimitive?.int?.let { resources = it }
-		json["surges"]?.jsonPrimitive?.int?.let { surges = it }
+		json["resourceName"]?.jsonPrimitive?.contentOrNull?.let { resourceName = it }
 		json["victories"]?.jsonPrimitive?.int?.let { victories = it }
 		
 		if (json.containsKey("pictureUrl")) json["pictureUrl"]?.jsonPrimitive?.contentOrNull?.let { pictureUrl = it }
@@ -197,11 +194,10 @@ data class CharacterDTO (
 	val temporaryHp: Int,
 	val removedRecoveries: Int,
 	val maxRecoveries: Int,
-	val resources: Int,
-	val surges: Int,
 	val victories: Int,
 	val campaign: Int,
 	val user: Int,
+	val resourceName: String?,
 	val pictureUrl: String?,
 	val border: String?,
 	val conditions: List<CharacterConditionDTO>
@@ -224,11 +220,10 @@ data class CharacterDTO (
 				entity.temporaryHp,
 				entity.removedRecoveries,
 				entity.maxRecoveries,
-				entity.resources,
-				entity.surges,
 				entity.victories,
 				entity.campaign.id.value,
 				entity.user.id.value,
+				entity.resourceName,
 				entity.pictureUrl,
 				entity.border,
 				entity.conditions.map { it.toDTO() }

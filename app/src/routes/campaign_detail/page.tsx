@@ -1,9 +1,9 @@
 import { faFile, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useContext, useMemo, useRef, useState } from "react";
-import { Button, Card, CardTitle, Image, Modal, Navbar, NavbarText } from "react-bootstrap";
+import { Fragment, useContext, useId, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Anchored } from "src/components/anchored.tsx";
 import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
 import { UploadModal } from "src/components/upload-modal.tsx";
 import { useCampaign, useCombatsForCampaign, useWatchCampaign } from "src/hooks/api_hooks.ts";
@@ -12,10 +12,13 @@ import { CharacterEditor } from "src/components/character_editor/character_edito
 import { createCharacter, createCombat, CreateCombatUpdate, deleteCombat, updateCampaign } from "src/services/api.ts";
 import { ErrorContext } from "src/services/contexts.ts";
 import { Character, Combat } from "src/types/models.ts";
+import { ActionIcon, Button, Card, Flex, Modal, Text, Image, Title, Stack, Group, Divider, Box, useModalsStack } from "@mantine/core";
 import Element = React.JSX.Element;
 
 export function CampaignDetail() {
 	const queryClient = useQueryClient();
+	
+	const stack = useModalsStack(['character-editor', 'upload-modal']);
 	
 	const [newCharacter, setNewCharacter] = useState(false);
 	const [newCombat, setNewCombat] = useState(false);
@@ -105,14 +108,13 @@ export function CampaignDetail() {
 	const newCharacterModal = useMemo(() => {
 		const model = Character.new();
 		
-		return <Modal show={newCharacter} onHide={() => setNewCharacter(false)}>
-			<Modal.Header closeButton>
-				<Modal.Title>New Character</Modal.Title>
-			</Modal.Header>
-			<Modal.Body>
-				<CharacterEditor character={model} onSubmit={saveCharacterMutation.mutateAsync}></CharacterEditor>
-			</Modal.Body>
-		</Modal>;
+		return (
+			<Modal.Stack>
+				<Modal stackId={'character-editor'} opened={newCharacter} title={'New Character'} onClose={() => setNewCharacter(false)}>
+					<CharacterEditor uploadStackId={'upload-modal'} character={model} onSubmit={saveCharacterMutation.mutateAsync}></CharacterEditor>
+				</Modal>
+			</Modal.Stack>
+		);
 	}, [newCharacter, saveCharacterMutation.mutateAsync]);
 	
 	const newCombatModal = useMemo(() => {
@@ -132,76 +134,81 @@ export function CampaignDetail() {
 		}
 		
 		return <>
-			<Modal show={newCombat}
-			       onShow={() => combatSelected.current = {}}
-			       onHide={() => setNewCombat(false)}>
-				<Modal.Header>
-					<Modal.Title>New Combat</Modal.Title>
-				</Modal.Header>
-				<Modal.Body>
-					<CharacterSelector onChange={(e) => combatSelected.current = e}
-					                   characters={campaign.characters}/>
-				</Modal.Body>
-				<Modal.Footer>
-					<Button variant="secondary" onClick={() => setNewCombat(false)}>Cancel</Button>
-					<Button disabled={createCombatMutation.isPending} onClick={() => onCreate()}>Create</Button>
-				</Modal.Footer>
+			<Modal title={'New Combat'}
+				     opened={newCombat}
+			       onEnterTransitionEnd={() => combatSelected.current = {}}
+			       onClose={() => setNewCombat(false)}>
+				<Stack>
+					<div>
+						<CharacterSelector onChange={(e) => combatSelected.current = e}
+						                   characters={campaign.characters}/>
+					</div>
+					
+					<Divider my={2}/>
+					<Group justify={'end'}>
+						<Button color="gray" onClick={() => setNewCombat(false)}>Cancel</Button>
+						<Button disabled={createCombatMutation.isPending} onClick={() => onCreate()}>Create</Button>
+					</Group>
+				</Stack>
+				
 			</Modal>
 		</>;
 	}, [campaign, newCombat, createCombatMutation]);
 	
 	const deleteCombatModal = useMemo(() => {
 		return <>
-			<Modal show={!!combatToDelete}>
-				<Modal.Header>
-					<Modal.Title>Delete Combat</Modal.Title>
-				</Modal.Header>
-				<Modal.Body>
+			<Modal title={'Delete Combat'}
+			       opened={!!combatToDelete}
+			       onClose={() => setCombatToDelete(null)}>
+				<Stack>
 					Are you sure you want to delete this combat?
-				</Modal.Body>
-				<Modal.Footer>
-					<Button variant="secondary" onClick={() => setCombatToDelete(null)}>Cancel</Button>
-					<Button variant="danger" onClick={() => {
-						if (combatToDelete) {
-							deleteCombatMutation.mutate(combatToDelete.id);
-						}
-					}}>Delete</Button>
-				</Modal.Footer>
+					<Divider my={2}/>
+					<Group justify={'end'}>
+						<Button color="gray" onClick={() => setCombatToDelete(null)}>Cancel</Button>
+						<Button color="red" onClick={() => {
+							if (combatToDelete) {
+								deleteCombatMutation.mutate(combatToDelete.id);
+							}
+						}}>Delete</Button>
+					</Group>
+				</Stack>
 			</Modal>
 		</>
 	}, [combatToDelete, deleteCombatMutation]);
 	
 	const combatElements = useMemo(() => {
 		return <>
-			<div>
-				<div className="d-flex align-items-center mb-2">
-					<h3 className="m-0">Combats</h3>
-					<Button size="sm"
-					        className="ms-2"
-					        onClick={() => setNewCombat(true)}>
+			<Stack>
+				<Anchored position={'left'}>
+					<Title display={'inline-block'} pr={8} order={3}>Combats</Title>
+					<ActionIcon onClick={() => setNewCombat(true)}>
 						<FontAwesomeIcon icon={faPlus}/>
-					</Button>
-				</div>
-				{combats.map((combat) => {
-					return <Fragment key={combat.id}>
-						<div className="w-50">
-							<Card>
-								<CardTitle className="d-flex justify-content-between m-2">
-									Round: {combat.round}
-									<div className="d-flex flex-column justify-content-center">
-										<Button className="mb-2" onClick={() => navigate(`/combats/${combat.id}`)}>
-											View
-										</Button>
-										<Button variant="danger" onClick={() => setCombatToDelete(combat)}>
-											Delete
-										</Button>
-									</div>
-								</CardTitle>
-							</Card>
-						</div>
-					</Fragment>
-				})}
-			</div>
+					</ActionIcon>
+				</Anchored>
+				<Flex>
+					{combats.map((combat) => {
+						return (
+							<Fragment key={combat.id}>
+								<Card w={'50%'}>
+									<Flex justify={'space-between'} m={2}>
+										<Title order={3}>
+											Round: {combat.round}
+										</Title>
+										<Flex direction={'column'} justify={'center'}>
+											<Button mb={2} onClick={() => navigate(`/combats/${combat.id}`)}>
+												View
+											</Button>
+											<Button color="red" onClick={() => setCombatToDelete(combat)}>
+												Delete
+											</Button>
+										</Flex>
+									</Flex>
+								</Card>
+							</Fragment>
+						)
+					})}
+				</Flex>
+			</Stack>
 		</>;
 	}, [combats, navigate]);
 	
@@ -221,39 +228,38 @@ export function CampaignDetail() {
 			return acc;
 		}, new Array<Element[]>())
 			.map((row, index) => (
-				<div className={'d-flex flex-column flex-1'} key={index}>
+				<Stack key={index}>
 					{row.map((el) => (el))}
-				</div>
+				</Stack>
 			));
 	}, [campaign, navigate]);
 	
 	const campaignDisplay = useMemo(() => (
 		campaign &&
-	    <div className={'d-flex flex-column vh-100'}>
-	      <div className={'flex-1'}>
-          <Navbar>
-		          <div className="d-flex justify-content-between w-100">
-	              <NavbarText>{campaign.campaign.name}</NavbarText>
-			          <Button onClick={() => setShowBackgroundUpload(true)} variant={'outline-info'}>
-					          <FontAwesomeIcon icon={faFile} />
-			          </Button>
-		          </div>
-          </Navbar>
-	      </div>
-	      <div className={'flex-2'}>
-		      {combatElements}
-	      </div>
-	      <div className={'flex-3 d-flex flex-column flex-wrap'}>
-			      <div className={'d-flex justify-content-center my-2'}>
-				      <Button onClick={() => setNewCharacter(true)}>Add Character</Button>
-			      </div>
-	          <div className={'d-flex'}>
-							{characterElements?.map((row) => (
-								row
-							))}
-	          </div>
-	      </div>
-	    </div>
+	    <Stack>
+	      <Flex flex={1}>
+          <Anchored position={'left'}>
+            <Title display={'inline-block'} pr={8} order={2}>{campaign.campaign.name}</Title>
+	          <ActionIcon onClick={() => setShowBackgroundUpload(true)} variant={'outline'}>
+			          <FontAwesomeIcon icon={faFile} />
+	          </ActionIcon>
+          </Anchored>
+	      </Flex>
+	      {combatElements}
+	      <Stack flex={3}>
+		      <Anchored position={'left'}>
+			      <Title display={'inline-block'} pr={8} order={3}>Characters</Title>
+			      <ActionIcon onClick={() => setNewCharacter(true)}>
+					      <FontAwesomeIcon icon={faPlus} />
+			      </ActionIcon>
+		      </Anchored>
+          <Group align={'start'}>
+						{characterElements?.map((row) => (
+							row
+						))}
+          </Group>
+	      </Stack>
+	    </Stack>
 	), [campaign, characterElements, combatElements]);
 	
 	if (campaign) {
@@ -265,7 +271,7 @@ export function CampaignDetail() {
 				             onComplete={(e) => updateCampaignBackgroundMutation.mutate(e ? `/files/${e}` : undefined)}>
 					{(file) => {
 						if (file == null) return <></>;
-						return <Image style={{width: '100%', objectFit: 'contain'}} src={URL.createObjectURL(file)} thumbnail/>;
+						return <Image fit={'contain'} src={URL.createObjectURL(file)}/>;
 					}}
 				</UploadModal>
 				{deleteCombatModal}

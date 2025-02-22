@@ -1,19 +1,20 @@
-import './character_editor.scss';
-
+import { NumberInput, Image, Stack, TextInput, Group, Button, Divider, Loader } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { useRef, useState } from "react";
-import { Button, Col, Form, FormLabel, Image, Row } from "react-bootstrap";
 import { UploadModal } from "src/components/upload-modal.tsx";
 import { usePromise } from "src/hooks/promise_hook.ts";
 import { Character } from "src/types/models.ts";
+import { parseIntOrUndefined } from "src/utils.ts";
 
 export interface CharacterEditorProps {
 	character: Character
 	onSubmit: (character: CharacterEditorResult) => void | Promise<void>;
+	uploadStackId?: string
 }
 
-export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
+export function CharacterEditor({ uploadStackId, character, onSubmit }: CharacterEditorProps) {
 	const [submitPromise, setSubmitPromise] = useState<Promise<void>>();
-	const [showUploadFile, setShowUploadFile] = useState(false);
+	const [showUploadFile, showFileUploadHandler] = useDisclosure(false);
 	
 	const stateVars = Object.entries(character)
 		.reduce((eState, [key, value]) => {
@@ -24,13 +25,16 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 	
 	const changedKeys = useRef(new Set<EditorKey>());
 	
-	//TODO: Move to using query mutations
 	const { loading: submitLoading } = usePromise(submitPromise);
 	
 	function onEdit<K extends EditorKey>(key: K, value: CharacterEditorValue<K>) {
+		if (typeof value === 'number' && isNaN(value as any)) {
+			(value as any) = null;
+		}
+		
 		console.log(key, value);
 		changedKeys.current.add(key);
-		stateVars[key][1](value);
+		stateVars[key][1](value ?? null);
 	}
 	
 	function submit() {
@@ -59,102 +63,74 @@ export function CharacterEditor({ character, onSubmit }: CharacterEditorProps) {
 	
 	function createStateBlock(key: keyof Pick<CharacterEditorCore, 'might' | 'agility' | 'intuition' | 'presence' | 'reason'>) {
 		return (
-			<Form.Group controlId={'char-' + key}>
-				<FormLabel>{key[0].toUpperCase() + key.slice(1)}</FormLabel>
-				<Form.Control
-					value={wrapNumberValue(stateVars[key][0])}
-					type={'number'}
-					onChange={(e) => onEdit(key, parseInt(e.target.value))}
-				/>
-			</Form.Group>
+			<NumberInput label={key[0].toUpperCase() + key.slice(1)}
+			             value={wrapNumberValue(stateVars[key][0])}
+			             onChange={(e) => onEdit(key, parseIntOrUndefined(e) ?? NaN)}/>
 		);
 	}
 	
 	return <>
-		<UploadModal show={showUploadFile}
+		<UploadModal stackId={uploadStackId}
+		             show={showUploadFile}
 		             accept=".png,.jpg,.jpeg,.webp"
-		             onHide={() => setShowUploadFile(false)}
+		             onHide={showFileUploadHandler.close}
 		             onComplete={(e) => {
 			             onEdit('pictureUrl', `/files/${e}`);
-			             setShowUploadFile(false);
+			             showFileUploadHandler.close();
 		             }}>
 			{(file) => {
 				if (file == null) {
 					return <></>;
 				}
 				
-				return <Image thumbnail className="modal-image" src={URL.createObjectURL(file)}/>
+				return <Image src={URL.createObjectURL(file)}/>
 			}}
 		</UploadModal>
-		<Form>
-			<Form.Group controlId={'char-name'}>
-				<FormLabel>Name</FormLabel>
-				<Form.Control
-					value={stateVars['name'][0]}
-					maxLength={100}
-					onChange={(e) => onEdit('name', e.target.value)}
-				/>
-			</Form.Group>
-			<Row>
-				<Col>
-					{createStateBlock('might')}
-				</Col>
-				<Col>
-					{createStateBlock('agility')}
-				</Col>
-				<Col>
-					{createStateBlock('intuition')}
-				</Col>
-				<Col>
-					{createStateBlock('presence')}
-				</Col>
-				<Col>
-					{createStateBlock('reason')}
-				</Col>
-			</Row>
-			<Form.Group controlId={'char-hp'}>
-				<FormLabel>Max HP</FormLabel>
-				<Form.Control
-					value={stateVars['maxHp'][0]}
-					typeof={'number'}
-					min={0}
-					onChange={(e) => onEdit('maxHp', parseInt(e.target.value))}
-				/>
-			</Form.Group>
-			<Form.Group controlId={'char-recoveries'}>
-				<FormLabel>Recoveries</FormLabel>
-				<Form.Control
-					value={stateVars['maxRecoveries'][0]}
-					typeof={'number'}
-					min={0}
-					onChange={(e) => onEdit('maxRecoveries', parseInt(e.target.value))}
-				/>
-			</Form.Group>
-			<Form.Group controlId={'char-picture'}>
-				<FormLabel>Picture</FormLabel>
-				<Row>
-					<Col xs={9}>
-						<Form.Control
-							value={stateVars['pictureUrl'][0] ?? undefined}
-							onChange={(e) => onEdit('pictureUrl', e.target.value)}
-						/>
-					</Col>
-					<Col xs={3} className="d-flex justify-content-center">
-						<Button onClick={() => setShowUploadFile(true)}>Upload</Button>
-					</Col>
-				</Row>
-				{
-					stateVars['pictureUrl'][0] ?
-						<img style={{maxWidth: '100%', objectFit: 'contain'}} src={stateVars['pictureUrl'][0]!} alt={stateVars['pictureUrl'][0]!}/>
-						: <></>
-				}
-			</Form.Group>
-			<Row style={{justifyContent: 'end', paddingTop: '10px'}}>
-				<Col sm={4} style={{textAlign: 'right'}}>
-					<Button disabled={submitLoading} onClick={submit}>Submit</Button>
-				</Col>
-			</Row>
-		</Form>
+		<Stack>
+			<TextInput label="Name"
+			           value={stateVars['name'][0]}
+			           onChange={(e) => onEdit('name', e.target.value)}/>
+			<Group>
+				{createStateBlock('might')}
+				{createStateBlock('agility')}
+				{createStateBlock('reason')}
+				{createStateBlock('intuition')}
+				{createStateBlock('presence')}
+			</Group>
+			
+			<NumberInput label="Max HP"
+			             value={wrapNumberValue(stateVars['maxHp'][0])}
+			             onChange={(e) => onEdit('maxHp', parseIntOrUndefined(e) ?? NaN)}/>
+			
+			<NumberInput label="Recoveries"
+			             value={wrapNumberValue(stateVars['maxRecoveries'][0])}
+			             onChange={(e) => onEdit('maxRecoveries', parseIntOrUndefined(e) ?? NaN)}/>
+			
+			<TextInput label="Resource Name"
+			           value={stateVars['resourceName'][0] ?? ''}
+			           onChange={(e) => onEdit('resourceName', e.target.value)}/>
+			
+			<Divider/>
+			{ stateVars['pictureUrl'][0] &&
+				<Image src={stateVars['pictureUrl'][0]}></Image>
+			}
+			<Stack>
+				<TextInput label="Picture URL"
+				           value={stateVars['pictureUrl'][0] ?? ''}
+				           onChange={(e) => onEdit('pictureUrl', e.target.value)}/>
+				<Button onClick={showFileUploadHandler.open}>Upload</Button>
+			</Stack>
+			<Divider my={'md'} />
+			<Group justify="end">
+				<Button disabled={submitLoading}
+				        onClick={submit}
+				        leftSection={
+					        submitLoading && <Loader/>
+				        }>
+					Submit
+				</Button>
+			</Group>
+		</Stack>
 	</>
 }
 
