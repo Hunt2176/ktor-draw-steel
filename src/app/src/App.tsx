@@ -1,4 +1,4 @@
-import 'src/App.scss'
+import 'App.scss'
 import '@mantine/core/styles.css';
 
 import { Card, ColorSchemeScript, createTheme, MantineProvider, Modal, Popover, useMantineColorScheme } from "@mantine/core";
@@ -7,12 +7,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { CampaignDetail } from "src/routes/campaign_detail/page.tsx";
-import { CampaignPage } from "src/routes/campaigns/page.tsx";
-import { CharacterPage } from "src/routes/characters/page.tsx";
-import { CombatPage } from "src/routes/combat/page.tsx";
-import { HomePage } from "src/routes/home/page.tsx";
-import { ErrorContext } from "src/services/contexts.ts";
+import { CampaignDetail } from "routes/campaign_detail/page.tsx";
+import { CampaignPage } from "routes/campaigns/page.tsx";
+import { CharacterPage } from "routes/characters/page.tsx";
+import { CombatPage } from "routes/combat/page.tsx";
+import { HomePage } from "routes/home/page.tsx";
+import { ErrorContext } from "services/contexts.ts";
 
 const queryClient = new QueryClient();
 

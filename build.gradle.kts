@@ -46,7 +46,7 @@ val buildApp by tasks.registering {
 	description = "Builds the frontend app"
 	doLast {
 		exec {
-			workingDir = file("$projectDir/app")
+			workingDir = file("$projectDir")
 			commandLine("bun", "install")
 			commandLine("bun", "run", "build")
 		}

@@ -1,6 +1,6 @@
 import { Button, Checkbox } from "@mantine/core";
 import { Fragment, useId, useState } from "react";
-import { Character } from "src/types/models.ts";
+import { Character } from "types/models.ts";
 
 type CharacterSelection = {
 	[id: number]: boolean;

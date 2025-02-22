@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Campaign } from "src/types/models";
+import { Campaign } from "types/models";
 
 export function useCampaignBackground(campaign: Campaign | undefined) {
 	

@@ -2,8 +2,8 @@ import { faPencilAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ReactNode, useId } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useCharacter, useWatchCampaign } from "src/hooks/api_hooks.ts";
-import { CharacterCard, CharacterCardExtra } from "src/components/character_card/card.tsx";
+import { useCharacter, useWatchCampaign } from "hooks/api_hooks.ts";
+import { CharacterCard, CharacterCardExtra } from "components/character_card/card.tsx";
 import { ActionIcon, Group, Modal, useModalsStack } from "@mantine/core";
 
 export function CharacterPage(): ReactNode {

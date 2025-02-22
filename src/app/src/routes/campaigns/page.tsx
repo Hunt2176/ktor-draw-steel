@@ -1,7 +1,7 @@
 import { Button, Table } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
-import { useCampaignList } from "src/hooks/api_hooks.ts";
-import { CampaignDetails } from "src/types/models.ts";
+import { useCampaignList } from "hooks/api_hooks.ts";
+import { CampaignDetails } from "types/models.ts";
 
 export function CampaignPage() {
 	const navigator = useNavigate();

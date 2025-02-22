@@ -1,10 +1,10 @@
 import { NumberInput, Image, Stack, TextInput, Group, Button, Divider, Loader } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useRef, useState } from "react";
-import { UploadModal } from "src/components/upload-modal.tsx";
-import { usePromise } from "src/hooks/promise_hook.ts";
-import { Character } from "src/types/models.ts";
-import { parseIntOrUndefined } from "src/utils.ts";
+import { UploadModal } from "components/upload-modal.tsx";
+import { usePromise } from "hooks/promise_hook.ts";
+import { Character } from "types/models.ts";
+import { parseIntOrUndefined } from "utils.ts";
 
 export interface CharacterEditorProps {
 	character: Character

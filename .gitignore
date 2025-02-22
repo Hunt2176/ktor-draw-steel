@@ -38,3 +38,5 @@ out/
 **/*.sqlite
 
 files/
+
+node_modules

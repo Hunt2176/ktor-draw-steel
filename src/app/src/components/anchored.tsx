@@ -1,6 +1,6 @@
 import { Box } from "@mantine/core";
 import React, { Fragment, useMemo } from "react";
-import { Vararg } from "src/utils.ts";
+import { Vararg } from "utils.ts";
 
 export interface AnchoredProps {
 	position: 'left' | 'right'
