@@ -2,12 +2,12 @@ import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popove
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useContext, useMemo, useRef, useState } from "react";
-import { CharacterEditor, CharacterEditorCore } from "src/components/character_editor/character_editor.tsx";
-import { usePromise } from "src/hooks/promise_hook.ts";
-import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "src/services/api.ts";
-import { ErrorContext } from "src/services/contexts.ts";
-import { Character } from "src/types/models.ts";
-import { parseIntOrUndefined, toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "src/utils.ts";
+import { CharacterEditor, CharacterEditorCore } from "components/character_editor/character_editor.tsx";
+import { usePromise } from "hooks/promise_hook.ts";
+import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "services/api.ts";
+import { ErrorContext } from "services/contexts.ts";
+import { Character } from "types/models.ts";
+import { parseIntOrUndefined, toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "utils.ts";
 
 
 export interface CharacterCardProps {

@@ -5,8 +5,8 @@ import { useDisclosure, useInputState } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
-import { addCharacterCondition, CharacterConditionUpdate, deleteCharacterCondition } from "src/services/api.ts";
-import { Character, CharacterCondition } from "src/types/models.ts";
+import { addCharacterCondition, CharacterConditionUpdate, deleteCharacterCondition } from "services/api.ts";
+import { Character, CharacterCondition } from "types/models.ts";
 
 export interface CharacterConditionsProps {
 	character: Character

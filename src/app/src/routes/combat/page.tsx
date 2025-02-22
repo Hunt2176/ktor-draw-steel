@@ -4,13 +4,13 @@ import { useDisclosure, useFocusTrap, useInputState, useMap } from "@mantine/hoo
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useId, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CharacterCard, CharacterCardExtra } from "src/components/character_card/card.tsx";
-import { CharacterConditions } from "src/components/character_conditions.tsx";
-import { CharacterSelector } from "src/components/character_selector/character_selector.tsx";
-import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "src/hooks/api_hooks.ts";
-import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "src/services/api.ts";
-import { Character, Combatant } from "src/types/models.ts";
-import { parseIntOrUndefined } from "src/utils.ts";
+import { CharacterCard, CharacterCardExtra } from "components/character_card/card.tsx";
+import { CharacterConditions } from "components/character_conditions.tsx";
+import { CharacterSelector } from "components/character_selector/character_selector.tsx";
+import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "hooks/api_hooks.ts";
+import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
+import { Character, Combatant } from "types/models.ts";
+import { parseIntOrUndefined } from "utils.ts";
 import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput } from "@mantine/core";
 
 export interface CombatPageProps {

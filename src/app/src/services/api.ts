@@ -1,4 +1,4 @@
-import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant } from "src/types/models.ts";
+import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant } from "types/models.ts";
 import axios from 'axios';
 
 export async function updateCampaign(id: number, campaign: Partial<Campaign>) {

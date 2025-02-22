@@ -1,10 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useWebSocket from "react-use-websocket";
-import { useCampaignBackground } from "src/hooks/CampaignBackground.tsx";
-import { fetchCampaign, fetchCampaigns, fetchCharacter, fetchCombat, fetchCombatsFor } from "src/services/api.ts";
-import { CampaignDetails, Character, Combat } from "src/types/models.ts";
-import { parseIntOrUndefined } from "src/utils.ts";
+import { useCampaignBackground } from "hooks/CampaignBackground.tsx";
+import { fetchCampaign, fetchCampaigns, fetchCharacter, fetchCombat, fetchCombatsFor } from "services/api.ts";
+import { CampaignDetails, Character, Combat } from "types/models.ts";
+import { parseIntOrUndefined } from "utils.ts";
 
 export function useCharacter(id: number | undefined): Character | undefined {
 	const queryKey = useMemo(() => ['character', id], [id]);

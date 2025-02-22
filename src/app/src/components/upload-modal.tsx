@@ -1,7 +1,7 @@
 import { Button, Divider, FileButton, Group, Modal, useModalsStack } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
 import { ReactElement, useId, useRef, useState } from "react";
-import { uploadFile } from "src/services/api.ts";
+import { uploadFile } from "services/api.ts";
 
 export interface UploadModalProps {
 	stackId?: string;
