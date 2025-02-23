@@ -143,11 +143,20 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 		);
 	}, [recoveries.percent, recoveries.current, recoveries.max]);
 	
+	const image = useMemo(() => (
+		<Image fit={'cover'}
+		       w={type != 'full' ? '100px' : undefined}
+		       flex={type != 'full' ? 'revert' : undefined}
+		       style={{objectPosition: 'top center'}}
+		       onClick={onPortraitClick}
+		       src={character.pictureUrl ?? undefined}/>
+	), [character.pictureUrl, onPortraitClick, type]);
+	
 	const fullCard = useMemo(() => (
 			<Card withBorder shadow={'xs'} style={{width: '15rem'}}>
 				<Card.Section withBorder>
 					<div style={{position: 'relative'}}>
-						<Image onClick={onPortraitClick} src={character.pictureUrl ?? undefined}></Image>
+						{image}
 						<div style={{position: 'absolute', width: '100%', bottom: '0px'}}>
 							<Group justify={'space-around'}>
 								<Text fw={600} component={'div'}>
@@ -186,7 +195,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 					</>
 				}
 			</Card>
-	), [character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, children?.gauges, character.pictureUrl, onPortraitClick]);
+	), [character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, children?.gauges, image]);
 	
 	const tileCard = useMemo(() => {
 		return (
@@ -196,7 +205,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 						{ children?.left &&
 							children.left
 						}
-						<Image onClick={onPortraitClick} radius={'xs'} w={100} fit={'cover'} style={{objectPosition: 'top'}} src={character.pictureUrl ?? undefined}></Image>
+						{image}
 						<Stack gap={0}>
 							<Text size={'xl'} fw={700} pl={'xs'}>
 								{character.name}
@@ -220,7 +229,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				</Stack>
 			</Card>
 		);
-		}, [hpBar, recoveriesBar, children?.left, children?.right, character.pictureUrl, character.name, children?.bottom, children?.gauges, onPortraitClick]);
+		}, [hpBar, recoveriesBar, children?.left, children?.right, character?.name, children?.bottom, children?.gauges, image]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modHp, setModHp] = useInputState<number | string>('');
