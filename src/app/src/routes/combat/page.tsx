@@ -11,7 +11,7 @@ import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "hooks/
 import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
 import { Character, Combatant } from "types/models.ts";
 import { parseIntOrUndefined } from "utils.ts";
-import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput } from "@mantine/core";
+import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex } from "@mantine/core";
 
 export interface CombatPageProps {
 
@@ -193,7 +193,9 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 								[available ? 'right' : 'left']: (
 									<CharacterCardExtra>
 										{(props) => <>
-											<Box ta={available ? 'end' : undefined}
+											<Box mr={!available ? 'xs' : undefined}
+											     ml={available ? 'xs' : undefined}
+												   ta={available ? 'end' : undefined}
 											     flex={available ? 1 : undefined}>
 												<Box mb={'xs'}>
 													<ActionIcon
@@ -212,7 +214,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 								),
 								gauges: (
 									<CharacterCardExtra>
-										<Box style={{alignSelf: 'stretch'}}>
+										<Flex justify={'center'} style={{alignSelf: 'stretch'}}>
 											<Popover trapFocus withArrow>
 												<Popover.Target>
 													<Button color={'indigo'} variant={'subtle'} h={'auto'} fw={700}>
@@ -230,8 +232,8 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 													<CombatantValueUpdate combatantId={combatant.id} name={c.resourceName ?? undefined} valueKey={'resources'} />
 												</Popover.Dropdown>
 											</Popover>
-										</Box>
-										<Box style={{alignSelf: 'stretch'}}>
+										</Flex>
+										<Flex justify={'center'} style={{alignSelf: 'stretch'}}>
 											<Popover trapFocus withArrow>
 												<Popover.Target>
 													<Button style={{alignSelf: 'stretch'}} color={'blue'} variant={'subtle'} h={'auto'} fw={700}>
@@ -249,7 +251,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 													<CombatantValueUpdate combatantId={combatant.id} valueKey={'surges'} />
 												</Popover.Dropdown>
 											</Popover>
-										</Box>
+										</Flex>
 									</CharacterCardExtra>
 								),
 								bottom: (
