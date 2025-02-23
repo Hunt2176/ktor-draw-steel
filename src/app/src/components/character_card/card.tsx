@@ -1,4 +1,4 @@
-import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal } from "@mantine/core";
+import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal, Box } from "@mantine/core";
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useContext, useMemo, useRef, useState } from "react";
@@ -203,10 +203,12 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				<Stack gap={'xs'}>
 					<Group align={'stretch'} justify={'stretch'} wrap={'nowrap'} gap={0}>
 						{ children?.left &&
-							children.left
+							<Box style={{flexShrink: 1}}>
+								{children.left}
+							</Box>
 						}
 						{image}
-						<Stack gap={0}>
+						<Stack flex={5} gap={0}>
 							<Text size={'xl'} fw={700} pl={'xs'}>
 								{character.name}
 							</Text>
@@ -220,7 +222,9 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 						</Stack>
 						{
 							children?.right &&
-								children.right
+							<Box style={{flexShrink: 1}}>
+								{children.right}
+							</Box>
 						}
 					</Group>
 					{ children?.bottom &&
