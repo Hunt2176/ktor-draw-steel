@@ -1,4 +1,4 @@
-import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal } from "@mantine/core";
+import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal, Box } from "@mantine/core";
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useContext, useMemo, useRef, useState } from "react";
@@ -143,11 +143,20 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 		);
 	}, [recoveries.percent, recoveries.current, recoveries.max]);
 	
+	const image = useMemo(() => (
+		<Image fit={'cover'}
+		       w={type != 'full' ? '100px' : undefined}
+		       flex={type != 'full' ? 'revert' : undefined}
+		       style={{objectPosition: 'top center'}}
+		       onClick={onPortraitClick}
+		       src={character.pictureUrl ?? undefined}/>
+	), [character.pictureUrl, onPortraitClick, type]);
+	
 	const fullCard = useMemo(() => (
 			<Card withBorder shadow={'xs'} style={{width: '15rem'}}>
 				<Card.Section withBorder>
 					<div style={{position: 'relative'}}>
-						<Image onClick={onPortraitClick} src={character.pictureUrl ?? undefined}></Image>
+						{image}
 						<div style={{position: 'absolute', width: '100%', bottom: '0px'}}>
 							<Group justify={'space-around'}>
 								<Text fw={600} component={'div'}>
@@ -186,7 +195,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 					</>
 				}
 			</Card>
-	), [character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, children?.gauges, character.pictureUrl, onPortraitClick]);
+	), [character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, children?.gauges, image]);
 	
 	const tileCard = useMemo(() => {
 		return (
@@ -194,10 +203,12 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				<Stack gap={'xs'}>
 					<Group align={'stretch'} justify={'stretch'} wrap={'nowrap'} gap={0}>
 						{ children?.left &&
-							children.left
+							<Box style={{flexShrink: 1}}>
+								{children.left}
+							</Box>
 						}
-						<Image onClick={onPortraitClick} radius={'xs'} w={100} fit={'cover'} style={{objectPosition: 'top'}} src={character.pictureUrl ?? undefined}></Image>
-						<Stack gap={0}>
+						{image}
+						<Stack flex={5} gap={0}>
 							<Text size={'xl'} fw={700} pl={'xs'}>
 								{character.name}
 							</Text>
@@ -211,7 +222,9 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 						</Stack>
 						{
 							children?.right &&
-								children.right
+							<Box style={{flexShrink: 1}}>
+								{children.right}
+							</Box>
 						}
 					</Group>
 					{ children?.bottom &&
@@ -220,7 +233,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				</Stack>
 			</Card>
 		);
-		}, [hpBar, recoveriesBar, children?.left, children?.right, character.pictureUrl, character.name, children?.bottom, children?.gauges, onPortraitClick]);
+		}, [hpBar, recoveriesBar, children?.left, children?.right, character?.name, children?.bottom, children?.gauges, image]);
 	
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modHp, setModHp] = useInputState<number | string>('');
