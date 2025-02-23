@@ -1,6 +1,6 @@
-import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useDisclosure, useFocusTrap, useInputState, useMap } from "@mantine/hooks";
+import { useDisclosure, useInputState } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useId, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -112,7 +112,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		mutationFn: (update: Parameters<typeof updateCombatantValue>) => {
 			return updateCombatantValue(...update);
 		},
-		onSuccess: async (update) => {
+		onSuccess: async () => {
 			await queryClient.invalidateQueries({
 				queryKey: ['combat', combat?.id]
 			})
@@ -192,11 +192,22 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 							{{
 								[available ? 'right' : 'left']: (
 									<CharacterCardExtra>
-										<Group mr={available ? 0 : 'xs'} ml={available ? 'xs' : 0} flex={available ? 1 : undefined} align={'start'} justify={available ? 'end' : 'start'}>
-											<ActionIcon onClick={() => activeCombatantMutation.mutate({ combatant, active: !combatant.available })}>
-												<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft} />
-											</ActionIcon>
-										</Group>
+										{(props) => <>
+											<Box ta={available ? 'end' : undefined}
+											     flex={available ? 1 : undefined}>
+												<Box mb={'xs'}>
+													<ActionIcon
+														onClick={() => activeCombatantMutation.mutate({combatant, active: !combatant.available})}>
+														<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft}/>
+													</ActionIcon>
+												</Box>
+												<Box>
+													<ActionIcon onClick={props.edit}>
+														<FontAwesomeIcon icon={faPencil}/>
+													</ActionIcon>
+												</Box>
+											</Box>
+										</>}
 									</CharacterCardExtra>
 								),
 								gauges: (
