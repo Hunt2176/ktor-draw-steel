@@ -51,14 +51,7 @@ export function CharacterEditor({ uploadStackId, character, onSubmit }: Characte
 	}
 	
 	function wrapNumberValue(val: any): number | string {
-		if (typeof val !== 'number') {
-			return '';
-		}
-		else if (isNaN(val)) {
-			return '';
-		}
-		
-		return val;
+		return parseIntOrUndefined(val) ?? '';
 	}
 	
 	function createStateBlock(key: keyof Pick<CharacterEditorCore, 'might' | 'agility' | 'intuition' | 'presence' | 'reason'>) {
@@ -97,6 +90,10 @@ export function CharacterEditor({ uploadStackId, character, onSubmit }: Characte
 				{createStateBlock('intuition')}
 				{createStateBlock('presence')}
 			</Group>
+			
+			<NumberInput label="Victories"
+			             value={wrapNumberValue(stateVars['victories'][0])}
+			             onChange={(e) => onEdit('victories', parseIntOrUndefined(e) ?? NaN)}/>
 			
 			<NumberInput label="Max HP"
 			             value={wrapNumberValue(stateVars['maxHp'][0])}
