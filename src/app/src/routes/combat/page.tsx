@@ -1,6 +1,6 @@
 import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useDisclosure, useInputState } from "@mantine/hooks";
+import { useDisclosure, useInputState, usePrevious } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useId, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -44,6 +44,14 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	}
 	
 	const combat = useCombat(id);
+	
+	const previousCombat = usePrevious(combat);
+	
+	if (combat == null && previousCombat != null) {
+		navigate(`/campaigns/${previousCombat.campaign}`);
+		return;
+	}
+	
 	const campaign = useCampaign(combat?.campaign);
 	useWatchCampaign(campaign?.campaign.id);
 	

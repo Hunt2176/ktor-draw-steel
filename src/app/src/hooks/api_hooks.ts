@@ -49,6 +49,10 @@ export function useCombat(id?: number): Combat | undefined {
 		enabled: () => id != null,
 	});
 	
+	if (query.isError) {
+		return undefined;
+	}
+	
 	return query.data;
 }
 
@@ -97,7 +101,14 @@ export function useWatchCampaign(id?: number) {
 				queryClient.setQueryData(['campaign', data.id], data);
 			},
 			'Combat': ({ data }) => {
-				queryClient.setQueryData(['combat', data.id], data);
+				if (socketEvent.changeType != 'Removed') {
+					queryClient.setQueryData(['combat', data.id], data);
+				}
+				else {
+					queryClient.removeQueries({
+						queryKey: ['combat', data.id]
+					});
+				}
 				
 				return queryClient.invalidateQueries({
 					queryKey: ['combats']
