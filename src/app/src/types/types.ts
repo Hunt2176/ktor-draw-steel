@@ -1,6 +1,7 @@
 import { type } from "arktype";
 
 const RootScope = type.scope({
+	'string.relativeUrl': /^(?![a-zA-Z][a-zA-Z0-9+\-.]*:).+/,
 	HasId: {
 		id: 'number',
 	},
@@ -38,7 +39,7 @@ const RootScope = type.scope({
 	},
 	Campaign: {
 		'...': 'BaseEntity',
-		background: 'string.url | string.ip',
+		background: 'string.url | string.ip | string.relativeUrl',
 	},
 	CampaignDetails: {
 		'...': 'BaseEntity',
@@ -51,14 +52,23 @@ const RootScope = type.scope({
 		resources: 'number',
 		surges: 'number',
 		character: 'Character',
+		combat: 'number'
 	},
 	Combat: {
 		'...': 'HasId',
 		campaign: 'number',
 		combatants: 'Combatant[]',
 	},
+	EntityType: '"ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition"',
+	SocketEvent: {
+		campaignId: 'number',
+		changeType: '"Updated" | "Created" | "Removed"',
+		entityType: 'EntityType | null',
+		dataId: 'number | null',
+		data: 'Campaign | Character | Combat | Combatant | CharacterCondition | null',
+	}
 });
 
 const RootModule = RootScope.export();
 
-export { RootModule as default };
+export { RootModule as default, RootScope };

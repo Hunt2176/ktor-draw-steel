@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ArkErrors } from "arktype";
+import { useMemo, useState } from "react";
 import useWebSocket from "react-use-websocket";
 import { useCampaignBackground } from "hooks/CampaignBackground.tsx";
 import { fetchCampaign, fetchCampaigns, fetchCharacter, fetchCombat, fetchCombatsFor } from "services/api.ts";
 import { CampaignDetails, Character, Combat } from "types/models.ts";
-import { parseIntOrUndefined } from "utils.ts";
+import Types, { RootScope } from 'types/types.ts';
 
 export function useCharacter(id: number | undefined): Character | undefined {
 	const queryKey = useMemo(() => ['character', id], [id]);
@@ -81,6 +82,49 @@ export function useWatchCampaign(id?: number) {
 	}
 	
 	setLastMessageTime(lastMessage.timeStamp);
+	
+	const socketEvent = Types.SocketEvent(lastJsonMessage);
+	if (socketEvent instanceof ArkErrors) {
+		console.error(socketEvent.summary);
+		return;
+	}
+	
+	const socketAction = RootScope.match
+		.in(Types.SocketEvent)
+		.at('data')
+		.match({
+			'CampaignDetails': ({ data }) => {
+				queryClient.setQueryData(['campaign', data.id], data);
+			},
+			'Combat': ({ data }) => {
+				queryClient.setQueryData(['combat', data.id], data);
+			},
+			'Campaign': ({ data }) => {
+				return queryClient.invalidateQueries({
+					predicate: ({ queryKey }) => {
+						return queryKey[0] == 'campaigns' || (queryKey[0] === 'campaign' && queryKey[1] === data.id);
+					},
+				});
+			},
+			'Character': ({ data }) => {
+				return queryClient.invalidateQueries({
+					queryKey: ['campaign', data.campaign]
+				})
+			},
+			'Combatant': ({ data }) => {
+				return queryClient.invalidateQueries({
+					queryKey: ['combat', data.combat]
+				});
+			},
+			'CharacterCondition': ({ data }) => {
+				return queryClient.invalidateQueries({
+					queryKey: ['character', data.character]
+				});
+			},
+			'default': () => {}
+		});
+	
+	socketAction(socketEvent);
 	
 	console.log(lastJsonMessage);
 }
