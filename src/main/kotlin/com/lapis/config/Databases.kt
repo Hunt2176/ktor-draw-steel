@@ -3,7 +3,7 @@ package com.lapis.config
 import com.lapis.database.*
 import com.lapis.database.base.BaseRepository
 import com.lapis.database.base.BaseRepositoryEntityMapper
-import com.lapis.services.base.SocketService
+import com.lapis.services.SocketService
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.dao.EntityHook
@@ -12,7 +12,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureDatabases()
 {
-	val socketServices = getKoinApplication().koin.getAll<SocketService<*>>()
+	val socketService = getKoinApplication().koin.get<SocketService>()
 	
 	val database = Database.connect(
 		url = "jdbc:sqlite:draw_steel.sqlite",
@@ -60,8 +60,6 @@ fun Application.configureDatabases()
 			return@subscribe
 		}
 		
-		socketServices.forEach {
-			it.updateFromEntityChange(event)
-		}
+		socketService.updateFromEntityChange(event)
 	}
 }

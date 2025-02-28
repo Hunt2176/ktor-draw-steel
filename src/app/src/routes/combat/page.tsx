@@ -7,7 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { CharacterCard, CharacterCardExtra } from "components/character_card/card.tsx";
 import { CharacterConditions } from "components/character_conditions.tsx";
 import { CharacterSelector } from "components/character_selector/character_selector.tsx";
-import { useCampaign, useCombat, useWatchCampaign, useWatchCombat } from "hooks/api_hooks.ts";
+import { useCampaign, useCombat, useWatchCampaign } from "hooks/api_hooks.ts";
 import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
 import { Character, Combatant } from "types/models.ts";
 import { parseIntOrUndefined } from "utils.ts";
@@ -46,7 +46,6 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	const combat = useCombat(id);
 	const campaign = useCampaign(combat?.campaign);
 	useWatchCampaign(campaign?.campaign.id);
-	useWatchCombat(id);
 	
 	const quickAddMutation = useMutation({
 		mutationFn: (character: Partial<Character>) => {

@@ -1,7 +1,6 @@
 package com.lapis.config
 
-import com.lapis.database.base.toCamelCase
-import com.lapis.services.base.SocketService
+import com.lapis.services.SocketService
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
@@ -17,21 +16,19 @@ fun Application.configureSockets()
 		masking = false
 	}
 	
-	val socketServices = getKoinApplication().koin.getAll<SocketService<*>>()
+	val socketService = getKoinApplication().koin.get<SocketService>()
 	
 	routing {
-		socketServices.forEach {
-			val tableName = it.typeEntity.table.tableName.toCamelCase()
-			val endPoint = "/watch/$tableName/{id}"
-			
-			webSocket(endPoint) {
-				val id = call.parameters["id"]?.toIntOrNull()
-				if (id == null) {
-					close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "The id of the entity is invalid"))
-					return@webSocket
-				}
-				it.addConnection(id, this@webSocket)
+		val endPoint = "/watch/{id}"
+		
+		webSocket(endPoint) {
+			val id = call.parameters["id"]?.toIntOrNull()
+			if (id == null) {
+				close(CloseReason(CloseReason.Codes.CANNOT_ACCEPT, "The id of the entity is invalid"))
+				return@webSocket
 			}
+			
+			socketService.addConnection(id, this@webSocket)
 		}
 	}
 }

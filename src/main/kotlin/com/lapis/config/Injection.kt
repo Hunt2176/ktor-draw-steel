@@ -1,8 +1,6 @@
 package com.lapis.config
 
-import com.lapis.services.SocketCampaignService
-import com.lapis.services.SocketCombatService
-import com.lapis.services.base.SocketService
+import com.lapis.services.SocketService
 import io.ktor.server.application.*
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
@@ -20,8 +18,7 @@ typealias KoinModule = Module
 private lateinit var app: KoinApplication
 
 private val appModule = module {
-	single { SocketCampaignService() } bind SocketService::class
-	single { SocketCombatService() } bind SocketService::class
+	single { SocketService() } bind SocketService::class
 }
 
 fun getKoinApplication(): KoinApplication = app
