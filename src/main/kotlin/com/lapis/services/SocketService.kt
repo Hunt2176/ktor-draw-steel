@@ -108,7 +108,7 @@ class SocketService : KoinComponent, ScopedTransactionProvider
 			}
 			is ExposedCombatant -> {
 				res = SocketServiceMatchResult(
-					campaignId = entity.combat.id.value,
+					campaignId = entity.combat.campaign.id.value,
 					value = json.encodeToJsonElement(entity.toDTO())
 				)
 			}
