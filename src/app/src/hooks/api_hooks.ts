@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ArkErrors } from "arktype";
+import { useMemo, useState } from "react";
 import useWebSocket from "react-use-websocket";
 import { useCampaignBackground } from "hooks/CampaignBackground.tsx";
 import { fetchCampaign, fetchCampaigns, fetchCharacter, fetchCombat, fetchCombatsFor } from "services/api.ts";
 import { CampaignDetails, Character, Combat } from "types/models.ts";
-import { parseIntOrUndefined } from "utils.ts";
+import Types, { RootScope } from 'types/types.ts';
 
 export function useCharacter(id: number | undefined): Character | undefined {
 	const queryKey = useMemo(() => ['character', id], [id]);
@@ -48,6 +49,10 @@ export function useCombat(id?: number): Combat | undefined {
 		enabled: () => id != null,
 	});
 	
+	if (query.isError) {
+		return undefined;
+	}
+	
 	return query.data;
 }
 
@@ -66,7 +71,7 @@ export function useWatchCampaign(id?: number) {
 	const queryClient = useQueryClient();
 	const [lastMessageTime, setLastMessageTime] = useState(0);
 	
-	const wsRes = useWebSocket<CampaignDetails | undefined>(`/watch/campaigns/${id}`, {
+	const wsRes = useWebSocket<unknown | undefined>(`/watch/${id}`, {
 		reconnectAttempts: 5,
 		retryOnError: true
 	}, id != null && !isNaN(id));
@@ -82,43 +87,59 @@ export function useWatchCampaign(id?: number) {
 	
 	setLastMessageTime(lastMessage.timeStamp);
 	
-	queryClient.invalidateQueries({
-		queryKey: ['campaigns']
-	}).finally();
-	
-	queryClient.invalidateQueries({
-		queryKey: ['combats', id]
-	}).finally()
-	
-	if (lastJsonMessage.campaign != null) {
-		queryClient.setQueryData(['campaign', id], lastJsonMessage);
-	}
-	
-	lastJsonMessage.characters.forEach((character: Character) => {
-		queryClient.setQueryData(['character', character.id], character);
-	});
-}
-
-export function useWatchCombat(id?: number) {
-	const queryClient = useQueryClient();
-	const [lastMessageTime, setLastMessageTime] = useState(0);
-	const parsedId = useMemo(() => parseIntOrUndefined(id), [id]);
-	
-	const wsRes = useWebSocket<Combat | undefined>(`/watch/combats/${parsedId}`, {
-		reconnectAttempts: 5,
-		retryOnError: true
-	}, parsedId != null);
-	
-	if (!wsRes || parsedId == null) {
+	const socketEvent = Types.SocketEvent(lastJsonMessage);
+	if (socketEvent instanceof ArkErrors) {
+		console.error(socketEvent.summary);
 		return;
 	}
 	
-	const { lastJsonMessage, lastMessage } = wsRes;
-	if (lastMessage == null || lastJsonMessage == null || lastMessage.timeStamp === lastMessageTime) {
-		return;
-	}
+	const socketAction = RootScope.match
+		.in(Types.SocketEvent)
+		.at('data')
+		.match({
+			'CampaignDetails': ({ data }) => {
+				queryClient.setQueryData(['campaign', data.id], data);
+			},
+			'Combat': ({ data }) => {
+				if (socketEvent.changeType != 'Removed') {
+					queryClient.setQueryData(['combat', data.id], data);
+				}
+				else {
+					queryClient.removeQueries({
+						queryKey: ['combat', data.id]
+					});
+				}
+				
+				return queryClient.invalidateQueries({
+					queryKey: ['combats']
+				});
+			},
+			'Campaign': ({ data }) => {
+				return queryClient.invalidateQueries({
+					predicate: ({ queryKey }) => {
+						return queryKey[0] == 'campaigns' || (queryKey[0] === 'campaign' && queryKey[1] === data.id);
+					},
+				});
+			},
+			'Character': ({ data }) => {
+				return queryClient.invalidateQueries({
+					queryKey: ['campaign', data.campaign]
+				})
+			},
+			'Combatant': ({ data }) => {
+				return queryClient.invalidateQueries({
+					queryKey: ['combat', data.combat]
+				});
+			},
+			'CharacterCondition': ({ data }) => {
+				return queryClient.invalidateQueries({
+					queryKey: ['character', data.character]
+				});
+			},
+			'default': () => {}
+		});
 	
-	setLastMessageTime(lastMessage.timeStamp);
+	socketAction(socketEvent);
 	
-	queryClient.setQueryData(['combat', parsedId], lastJsonMessage);
+	console.log(lastJsonMessage);
 }
