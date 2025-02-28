@@ -98,6 +98,10 @@ export function useWatchCampaign(id?: number) {
 			},
 			'Combat': ({ data }) => {
 				queryClient.setQueryData(['combat', data.id], data);
+				
+				return queryClient.invalidateQueries({
+					queryKey: ['combats']
+				});
 			},
 			'Campaign': ({ data }) => {
 				return queryClient.invalidateQueries({
