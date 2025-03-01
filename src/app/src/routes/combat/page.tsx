@@ -2,8 +2,9 @@ import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDisclosure, useInputState, usePrevious } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { usePreviousRef } from "hooks/usePreviousRef.ts";
 import React, { useId, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { data, useNavigate, useParams } from "react-router-dom";
 import { CharacterCard, CharacterCardExtra } from "components/character_card/card.tsx";
 import { CharacterConditions } from "components/character_conditions.tsx";
 import { CharacterSelector } from "components/character_selector/character_selector.tsx";
@@ -43,13 +44,19 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		return;
 	}
 	
-	const { data: combat } = useCombat(id);
+	const combatResult = useCombat(id);
+	const combat = combatResult.data;
+	const previousCombat = usePreviousRef(combat, {
+		predicate: () => !combatResult.isPending
+	});
 	
-	const previousCombat = usePrevious(combat);
-	
-	if (combat == null && previousCombat != null) {
-		navigate(`/campaigns/${previousCombat.campaign}`);
-		return;
+	if (!combatResult.isPending && (combat == null || combatResult.isError)) {
+		if (previousCombat != null) {
+			navigate(`/campaigns/${previousCombat.campaign}`);
+		}
+		else {
+			navigate('/campaigns');
+		}
 	}
 	
 	const { data: campaign } = useCampaign(combat?.campaign);
