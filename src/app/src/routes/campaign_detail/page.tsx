@@ -1,7 +1,7 @@
 import { faFile, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useContext, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useContext, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Anchored } from "components/anchored.tsx";
 import { CharacterSelector } from "components/character_selector/character_selector.tsx";
@@ -12,7 +12,7 @@ import { CharacterEditor } from "components/character_editor/character_editor.ts
 import { createCharacter, createCombat, CreateCombatUpdate, deleteCombat, updateCampaign } from "services/api.ts";
 import { ErrorContext } from "services/contexts.ts";
 import { Character, Combat } from "types/models.ts";
-import { ActionIcon, Button, Card, Flex, Modal, Text, Image, Title, Stack, Group, Divider, Box, useModalsStack } from "@mantine/core";
+import { ActionIcon, Button, Card, Flex, Modal, Image, Title, Stack, Group, Divider, useModalsStack } from "@mantine/core";
 import Element = React.JSX.Element;
 
 export function CampaignDetail() {
@@ -40,8 +40,8 @@ export function CampaignDetail() {
 	}
 	
 	useWatchCampaign(id);
-	const campaign = useCampaign(id);
-	const combats = useCombatsForCampaign(campaign?.campaign.id);
+	const { data: campaign } = useCampaign(id);
+	const { data: combats } = useCombatsForCampaign(campaign?.campaign.id);
 	
 	const updateCampaignBackgroundMutation = useMutation({
 		mutationFn: (url?: string) => {
@@ -186,7 +186,7 @@ export function CampaignDetail() {
 					</ActionIcon>
 				</Anchored>
 				<Flex>
-					{combats.map((combat) => {
+					{combats?.map((combat) => {
 						return (
 							<Fragment key={combat.id}>
 								<Card w={'50%'}>

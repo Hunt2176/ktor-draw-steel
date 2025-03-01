@@ -19,7 +19,7 @@ export function CharacterPage(): ReactNode {
 		return <></>;
 	}
 	
-	const character = useCharacter(id);
+	const { data: character } = useCharacter(id);
 	useWatchCampaign(character?.campaign);
 	
 	if (character != null) {

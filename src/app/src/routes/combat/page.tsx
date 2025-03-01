@@ -43,7 +43,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		return;
 	}
 	
-	const combat = useCombat(id);
+	const { data: combat } = useCombat(id);
 	
 	const previousCombat = usePrevious(combat);
 	
@@ -52,7 +52,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		return;
 	}
 	
-	const campaign = useCampaign(combat?.campaign);
+	const { data: campaign } = useCampaign(combat?.campaign);
 	useWatchCampaign(campaign?.campaign.id);
 	
 	const quickAddMutation = useMutation({
