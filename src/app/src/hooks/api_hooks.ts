@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query";
 import { ArkErrors } from "arktype";
 import { useMemo, useState } from "react";
 import useWebSocket from "react-use-websocket";
@@ -7,64 +7,52 @@ import { fetchCampaign, fetchCampaigns, fetchCharacter, fetchCombat, fetchCombat
 import { CampaignDetails, Character, Combat } from "types/models.ts";
 import Types, { RootScope } from 'types/types.ts';
 
-export function useCharacter(id: number | undefined): Character | undefined {
+export function useCharacter(id: number | undefined): UseQueryResult<Character> {
 	const queryKey = useMemo(() => ['character', id], [id]);
 	
-	const { data } = useQuery({
+	return useQuery({
 		queryKey,
 		queryFn: () => fetchCharacter(id!),
 		enabled: () => id != null,
 	});
-	
-	return data
 }
 
-export function useCampaign(id: number | undefined): CampaignDetails | undefined {
+export function useCampaign(id: number | undefined): UseQueryResult<CampaignDetails> {
 	const queryKey = useMemo(() => ['campaign', id], [id]);
 	
-	const { data } = useQuery({
+	const result = useQuery({
 		queryKey,
 		enabled: () => id != null,
 		queryFn: () => fetchCampaign(id!),
 	});
 	
-	useCampaignBackground(data?.campaign);
-	return data;
+	useCampaignBackground(result.data?.campaign);
+	return result;
 }
 
-export function useCampaignList(): CampaignDetails[] {
-	const query = useQuery({
+export function useCampaignList(): UseQueryResult<CampaignDetails[]> {
+	return useQuery({
 		queryKey: ['campaigns'],
 		queryFn: fetchCampaigns,
 	});
-	
-	return query.data ?? [];
 }
 
-export function useCombat(id?: number): Combat | undefined {
+export function useCombat(id?: number): UseQueryResult<Combat> {
 	const queryKey = useMemo(() => ['combat', id], [id]);
-	const query = useQuery({
+	return useQuery({
 		queryKey: queryKey,
 		queryFn: () => fetchCombat(id!),
 		enabled: () => id != null,
 	});
-	
-	if (query.isError) {
-		return undefined;
-	}
-	
-	return query.data;
 }
 
-export function useCombatsForCampaign(id?: number): Combat[] {
+export function useCombatsForCampaign(id?: number): UseQueryResult<Combat[]> {
 	const queryKey = useMemo(() => ['combats', id], [id]);
-	const query = useQuery({
+	return useQuery({
 		queryKey: queryKey,
 		queryFn: () => fetchCombatsFor(id!),
 		enabled: () => id != null,
 	});
-	
-	return query.data ?? [];
 }
 
 export function useWatchCampaign(id?: number) {

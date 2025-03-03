@@ -6,7 +6,7 @@ import { CampaignDetails } from "types/models.ts";
 export function CampaignPage() {
 	const navigator = useNavigate();
 	
-	const campaigns = useCampaignList();
+	const { data: campaigns } = useCampaignList();
 	
 	function selectCampaign(details: CampaignDetails) {
 		navigator(`/campaigns/${details.campaign.id}`);
