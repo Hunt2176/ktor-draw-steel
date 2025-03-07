@@ -214,6 +214,10 @@ export function CampaignDetail() {
 	
 	const characterElements = useMemo(() => {
 		return campaign && campaign.characters.reduce((acc, character, index) => {
+			if (character.offstage) {
+				return acc;
+			}
+			
 			const characterEl = (
 				<CharacterCard onPortraitClick={() => navigate(`/characters/${character.id}`)} key={character.id} character={character} type={'tile'}/>
 			)

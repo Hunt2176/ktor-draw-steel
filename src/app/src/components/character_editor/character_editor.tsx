@@ -1,4 +1,4 @@
-import { NumberInput, Image, Stack, TextInput, Group, Button, Divider, Loader } from "@mantine/core";
+import { NumberInput, Image, Stack, TextInput, Group, Button, Divider, Loader, Switch } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useRef, useState } from "react";
 import { UploadModal } from "components/upload-modal.tsx";
@@ -106,6 +106,10 @@ export function CharacterEditor({ uploadStackId, character, onSubmit }: Characte
 			<TextInput label="Resource Name"
 			           value={stateVars['resourceName'][0] ?? ''}
 			           onChange={(e) => onEdit('resourceName', e.target.value)}/>
+			
+			<Switch label={'Offstage'}
+			        checked={stateVars['offstage'][0]}
+			        onChange={(e) => onEdit('offstage', e.target.checked)}/>
 			
 			<Divider/>
 			{ stateVars['pictureUrl'][0] &&

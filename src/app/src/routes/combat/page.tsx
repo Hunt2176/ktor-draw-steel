@@ -12,7 +12,7 @@ import { useCampaign, useCombat, useWatchCampaign } from "hooks/api_hooks.ts";
 import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
 import { Character, Combatant } from "types/models.ts";
 import { parseIntOrUndefined } from "utils.ts";
-import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex } from "@mantine/core";
+import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex, Switch } from "@mantine/core";
 
 export interface CombatPageProps {
 
@@ -64,7 +64,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	
 	const quickAddMutation = useMutation({
 		mutationFn: (character: Partial<Character>) => {
-			return quickAddCombatant(id, { character: {name: character.name!, maxHp: character.maxHp!, user: 1} });
+			return quickAddCombatant(id, { character: {name: character.name!, maxHp: character.maxHp!, offstage: character.offstage ?? true, user: 1} });
 		},
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({
@@ -353,6 +353,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		<Modal title={'Quick Add'} opened={showQuickAdd} onClose={showQuickAddHandler.close} onEnterTransitionEnd={() => setQuickAddConfig({})}>
 			<TextInput label="Name" value={quickAddConfig['name'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, name: e.target.value})} />
 			<TextInput label={'Max HP'} type={'number'} min={0} value={quickAddConfig['maxHp'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, maxHp: parseIntOrUndefined(e.target.value)})} />
+			<Switch mt={'xs'} label={'Offstage'} checked={quickAddConfig['offstage'] ?? true} onChange={(e) => setQuickAddConfig({...quickAddConfig, offstage: e.target.checked})} />
 			<Divider my={'md'} />
 			<Group justify={'end'}>
 				<Button disabled={quickAddConfig['name'] == null || quickAddConfig['maxHp'] == null}
