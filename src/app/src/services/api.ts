@@ -189,7 +189,8 @@ export type CombatantQuickAddUpdate = {
 	character: {
 		name: string,
 		maxHp: number,
-		user: number
+		user: number,
+		offstage: boolean
 	}
 }
 export async function quickAddCombatant(id: number, update: CombatantQuickAddUpdate): Promise<Combat> {

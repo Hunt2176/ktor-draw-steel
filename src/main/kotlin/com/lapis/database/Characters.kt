@@ -105,6 +105,7 @@ object Characters : IntIdTable(), HasName, HasCampaign
 	
 	val victories = integer("victories").default(0)
 	
+	val offstage = bool("offstage").default(false)
 	val resourceName = text("resource_name").nullable()
 	val pictureUrl = varchar("picture_url", 255).nullable()
 	val border = varchar("border", 255).nullable()
@@ -139,6 +140,7 @@ class ExposedCharacter(
 	
 	var victories by Characters.victories
 	
+	var offstage by Characters.offstage
 	var resourceName by Characters.resourceName
 	var pictureUrl by Characters.pictureUrl
 	var border by Characters.border
@@ -169,11 +171,12 @@ class ExposedCharacter(
 		json["removedRecoveries"]?.jsonPrimitive?.int?.let { removedRecoveries = it }
 		json["maxRecoveries"]?.jsonPrimitive?.int?.let { maxRecoveries = it }
 		
+		json["offstage"]?.jsonPrimitive?.boolean?.let { offstage = it }
 		json["resourceName"]?.jsonPrimitive?.contentOrNull?.let { resourceName = it }
 		json["victories"]?.jsonPrimitive?.int?.let { victories = it }
 		
-		if (json.containsKey("pictureUrl")) json["pictureUrl"]?.jsonPrimitive?.contentOrNull?.let { pictureUrl = it }
-		if (json.containsKey("border")) json["border"]?.jsonPrimitive?.contentOrNull?.let { border = it }
+		json["pictureUrl"]?.jsonPrimitive?.contentOrNull?.let { pictureUrl = it }
+		json["border"]?.jsonPrimitive?.contentOrNull?.let { border = it }
 		
 		json["campaign"]?.jsonPrimitive?.int?.let { campaign = ExposedCampaign.findById(it) ?: error("Campaign not found") }
 		json["user"]?.jsonPrimitive?.int?.let { user = ExposedUser.findById(it) ?: error("User not found") }
@@ -197,6 +200,7 @@ data class CharacterDTO (
 	val victories: Int,
 	val campaign: Int,
 	val user: Int,
+	val offstage: Boolean,
 	val resourceName: String?,
 	val pictureUrl: String?,
 	val border: String?,
@@ -223,6 +227,7 @@ data class CharacterDTO (
 				entity.victories,
 				entity.campaign.id.value,
 				entity.user.id.value,
+				entity.offstage,
 				entity.resourceName,
 				entity.pictureUrl,
 				entity.border,

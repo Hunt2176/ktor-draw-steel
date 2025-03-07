@@ -36,6 +36,7 @@ const RootScope = type.scope({
 		border: 'string | null',
 		campaign: 'number',
 		conditions: 'CharacterCondition[]',
+		offstage: 'boolean',
 	},
 	Campaign: {
 		'...': 'BaseEntity',

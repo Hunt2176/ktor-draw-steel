@@ -34,6 +34,7 @@ export interface Character extends HasId, HasName {
 	user: number;
 	pictureUrl: string | null;
 	border: string | null;
+	offstage: boolean;
 	
 	campaign: number;
 	conditions: CharacterCondition[];
@@ -78,6 +79,7 @@ export class Character {
 			campaign: -1,
 			pictureUrl: null,
 			border: null,
+			offstage: false,
 			conditions: [],
 		} as Character;
 	}

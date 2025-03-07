@@ -131,11 +131,10 @@ class CombatRepository(database: Database) : BaseRepository<ExposedCombat, Expos
 			
 			val response = transaction {
 				val combat = ExposedCombat.findById(id) ?: error("Combat not found")
+				
 				val character = ExposedCharacter.new {
-					this.name = body.character["name"]?.jsonPrimitive?.content ?: error("Name not found")
-					this.maxHp = body.character["maxHp"]?.jsonPrimitive?.int ?: error("Max HP not found")
-					this.user = body.character["user"]?.jsonPrimitive?.int?.let { ExposedUser.findById(it) } ?: error("User not found")
-					this.campaign = combat.campaign
+					customizeFromJson(body.character)
+					campaign = combat.campaign
 				}
 				
 				ExposedCombatant.new {
