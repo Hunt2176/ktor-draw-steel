@@ -40,12 +40,13 @@ const RootScope = type.scope({
 	},
 	Campaign: {
 		'...': 'BaseEntity',
-		background: 'string.url | string.ip | string.relativeUrl',
+		background: 'string.url | string.relativeUrl',
 	},
 	CampaignDetails: {
 		'...': 'BaseEntity',
 		campaign: 'Campaign',
 		characters: 'Character[]',
+		entries: 'DisplayEntry[]',
 	},
 	Combatant: {
 		'...': 'HasId',
@@ -59,6 +60,13 @@ const RootScope = type.scope({
 		'...': 'HasId',
 		campaign: 'number',
 		combatants: 'Combatant[]',
+	},
+	DisplayEntry: {
+		'...': 'HasId',
+		title: 'string',
+		'description': 'string | null',
+		'pictureUrl': 'string.url | string.relativeUrl | null',
+		'type': '"Background" | "Portrait"'
 	},
 	EntityType: '"ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition"',
 	SocketEvent: {
