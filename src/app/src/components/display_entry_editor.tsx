@@ -1,4 +1,4 @@
-import { Button, FileButton, Select, TextInput, Image } from "@mantine/core";
+import { Button, FileButton, Select, TextInput, Image, Textarea } from "@mantine/core";
 import { useDidUpdate, useInputState } from "@mantine/hooks";
 import { ArkErrors } from "arktype";
 import { useMemo } from "react";
@@ -30,9 +30,9 @@ export function DisplayEntryEditor({ entry: initEntry, onChange }: DisplayEntryE
 	useDidUpdate(() => {
 		const update = EditorUpdateType({
 			title: title,
-			description: description,
 			type: type,
-			pictureUrl: pictureUrl,
+			description: description ?? null,
+			pictureUrl: pictureUrl ?? null,
 			file: image
 		});
 		
@@ -54,7 +54,7 @@ export function DisplayEntryEditor({ entry: initEntry, onChange }: DisplayEntryE
 	
 	return <>
 		<TextInput label={'Title'} value={title} onChange={setTitle}></TextInput>
-		<TextInput label={'Description'} value={description ?? undefined} onChange={setDescription}></TextInput>
+		<Textarea label={'Description'} value={description ?? undefined} onChange={setDescription}></Textarea>
 		<Select label={'Type'} value={type} data={['Portrait', 'Background'] as const} onChange={(e) => setType(e as typeof type)} />
 		<FileButton onChange={setImage}>
 			{ (props) => <>
@@ -69,9 +69,10 @@ export function DisplayEntryEditor({ entry: initEntry, onChange }: DisplayEntryE
 
 const EditorUpdateType = RootScope.type({
 	title: /[a-zA-Z]+/,
-	'description?': 'string',
-	'type': Types.DisplayEntry.get('type'),
+	description: 'string | null',
+	type: Types.DisplayEntry.get('type'),
 	file: 'File | null',
+	pictureUrl: Types.DisplayEntry.get('pictureUrl'),
 });
 
 export type DisplayEntryEditorUpdate = typeof EditorUpdateType.infer;

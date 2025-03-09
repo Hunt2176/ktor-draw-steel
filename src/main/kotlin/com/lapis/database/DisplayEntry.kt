@@ -5,6 +5,7 @@ import com.lapis.database.base.HasCampaign
 import com.lapis.database.base.HasDTO
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.dao.Entity
@@ -48,9 +49,9 @@ class ExposedDisplayEntry(
 	
 	override fun ExposedDisplayEntry.customizeFromJson(json: JsonObject)
 	{
-		json["title"]?.jsonPrimitive?.content?.let { title = it }
-		json["description"]?.jsonPrimitive?.content?.let { description = it }
-		json["pictureUrl"]?.jsonPrimitive?.content?.let { pictureUrl = it }
+		json["title"]?.jsonPrimitive?.contentOrNull?.let { title = it }
+		json["description"]?.jsonPrimitive?.contentOrNull?.let { description = it }
+		json["pictureUrl"]?.jsonPrimitive?.contentOrNull?.let { pictureUrl = it }
 		json["type"]?.jsonPrimitive?.content?.let { type = DisplayEntryType.valueOf(it) }
 		
 		json["campaign"]?.jsonPrimitive?.int?.let { campaign = ExposedCampaign.findById(it) ?: error("Campaign not found") }

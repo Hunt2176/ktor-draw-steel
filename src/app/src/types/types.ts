@@ -68,13 +68,13 @@ const RootScope = type.scope({
 		type: '"Background" | "Portrait"',
 		campaign: 'number',
 	},
-	EntityType: '"ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition"',
+	EntityType: '"ExposedDisplayEntry" | "ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition" | "ExposedCharacterCondition"',
 	SocketEvent: {
 		campaignId: 'number',
 		changeType: '"Updated" | "Created" | "Removed"',
 		entityType: 'EntityType | null',
 		dataId: 'number | null',
-		data: 'Campaign | Character | Combat | Combatant | CharacterCondition | null',
+		data: 'Campaign | Character | Combat | Combatant | CharacterCondition | DisplayEntry | null',
 	}
 });
 
