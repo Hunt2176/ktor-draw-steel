@@ -64,6 +64,7 @@ data class DisplayEntryDTO(
 	val description: String?,
 	val pictureUrl: String?,
 	val type: DisplayEntryType,
+	val campaign: Int
 ) {
 	companion object
 	{
@@ -74,7 +75,8 @@ data class DisplayEntryDTO(
 				title = entity.title,
 				description = entity.description,
 				pictureUrl = entity.pictureUrl,
-				type = entity.type
+				type = entity.type,
+				campaign = entity.campaign.id.value
 			)
 		}
 	}

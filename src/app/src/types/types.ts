@@ -63,9 +63,10 @@ const RootScope = type.scope({
 	DisplayEntry: {
 		'...': 'HasId',
 		title: 'string',
-		'description': 'string | null',
-		'pictureUrl': 'string.url | string.relativeUrl | null',
-		'type': '"Background" | "Portrait"'
+		description: 'string | null',
+		pictureUrl: 'string.url | string.relativeUrl | null',
+		type: '"Background" | "Portrait"',
+		campaign: 'number',
 	},
 	EntityType: '"ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition"',
 	SocketEvent: {
