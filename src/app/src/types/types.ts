@@ -43,7 +43,6 @@ const RootScope = type.scope({
 		background: 'string.url | string.relativeUrl',
 	},
 	CampaignDetails: {
-		'...': 'BaseEntity',
 		campaign: 'Campaign',
 		characters: 'Character[]',
 		entries: 'DisplayEntry[]',

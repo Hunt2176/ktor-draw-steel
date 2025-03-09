@@ -1,7 +1,9 @@
 import { Carousel } from "@mantine/carousel";
-import { BackgroundImage, Box, Flex, Image, Stack, Title } from "@mantine/core";
+import { BackgroundImage, Box, Burger, Drawer, Flex, Image, Stack, Title, Text, Anchor, Button } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { EmblaCarouselType } from "embla-carousel";
 import { useCampaign } from "hooks/api_hooks.ts";
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { parseIntOrUndefined } from "utils.ts";
 
@@ -10,6 +12,9 @@ export interface DisplayPageProps {}
 export function DisplayPage({}: DisplayPageProps) {
 	const navigate = useNavigate();
 	const params = useParams();
+	
+	const [drawerOpen, drawerOpenHandlers] = useDisclosure(false);
+	const [embla, setEmbla] = useState<EmblaCarouselType>();
 	
 	const { id } = params;
 	const campaignId = parseIntOrUndefined(id);
@@ -93,17 +98,50 @@ export function DisplayPage({}: DisplayPageProps) {
 		
 	}, [campaign]);
 	
+	const drawer = useMemo(() => {
+		if (!campaign) {
+			return <></>;
+		}
+		
+		function scrollTo(index: number) {
+			embla?.scrollTo(index, true);
+			drawerOpenHandlers.close();
+		}
+		
+		return <>
+			<Drawer title={<Text>{campaign.campaign.name}</Text>}
+			        opened={drawerOpen}
+			        onClose={drawerOpenHandlers.close}>
+				<Stack>
+					{ campaign.entries.map((e, idx) => {
+						return <Fragment key={e.id}>
+							<Button onClick={() => scrollTo(idx)} disabled={embla == null}>
+								<Text>{e.title}</Text>
+							</Button>
+						</Fragment>
+					})}
+				</Stack>
+			</Drawer>
+		</>;
+	}, [campaign, drawerOpen, embla]);
+	
 	if (!campaign) {
 		return <>
 			<Flex h={'100%'} justify={'center'} align={'center'}>
 				Loading...
 			</Flex>
-		</>;
+			</>;
 	}
 	
 	return <>
+		{drawer}
+		<Box pos={'absolute'} style={{'zIndex': '100'}}>
+			<Box m={'xs'}>
+				<Burger opened={drawerOpen} onClick={drawerOpenHandlers.toggle}></Burger>
+			</Box>
+		</Box>
 		<Flex h={'100%'}>
-			<Carousel height={'100%'} style={{ flex: 1 }}>
+			<Carousel getEmblaApi={setEmbla} height={'100%'} style={{ flex: 1 }}>
 				{items}
 			</Carousel>
 		</Flex>
