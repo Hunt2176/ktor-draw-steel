@@ -146,7 +146,13 @@ export function DisplayPage({}: DisplayPageProps) {
 		}
 		
 		return <>
-			<Drawer title={<Text>{campaign.campaign.name}</Text>}
+			<Drawer title={
+				<Button onClick={() => navigate(`/campaigns/${campaignId}`)} variant={'transparent'}>
+					<Title>
+						{campaign.campaign.name}
+					</Title>
+				</Button>
+			}
 			        opened={drawerOpen}
 			        onClose={drawerOpenHandlers.close}>
 				<Flex mb={'xs'} justify={'end'}>
