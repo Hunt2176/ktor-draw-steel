@@ -1,7 +1,7 @@
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Carousel } from "@mantine/carousel";
-import { BackgroundImage, Box, Burger, Drawer, Flex, Image, Stack, Title, Text, Button, ActionIcon, Dialog, Modal, Divider, Group } from "@mantine/core";
+import { BackgroundImage, Box, Burger, Drawer, Flex, Image, Stack, Title, Text, Button, Modal, Divider, Group, Grid, Popover } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArkErrors } from "arktype";
@@ -10,7 +10,7 @@ import { EmblaCarouselType } from "embla-carousel";
 import { useCampaign, useWatchCampaign } from "hooks/api_hooks.ts";
 import { Fragment, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { createDisplayEntry, uploadFile } from "services/api.ts";
+import { createDisplayEntry, deleteDisplayEntry, uploadFile } from "services/api.ts";
 import { parseIntOrUndefined } from "utils.ts";
 
 export interface DisplayPageProps {}
@@ -23,6 +23,7 @@ export function DisplayPage({}: DisplayPageProps) {
 	const [drawerOpen, drawerOpenHandlers] = useDisclosure(false);
 	const [editModalOpen, editModalOpenHandlers] = useDisclosure(false);
 	const [embla, setEmbla] = useState<EmblaCarouselType>();
+	const [openedDeleteId, setOpenedDeleteId] = useState<number>();
 	
 	const [editorState, setEditorState] = useState<DisplayEntryEditorUpdate | ArkErrors>();
 	
@@ -59,7 +60,18 @@ export function DisplayPage({}: DisplayPageProps) {
 				queryKey: ['campaign', campaignId],
 			})
 		}
-	})
+	});
+	
+	const deleteEntryMutation = useMutation({
+		mutationFn: async (id: number) => {
+			return await deleteDisplayEntry(id);
+		},
+		onSuccess: () => {
+			return queryClient.invalidateQueries({
+				queryKey: ['campaign', campaignId],
+			})
+		}
+	});
 	
 	const campaignResult = useCampaign(campaignId);
 	const { data: campaign } = campaignResult;
@@ -145,14 +157,20 @@ export function DisplayPage({}: DisplayPageProps) {
 			drawerOpenHandlers.close();
 		}
 		
+		function closeDelete(id: number) {
+			if (openedDeleteId === id) {
+				setOpenedDeleteId(undefined);
+			}
+		}
+		
 		return <>
 			<Drawer title={
-				<Button onClick={() => navigate(`/campaigns/${campaignId}`)} variant={'transparent'}>
+				<Button onClick={() => navigate(`/campaigns/${campaignId}`)}
+				        variant={'transparent'}>
 					<Title>
 						{campaign.campaign.name}
 					</Title>
-				</Button>
-			}
+				</Button>}
 			        opened={drawerOpen}
 			        onClose={drawerOpenHandlers.close}>
 				<Flex mb={'xs'} justify={'end'}>
@@ -164,15 +182,50 @@ export function DisplayPage({}: DisplayPageProps) {
 				<Stack>
 					{ campaign.entries.map((e, idx) => {
 						return <Fragment key={e.id}>
-							<Button onClick={() => scrollTo(idx)} disabled={embla == null}>
-								<Text>{e.title}</Text>
-							</Button>
+							<Grid align={'center'}>
+								<Grid.Col span={10}>
+									<Button w={'100%'} variant={'outline'} onClick={() => scrollTo(idx)} disabled={embla == null}>
+										<Text>{e.title}</Text>
+									</Button>
+								</Grid.Col>
+								<Grid.Col span={2}>
+									<Popover withArrow
+									         opened={openedDeleteId === e.id}
+									         onChange={(opened) => {
+														 if (opened) {
+															 setOpenedDeleteId(e.id);
+														 } else {
+															 closeDelete(e.id);
+														 }
+									         }}>
+										<Popover.Target>
+											<Button color={'red'} onClick={() => setOpenedDeleteId(e.id)}>
+												<FontAwesomeIcon icon={faTrash}/>
+											</Button>
+										</Popover.Target>
+										<Popover.Dropdown>
+											<Text size={'md'}>
+												Are you sure you want to delete this entry?
+											</Text>
+											<Divider orientation={'vertical'}/>
+											<Group justify={'end'} gap={'xs'}>
+												<Button mt={'xs'} color={'gray'} onClick={() => closeDelete(e.id)}>
+													Cancel
+												</Button>
+												<Button mt={'xs'} color={'red'} onClick={() => deleteEntryMutation.mutate(e.id)}>
+													Delete
+												</Button>
+											</Group>
+										</Popover.Dropdown>
+									</Popover>
+								</Grid.Col>
+							</Grid>
 						</Fragment>
 					})}
 				</Stack>
 			</Drawer>
 		</>;
-	}, [campaign, drawerOpen, embla, editModalOpenHandlers.open]);
+	}, [campaign, drawerOpen, embla, editModalOpenHandlers.open, navigate, openedDeleteId, deleteEntryMutation]);
 	
 	if (!campaign) {
 		return <>

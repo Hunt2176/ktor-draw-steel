@@ -299,3 +299,13 @@ export async function createDisplayEntry(entry: Omit<DisplayEntry, 'id'>) {
 	
 	return (await res.json()) as DisplayEntry;
 }
+
+export async function deleteDisplayEntry(id: number) {
+	const res = await fetch(`/api/displayEntry/${id}`, {
+		method: 'DELETE'
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to delete display entry');
+	}
+}
