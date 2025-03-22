@@ -40,12 +40,12 @@ const RootScope = type.scope({
 	},
 	Campaign: {
 		'...': 'BaseEntity',
-		background: 'string.url | string.ip | string.relativeUrl',
+		background: 'string.url | string.relativeUrl',
 	},
 	CampaignDetails: {
-		'...': 'BaseEntity',
 		campaign: 'Campaign',
 		characters: 'Character[]',
+		entries: 'DisplayEntry[]',
 	},
 	Combatant: {
 		'...': 'HasId',
@@ -60,13 +60,21 @@ const RootScope = type.scope({
 		campaign: 'number',
 		combatants: 'Combatant[]',
 	},
-	EntityType: '"ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition"',
+	DisplayEntry: {
+		'...': 'HasId',
+		title: 'string',
+		description: 'string | null',
+		pictureUrl: 'string.url | string.relativeUrl | null',
+		type: '"Background" | "Portrait"',
+		campaign: 'number',
+	},
+	EntityType: '"ExposedDisplayEntry" | "ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition" | "ExposedCharacterCondition"',
 	SocketEvent: {
 		campaignId: 'number',
 		changeType: '"Updated" | "Created" | "Removed"',
 		entityType: 'EntityType | null',
 		dataId: 'number | null',
-		data: 'Campaign | Character | Combat | Combatant | CharacterCondition | null',
+		data: 'Campaign | Character | Combat | Combatant | CharacterCondition | DisplayEntry | null',
 	}
 });
 

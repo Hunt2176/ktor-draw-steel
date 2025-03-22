@@ -1,4 +1,4 @@
-import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant } from "types/models.ts";
+import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant, DisplayEntry } from "types/models.ts";
 import axios from 'axios';
 
 export async function updateCampaign(id: number, campaign: Partial<Campaign>) {
@@ -282,4 +282,30 @@ export async function uploadFile(file: File) {
 	const res = await axios.postForm('/files', formData);
 	
 	return res.data as { fileName: string };
+}
+
+export async function createDisplayEntry(entry: Omit<DisplayEntry, 'id'>) {
+	const res = await fetch('/api/displayEntry', {
+		method: 'POST',
+		body: JSON.stringify(entry),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to create display entry');
+	}
+	
+	return (await res.json()) as DisplayEntry;
+}
+
+export async function deleteDisplayEntry(id: number) {
+	const res = await fetch(`/api/displayEntry/${id}`, {
+		method: 'DELETE'
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to delete display entry');
+	}
 }

@@ -1,4 +1,4 @@
-import { faFile, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faBook, faImage, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useContext, useMemo, useRef, useState } from "react";
@@ -243,10 +243,15 @@ export function CampaignDetail() {
 	    <Stack>
 	      <Flex flex={1}>
           <Anchored position={'left'}>
-            <Title display={'inline-block'} pr={8} order={2}>{campaign.campaign.name}</Title>
-	          <ActionIcon onClick={() => setShowBackgroundUpload(true)} variant={'outline'}>
-			          <FontAwesomeIcon icon={faFile} />
-	          </ActionIcon>
+	          <Group>
+	            <Title display={'inline-block'} pr={8} order={2}>{campaign.campaign.name}</Title>
+		          <ActionIcon variant={'outline'} onClick={() => navigate(`/campaigns/${campaign.campaign.id}/display`)}>
+			          <FontAwesomeIcon icon={faBook} />
+		          </ActionIcon>
+		          <ActionIcon variant={'outline'} onClick={() => setShowBackgroundUpload(true)}>
+				          <FontAwesomeIcon icon={faImage} />
+		          </ActionIcon>
+	          </Group>
           </Anchored>
 	      </Flex>
 	      {combatElements}
@@ -264,7 +269,7 @@ export function CampaignDetail() {
           </Group>
 	      </Stack>
 	    </Stack>
-	), [campaign, characterElements, combatElements]);
+	), [campaign, characterElements, combatElements, navigate]);
 	
 	if (campaign) {
 		return (

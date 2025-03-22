@@ -35,11 +35,15 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 				.find { Characters.campaign inList campaigns.map { it.id } }
 				.map { it.toDTO() }
 			
+			val displayEntries = ExposedDisplayEntry
+				.find { DisplayEntry.campaign inList campaigns.map { it.id } }
+				.map { it.toDTO() }
+			
 			campaigns.map { c ->
-				val cCharacters = characters.filter { it.campaign == c.id }
 				mapOf(
 					"campaign" to Json.encodeToJsonElement(c),
-					"characters" to Json.encodeToJsonElement(cCharacters)
+					"characters" to Json.encodeToJsonElement(characters),
+					"entries" to Json.encodeToJsonElement(displayEntries),
 				)
 			}
 		}

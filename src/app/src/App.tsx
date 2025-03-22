@@ -1,5 +1,6 @@
 import 'App.scss'
 import '@mantine/core/styles.css';
+import '@mantine/carousel/styles.css';
 
 import { Card, ColorSchemeScript, createTheme, MantineProvider, Modal, Popover, useMantineColorScheme } from "@mantine/core";
 import { ModalsProvider } from "@mantine/modals";
@@ -11,6 +12,7 @@ import { CampaignDetail } from "routes/campaign_detail/page.tsx";
 import { CampaignPage } from "routes/campaigns/page.tsx";
 import { CharacterPage } from "routes/characters/page.tsx";
 import { CombatPage } from "routes/combat/page.tsx";
+import { DisplayPage } from "routes/display/page_display_entry.tsx";
 import { HomePage } from "routes/home/page.tsx";
 import { ErrorContext } from "services/contexts.ts";
 
@@ -59,12 +61,13 @@ const RouterEl = () => {
 	return (
 				<Router>
 					<Routes>
-						<Route path="/" element={<HomePage/>}></Route>
-						<Route path="/campaigns" element={<CampaignPage/>}></Route>
-						<Route path="/campaigns/:id" element={<CampaignDetail/>}></Route>
-						<Route path="/campaigns/:id/characters" element={<CharacterPage/>}></Route>
-						<Route path="/characters/:id" element={<CharacterPage/>}></Route>
-						<Route path="/combats/:id" element={<CombatPage/>}></Route>
+						<Route path="/" element={<HomePage/>} />
+						<Route path="/campaigns" element={<CampaignPage/>} />
+						<Route path="/campaigns/:id" element={<CampaignDetail/>} />
+						<Route path="/campaigns/:id/characters" element={<CharacterPage/>} />
+						<Route path="/campaigns/:id/display" element={<DisplayPage/>} />
+						<Route path="/characters/:id" element={<CharacterPage/>} />
+						<Route path="/combats/:id" element={<CombatPage/>} />
 					</Routes>
 				</Router>
 	)

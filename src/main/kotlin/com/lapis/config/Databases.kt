@@ -43,6 +43,9 @@ fun Application.configureDatabases()
 			BaseRepository(ExposedCharacterCondition, database, BaseRepositoryEntityMapper(ExposedCharacterCondition::toDTO) {
 				customizeFromJson(it)
 			}),
+			BaseRepository(ExposedDisplayEntry, database, BaseRepositoryEntityMapper(ExposedDisplayEntry::toDTO) {
+				customizeFromJson(it)
+			})
 		)
 	}
 	

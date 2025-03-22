@@ -82,6 +82,12 @@ class SocketService : KoinComponent, ScopedTransactionProvider
 		
 		val res: SocketServiceMatchResult
 		when (entity) {
+			is ExposedDisplayEntry -> {
+				res = SocketServiceMatchResult(
+					campaignId = entity.campaign.id.value,
+					value = json.encodeToJsonElement(entity.toDTO())
+				)
+			}
 			is ExposedCampaign -> {
 				res = SocketServiceMatchResult(
 					campaignId = entity.id.value,

@@ -1,3 +1,6 @@
+import { type } from "arktype";
+import Types from "types/types.ts";
+
 export type HasId = { id: number };
 export type HasName = { name: string };
 
@@ -7,10 +10,8 @@ export interface Campaign extends HasId, HasName {
 	background?: string;
 }
 
-export interface CampaignDetails {
-	campaign: Campaign;
-	characters: Character[];
-}
+export type DisplayEntry = typeof Types.DisplayEntry.infer;
+export type CampaignDetails = typeof Types.CampaignDetails.infer;
 
 export type CharacterConditionEndType = 'endOfTurn' | 'save';
 export type CharacterCondition = HasId & HasName & {

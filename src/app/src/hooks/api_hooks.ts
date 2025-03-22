@@ -81,53 +81,14 @@ export function useWatchCampaign(id?: number) {
 		return;
 	}
 	
-	const socketAction = RootScope.match
-		.in(Types.SocketEvent)
-		.at('data')
-		.match({
-			'CampaignDetails': ({ data }) => {
-				queryClient.setQueryData(['campaign', data.id], data);
-			},
-			'Combat': ({ data }) => {
-				if (socketEvent.changeType != 'Removed') {
-					queryClient.setQueryData(['combat', data.id], data);
-				}
-				else {
-					queryClient.removeQueries({
-						queryKey: ['combat', data.id]
-					});
-				}
-				
-				return queryClient.invalidateQueries({
-					queryKey: ['combats']
-				});
-			},
-			'Campaign': ({ data }) => {
-				return queryClient.invalidateQueries({
-					predicate: ({ queryKey }) => {
-						return queryKey[0] == 'campaigns' || (queryKey[0] === 'campaign' && queryKey[1] === data.id);
-					},
-				});
-			},
-			'Character': ({ data }) => {
-				return queryClient.invalidateQueries({
-					queryKey: ['campaign', data.campaign]
-				})
-			},
-			'Combatant': ({ data }) => {
-				return queryClient.invalidateQueries({
-					queryKey: ['combat', data.combat]
-				});
-			},
-			'CharacterCondition': ({ data }) => {
-				return queryClient.invalidateQueries({
-					queryKey: ['character', data.character]
-				});
-			},
-			'default': () => {}
-		});
-	
-	socketAction(socketEvent);
+	queryClient.invalidateQueries({
+		predicate: (q) => {
+			if (q.queryKey[0] === 'campaign' && q.queryKey[1] === socketEvent.campaignId) {
+				return true;
+			}
+			return q.queryKey[0] === 'combat' && (q.state?.data as Combat)?.campaign == socketEvent.campaignId;
+		}
+	});
 	
 	console.log(lastJsonMessage);
 }
