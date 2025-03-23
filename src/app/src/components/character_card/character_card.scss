@@ -1,0 +1,24 @@
+.character-card {
+  .display-grid {
+    display: grid;
+    grid-template-areas: var(--character-card-grid-areas);
+    grid-template-columns: var(--character-card-grid-columns);
+    grid-template-rows: var(--character-card-grid-rows);
+  }
+
+  &.full {
+
+  }
+  &.tile {
+    --character-card-grid-areas:
+      'overflow-left image name name overflow-right'
+      'overflow-left image gauge gauge overflow-right'
+      'overflow-left image gauge gauge overflow-right'
+      'overflow-bottom overflow-bottom overflow-bottom overflow-bottom overflow-bottom'
+    ;
+    --character-card-grid-columns: minmax(0, min-content) minmax(0, min-content) repeat(2,minmax(0, 1fr)) minmax(0, min-content);
+    --character-card-grid-rows: repeat(4, min-content);
+    --character-card-image-height: 100%;
+
+  }
+}

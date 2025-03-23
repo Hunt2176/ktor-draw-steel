@@ -8,6 +8,7 @@ import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, Mo
 import { ErrorContext } from "services/contexts.ts";
 import { Character } from "types/models.ts";
 import { parseIntOrUndefined, toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "utils.ts";
+import './character_card.scss';
 
 
 export interface CharacterCardProps {
@@ -145,15 +146,17 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 	
 	const image = useMemo(() => (
 		<Image fit={'cover'}
+		       h={'var(--character-card-image-height)'}
 		       w={type != 'full' ? '100px' : undefined}
 		       flex={type != 'full' ? 'revert' : undefined}
 		       style={{objectPosition: 'top center'}}
 		       onClick={onPortraitClick}
+		       className={'character-portrait'}
 		       src={character.pictureUrl ?? undefined}/>
 	), [character.pictureUrl, onPortraitClick, type]);
 	
 	const fullCard = useMemo(() => (
-			<Card withBorder shadow={'xs'} style={{width: '15rem'}}>
+			<Card className={'character-card full'} withBorder shadow={'xs'} style={{width: '15rem'}}>
 				<Card.Section withBorder>
 					<div style={{position: 'relative'}}>
 						{image}
@@ -198,39 +201,41 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 	), [character.might, character.agility, character.reason, character.intuition, character.presence, character.name, hpBar, recoveriesBar, children?.bottom, children?.gauges, image]);
 	
 	const tileCard = useMemo(() => {
+		function createChildren(gridArea: 'overflow-left' | 'overflow-right' | 'overflow-bottom', children: React.ReactElement | undefined) {
+			const type = gridArea === 'overflow-bottom' ? 'group' : 'stack';
+			
+			if (children == null) {
+				return <></>;
+			}
+			else if (type === 'stack') {
+				return <Stack gap={0} style={{gridArea}}>{children}</Stack>;
+			}
+			else if (type === 'group') {
+				return <Group style={{gridArea}}>{children}</Group>;
+			}
+			return <></>;
+		}
+		
 		return (
-			<Card>
-				<Stack gap={'xs'}>
-					<Group align={'stretch'} justify={'stretch'} wrap={'nowrap'} gap={0}>
-						{ children?.left &&
-							<Box style={{flexShrink: 1}}>
-								{children.left}
-							</Box>
-						}
+			<Card className={'character-card tile'}>
+				<div className={'display-grid'}>
+					{createChildren('overflow-left', children?.left)}
+					{createChildren('overflow-right', children?.right)}
+					{createChildren('overflow-bottom', children?.bottom)}
+					<Text style={{gridArea: 'name'}} size={'xl'} fw={700} pl={'xs'}>
+						{character.name}
+					</Text>
+					<Box style={{gridArea: 'image'}}>
 						{image}
-						<Stack flex={5} gap={0}>
-							<Text size={'xl'} fw={700} pl={'xs'}>
-								{character.name}
-							</Text>
-							<Group gap={0}>
-								{hpBar}
-								{recoveriesBar}
-								{ children?.gauges &&
-									children.gauges
-								}
-							</Group>
-						</Stack>
-						{
-							children?.right &&
-							<Box style={{flexShrink: 1}}>
-								{children.right}
-							</Box>
+					</Box>
+					<Group gap={0} style={{gridArea: 'gauge'}}>
+						{hpBar}
+						{recoveriesBar}
+						{ children?.gauges &&
+							children.gauges
 						}
 					</Group>
-					{ children?.bottom &&
-						children.bottom
-					}
-				</Stack>
+				</div>
 			</Card>
 		);
 		}, [hpBar, recoveriesBar, children?.left, children?.right, character?.name, children?.bottom, children?.gauges, image]);

@@ -270,7 +270,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 								),
 								bottom: (
 									<CharacterCardExtra>
-										<Box>
+										<Box mt={'xs'}>
 											<CharacterConditions editing={true} character={c} />
 										</Box>
 									</CharacterCardExtra>

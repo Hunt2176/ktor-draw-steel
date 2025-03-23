@@ -1,5 +1,9 @@
 @use 'mantine' as mantine;
 
+#root {
+  container: root / size;
+}
+
 .clickable {
   cursor: pointer;
 }
