@@ -172,22 +172,20 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		}
 		
 		return <>
-			<Stack>
-				<Stack>
-					<NumberInput label={`Modify ${toDisplay}`}
-					             value={value}
-					             min={0}
-					             autoFocus
-					             onChange={setValue}/>
-					<Button.Group>
-						<Button onClick={() => execute('increase')} color={'green'}>
-							Increase
-						</Button>
-						<Button onClick={() => execute('decrease')} color={'red'}>
-							Decrease
-						</Button>
-					</Button.Group>
-				</Stack>
+			<Stack justify={'stretch'}>
+				<NumberInput label={`Modify ${toDisplay}`}
+				             value={value}
+				             min={0}
+				             autoFocus
+				             onChange={setValue}/>
+				<Button.Group>
+					<Button fullWidth onClick={() => execute('increase')} color={'green'}>
+						Add
+					</Button>
+					<Button fullWidth onClick={() => execute('decrease')} color={'red'}>
+						Remove
+					</Button>
+				</Button.Group>
 			</Stack>
 		</>
 	}

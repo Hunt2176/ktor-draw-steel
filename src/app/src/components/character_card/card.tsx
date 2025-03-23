@@ -317,8 +317,8 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 							             onChange={setModHp}
 							             min={0}/>
 							<Button.Group>
-								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'DAMAGE')} color={'red'}>Damage</Button>
 								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'HEAL')} color={'green'}>Heal</Button>
+								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedHp', 'DAMAGE')} color={'red'}>Damage</Button>
 							</Button.Group>
 						</Stack>
 						<Divider my={'sm'} />
@@ -338,14 +338,10 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 						             value={modRecoveries}
 						             onChange={setModRecoveries}
 						             min={0}/>
-						<Grid>
-							<GridCol span={6}>
-								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'INCREASE')}>Add</Button>
-							</GridCol>
-							<GridCol span={6}>
-								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'DECREASE')}>Remove</Button>
-							</GridCol>
-						</Grid>
+						<Button.Group>
+							<Button color={'green'} fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'INCREASE')}>Add</Button>
+							<Button color={'red'} fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'DECREASE')}>Remove</Button>
+						</Button.Group>
 					</Stack>
 				);
 		}
