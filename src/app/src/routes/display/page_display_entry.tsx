@@ -124,7 +124,7 @@ export function DisplayPage({}: DisplayPageProps) {
 							<Box>
 								<Box h={'60cqh'}>
 									<Flex h={'100%'} justify={'center'} align={'center'}>
-										<Image h={'100%'} fit={'contain'} radius={25} src={entry.pictureUrl}/>
+										<Image w={'auto'} h={'100%'} fit={'contain'} radius={25} src={entry.pictureUrl}/>
 									</Flex>
 								</Box>
 								<Box h={'40cqh'}>
