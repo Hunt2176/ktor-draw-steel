@@ -33,5 +33,12 @@ fun Application.configureRouting()
 			filesPath = "static/app"
 			defaultPage = "index.html"
 		}
+		
+		singlePageApplication {
+			useResources = false
+			applicationRoute = "/forgesteel"
+			filesPath = "./forgesteel"
+			defaultPage = "index.html"
+		}
 	}
 }
