@@ -1,6 +1,7 @@
-import { faBook, faImage, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faBook, faImage, faPlus, faQuestion } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useFaqDisplay } from "components/faq-display.tsx";
 import { Fragment, useContext, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Anchored } from "components/anchored.tsx";
@@ -42,6 +43,8 @@ export function CampaignDetail() {
 	useWatchCampaign(id);
 	const { data: campaign } = useCampaign(id);
 	const { data: combats } = useCombatsForCampaign(campaign?.campaign.id);
+	
+	const faq = useFaqDisplay();
 	
 	const updateCampaignBackgroundMutation = useMutation({
 		mutationFn: (url?: string) => {
@@ -250,6 +253,9 @@ export function CampaignDetail() {
 		          </ActionIcon>
 		          <ActionIcon variant={'outline'} onClick={() => setShowBackgroundUpload(true)}>
 				          <FontAwesomeIcon icon={faImage} />
+		          </ActionIcon>
+		          <ActionIcon variant={'outline'} onClick={() => {faq.open(campaign.campaign)}}>
+				          <FontAwesomeIcon icon={faQuestion} />
 		          </ActionIcon>
 	          </Group>
           </Anchored>
