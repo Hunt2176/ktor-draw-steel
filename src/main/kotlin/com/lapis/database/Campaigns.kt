@@ -128,6 +128,7 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 object Campaigns : IntIdTable(), HasName {
 	override val name: Column<String> = varchar("name", 100)
 	val background = text("background").nullable()
+	val faqText = text("faq_text").nullable()
 }
 
 class ExposedCampaign(
@@ -137,6 +138,7 @@ class ExposedCampaign(
 	
 	var name by Campaigns.name
 	var background by Campaigns.background
+	var faqText by Campaigns.faqText
 	
 	override fun toDTO(): CampaignDTO {
 		return CampaignDTO.fromEntity(this)
@@ -146,6 +148,7 @@ class ExposedCampaign(
 	{
 		json["name"]?.jsonPrimitive?.content?.let { name = it }
 		json["background"]?.jsonPrimitive?.content?.let { background = it }
+		json["faqText"]?.jsonPrimitive?.content?.let { faqText = it }
 	}
 }
 
@@ -153,11 +156,12 @@ class ExposedCampaign(
 data class CampaignDTO(
 	val id: Int,
 	val name: String,
-	val background: String?
+	val background: String?,
+	val faqText: String?
 ) {
 	companion object {
 		fun fromEntity(entity: ExposedCampaign): CampaignDTO {
-			return CampaignDTO(entity.id.value, entity.name, entity.background)
+			return CampaignDTO(entity.id.value, entity.name, entity.background, entity.faqText)
 		}
 	}
 }

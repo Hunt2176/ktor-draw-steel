@@ -1,7 +1,8 @@
-import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faPencil, faQuestion } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDisclosure, useInputState, usePrevious } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useFaqDisplay } from "components/faq-display.tsx";
 import { usePreviousRef } from "hooks/usePreviousRef.ts";
 import React, { useId, useMemo, useRef, useState } from "react";
 import { data, useNavigate, useParams } from "react-router-dom";
@@ -36,6 +37,8 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	
 	const modCharacterBefore = useRef<Record<number, boolean>>({});
 	const modCharacterAfter = useRef<Record<number, boolean>>({});
+	
+	const faq = useFaqDisplay();
 	
 	const id = useMemo(() => parseIntOrUndefined(params.id), [params.id]);
 	
@@ -402,12 +405,15 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 						</Button>
 						<Text ta={'center'} fw={700}>Round {combat.round}</Text>
 					</Stack>
-					<Box>
+					<Stack>
 						<Button onClick={showNextRoundHandler.open}>
 							<Text mr={2}>Next Round</Text>
 							<FontAwesomeIcon icon={faArrowRight}></FontAwesomeIcon>
 						</Button>
-					</Box>
+						<Button color={'gray'} onClick={() => faq.open(campaign.campaign)}>
+							<FontAwesomeIcon icon={faQuestion} />
+						</Button>
+					</Stack>
 				</Group>
 			</Card>
 			{characterDisplay}

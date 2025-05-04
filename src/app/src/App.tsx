@@ -5,6 +5,7 @@ import '@mantine/carousel/styles.css';
 import { Card, ColorSchemeScript, createTheme, MantineProvider, Modal, Popover, useMantineColorScheme } from "@mantine/core";
 import { ModalsProvider } from "@mantine/modals";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { FaqProvider } from "components/faq-display.tsx";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
@@ -48,7 +49,9 @@ const App = () => {
 							{errorController[0]?.toString()}
 						</Modal>
 						<Modal.Stack>
-							<RouterEl/>
+							<FaqProvider>
+								<RouterEl/>
+							</FaqProvider>
 						</Modal.Stack>
 					</ErrorContext.Provider>
 				</ModalsProvider>

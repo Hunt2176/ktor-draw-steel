@@ -1,15 +1,14 @@
-import { type } from "arktype";
+import { useDisclosure } from "@mantine/hooks";
 import Types from "types/types.ts";
+
+export type DisclosureController = ReturnType<typeof useDisclosure>[1];
 
 export type HasId = { id: number };
 export type HasName = { name: string };
 
 export type User = HasId;
 
-export interface Campaign extends HasId, HasName {
-	background?: string;
-}
-
+export type Campaign = typeof Types.Campaign.infer;
 export type DisplayEntry = typeof Types.DisplayEntry.infer;
 export type CampaignDetails = typeof Types.CampaignDetails.infer;
 
