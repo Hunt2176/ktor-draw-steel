@@ -5,7 +5,11 @@ import io.ktor.server.application.*
 
 fun main(args: Array<String>)
 {
-	io.ktor.server.netty.EngineMain.main(args)
+	val newArgs = args
+		.plus("-config=application-base.yaml")
+		.plus("-config=application.yaml")
+	
+	io.ktor.server.netty.EngineMain.main(newArgs)
 }
 
 fun Application.module()
