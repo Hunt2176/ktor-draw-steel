@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Carousel } from "@mantine/carousel";
 import { BackgroundImage, Box, Burger, Drawer, Flex, Image, Stack, Title, Text, Button, Modal, Divider, Group, Grid, Popover } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArkErrors } from "arktype";
 import { DisplayEntryEditor, DisplayEntryEditorUpdate } from "components/display_entry_editor.tsx";
 import { EmblaCarouselType } from "embla-carousel";
@@ -11,6 +11,8 @@ import { useCampaign, useWatchCampaign } from "hooks/api_hooks.ts";
 import { Fragment, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createDisplayEntry, deleteDisplayEntry, uploadFile } from "services/api.ts";
+import { KankaCharacter } from "types/kanka_types.ts";
+import { DisplayEntry } from "types/models.ts";
 import { parseIntOrUndefined } from "utils.ts";
 
 export interface DisplayPageProps {}
@@ -76,16 +78,47 @@ export function DisplayPage({}: DisplayPageProps) {
 	const campaignResult = useCampaign(campaignId);
 	const { data: campaign } = campaignResult;
 	
+	const kankaCharacters = useQuery({
+		queryKey: ['kankaCharacters', campaign?.campaign.id],
+		queryFn: async (): Promise<{ data: KankaCharacter[] }> => {
+			const toReturn = { data: [] as KankaCharacter[] };
+			const campaignId = campaign?.campaign.kankaApiId;
+			if (campaignId == null) {
+				return toReturn;
+			}
+			
+			return (await fetch(`/kanka/campaigns/${campaignId}/characters`)).json();
+		}
+	});
+	
 	if (!campaignResult.isFetching && !campaign) {
 		navigate('/campaigns');
 	}
+	
+	const itemModels: DisplayModel[] = useMemo(() => {
+		const cEntries = campaign?.entries ?? [];
+		const kEntries = kankaCharacters.data?.data ?? [];
+		
+		return [
+			...cEntries.map(e => ({ ...e, isKanka: false })),
+			...kEntries.map(e => ({
+				id: -e.id,
+				title: e.name,
+				description: e.entry_parsed?.replaceAll('\\"', '"') ?? null,
+				pictureUrl: e.image_full ?? null,
+				type: 'Portrait' as const,
+				campaign: campaignId!,
+				isKanka: true,
+			})),
+		]
+	}, [kankaCharacters.data?.data ?? [], campaign?.entries]);
 	
 	const items = useMemo(() => {
 		if (!campaign) {
 			return [];
 		}
 		
-		return campaign.entries.map((entry) => {
+		return itemModels.map((entry) => {
 			let el = <>
 				<Stack h={'100%'} justify={entry.type === 'Portrait' ? 'start' : 'end'}>
 					<Title ta={'center'} size={'h1'}>
@@ -94,7 +127,12 @@ export function DisplayPage({}: DisplayPageProps) {
 					{entry.description
 						? <>
 							<Title mah={entry.type === 'Background' ? '40%' : undefined} style={{ overflow: 'auto', whiteSpace: 'pre-wrap' }} ta={'center'} size={'h2'}>
-								{entry.description}
+								<Box p={'sm'} className={'blur'} style={{borderRadius: '25px'}}>
+									{ entry.isKanka
+										? <span dangerouslySetInnerHTML={{__html: entry.description ?? ''}}></span>
+										: entry.description
+									}
+								</Box>
 							</Title>
 						</>
 						: <></>
@@ -145,7 +183,7 @@ export function DisplayPage({}: DisplayPageProps) {
 			</Fragment>;
 		});
 		
-	}, [campaign]);
+	}, [itemModels]);
 	
 	const drawer = useMemo(() => {
 		if (!campaign) {
@@ -180,7 +218,7 @@ export function DisplayPage({}: DisplayPageProps) {
 					</Button>
 				</Flex>
 				<Stack>
-					{ campaign.entries.map((e, idx) => {
+					{ itemModels.map((e, idx) => {
 						return <Fragment key={e.id}>
 							<Grid align={'center'}>
 								<Grid.Col span={10}>
@@ -189,35 +227,39 @@ export function DisplayPage({}: DisplayPageProps) {
 									</Button>
 								</Grid.Col>
 								<Grid.Col span={2}>
-									<Popover withArrow
-									         opened={openedDeleteId === e.id}
-									         onChange={(opened) => {
-														 if (opened) {
-															 setOpenedDeleteId(e.id);
-														 } else {
-															 closeDelete(e.id);
-														 }
-									         }}>
-										<Popover.Target>
-											<Button color={'red'} onClick={() => setOpenedDeleteId(e.id)}>
-												<FontAwesomeIcon icon={faTrash}/>
-											</Button>
-										</Popover.Target>
-										<Popover.Dropdown>
-											<Text size={'md'}>
-												Are you sure you want to delete this entry?
-											</Text>
-											<Divider orientation={'vertical'}/>
-											<Group justify={'end'} gap={'xs'}>
-												<Button mt={'xs'} color={'gray'} onClick={() => closeDelete(e.id)}>
-													Cancel
-												</Button>
-												<Button mt={'xs'} color={'red'} onClick={() => deleteEntryMutation.mutate(e.id)}>
-													Delete
-												</Button>
-											</Group>
-										</Popover.Dropdown>
-									</Popover>
+									{
+										e.isKanka
+											? <></>
+											: <Popover withArrow
+											          opened={openedDeleteId === e.id}
+											          onChange={(opened) => {
+												          if (opened) {
+													          setOpenedDeleteId(e.id);
+												          } else {
+													          closeDelete(e.id);
+												          }
+											          }}>
+												<Popover.Target>
+													<Button color={'red'} onClick={() => setOpenedDeleteId(e.id)}>
+														<FontAwesomeIcon icon={faTrash}/>
+													</Button>
+												</Popover.Target>
+												<Popover.Dropdown>
+													<Text size={'md'}>
+														Are you sure you want to delete this entry?
+													</Text>
+													<Divider orientation={'vertical'}/>
+													<Group justify={'end'} gap={'xs'}>
+														<Button mt={'xs'} color={'gray'} onClick={() => closeDelete(e.id)}>
+															Cancel
+														</Button>
+														<Button mt={'xs'} color={'red'} onClick={() => deleteEntryMutation.mutate(e.id)}>
+															Delete
+														</Button>
+													</Group>
+												</Popover.Dropdown>
+											</Popover>
+									}
 								</Grid.Col>
 							</Grid>
 						</Fragment>
@@ -261,4 +303,8 @@ export function DisplayPage({}: DisplayPageProps) {
 			</Carousel>
 		</Flex>
 	</>;
+}
+
+interface DisplayModel extends DisplayEntry {
+	isKanka: boolean;
 }

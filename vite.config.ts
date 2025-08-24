@@ -32,7 +32,8 @@ export default defineConfig({
       '/watch': 'ws://localhost:8080',
       '/files': 'http://localhost:8080',
       '/api': 'http://localhost:8080',
-      '/static': 'http://localhost:8080'
+      '/static': 'http://localhost:8080',
+	    '/kanka': 'http://localhost:8080',
     }
   },
   css: {

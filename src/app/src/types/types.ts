@@ -41,6 +41,7 @@ const RootScope = type.scope({
 	Campaign: {
 		'...': 'BaseEntity',
 		background: 'string.url | string.relativeUrl',
+		kankaApiId: 'number | null',
 	},
 	CampaignDetails: {
 		campaign: 'Campaign',

@@ -44,7 +44,7 @@ const App = () => {
 					<ErrorContext.Provider value={errorController}>
 						<Modal title={'Error'}
 						       opened={errorController[0] != null}
-						       onClose={() => errorController[1](undefined)}>
+						       onClose={() => errorController[1](undefined)}> dev
 							{errorController[0]?.toString()}
 						</Modal>
 						<Modal.Stack>

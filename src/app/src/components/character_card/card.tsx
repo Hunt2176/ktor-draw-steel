@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useContext, useMemo, useRef, useState } from "react";
 import { CharacterEditor, CharacterEditorCore } from "components/character_editor/character_editor.tsx";
 import { usePromise } from "hooks/promise_hook.ts";
-import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "services/api.ts";
+import { deleteCharacter, modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "services/api.ts";
 import { ErrorContext } from "services/contexts.ts";
 import { Character } from "types/models.ts";
 import { parseIntOrUndefined, toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "utils.ts";
@@ -78,6 +78,17 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 		onSuccess: (res) => {
 			queryClient.setQueryData(['character', character.id], res);
 		},
+	});
+	
+	const deleteMutation = useMutation({
+		mutationFn: async () => {
+			return deleteCharacter(character.id);
+		},
+		onSuccess: () => {
+			return queryClient.invalidateQueries({
+				queryKey: ['character', character.id]
+			});
+		}
 	});
 	
 	const hpBar = useMemo(() => {
