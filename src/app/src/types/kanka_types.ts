@@ -7,7 +7,10 @@ export const KankaCharacterModel = z.object({
 	image_thumb: z.url().nullish(),
 	entry: z.string().nullish(),
 	entry_parsed: z.string().nullish(),
-	type: z.literal(['NPC', 'PLAYER']).or(z.string())
+	type: z.literal(['NPC', 'PLAYER']).or(z.string()),
+	urls: z.object({
+		view: z.url(),
+	})
 });
 
 export type KankaCharacter = z.infer<typeof KankaCharacterModel>;

@@ -1,14 +1,14 @@
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Carousel } from "@mantine/carousel";
-import { BackgroundImage, Box, Burger, Drawer, Flex, Image, Stack, Title, Text, Button, Modal, Divider, Group, Grid, Popover } from "@mantine/core";
+import { BackgroundImage, Box, Burger, Drawer, Flex, Image, Stack, Title, Text, Button, Modal, Divider, Group, Grid, Popover, Anchor } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArkErrors } from "arktype";
 import { DisplayEntryEditor, DisplayEntryEditorUpdate } from "components/display_entry_editor.tsx";
 import { EmblaCarouselType } from "embla-carousel";
 import { useCampaign, useWatchCampaign } from "hooks/api_hooks.ts";
-import { Fragment, useMemo, useState } from "react";
+import React, { Fragment, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createDisplayEntry, deleteDisplayEntry, uploadFile } from "services/api.ts";
 import { KankaCharacter } from "types/kanka_types.ts";
@@ -99,10 +99,11 @@ export function DisplayPage({}: DisplayPageProps) {
 		const cEntries = campaign?.entries ?? [];
 		const kEntries = kankaCharacters.data?.data ?? [];
 		
-		return [
+		const entries = [
 			...cEntries.map(e => ({ ...e, isKanka: false })),
 			...kEntries.map(e => ({
 				id: -e.id,
+				backLink: e.urls.view,
 				title: e.name,
 				description: e.entry_parsed?.replaceAll('\\"', '"') ?? null,
 				pictureUrl: e.image_full ?? null,
@@ -110,7 +111,13 @@ export function DisplayPage({}: DisplayPageProps) {
 				campaign: campaignId!,
 				isKanka: true,
 			})),
-		]
+		];
+		
+		entries.sort((a, b) => {
+			return a.title > b.title ? 1 : -1;
+		});
+		
+		return entries;
 	}, [kankaCharacters.data?.data ?? [], campaign?.entries]);
 	
 	const items = useMemo(() => {
@@ -119,9 +126,27 @@ export function DisplayPage({}: DisplayPageProps) {
 		}
 		
 		return itemModels.map((entry) => {
+			const openInNewWindow = (event: React.MouseEvent) => {
+				if (event.type !== 'click') {
+					return;
+				}
+				
+				const target = event.target as HTMLElement;
+				if (target.tagName !== 'A') {
+					return;
+				}
+				
+				event.preventDefault();
+				const href = (target as HTMLAnchorElement).href;
+				window.open(href, '_blank');
+			}
+			
 			let el = <>
 				<Stack h={'100%'} justify={entry.type === 'Portrait' ? 'start' : 'end'}>
-					<Title ta={'center'} size={'h1'}>
+					<Title ta={'center'}
+					       size={'h1'}
+					       onClick={() => entry.backLink ? open(entry.backLink, '_blank') : undefined}
+					       style={{cursor: entry.backLink ? 'pointer' : 'default'}}>
 						{entry.title}
 					</Title>
 					{entry.description
@@ -129,7 +154,7 @@ export function DisplayPage({}: DisplayPageProps) {
 							<Title mah={entry.type === 'Background' ? '40%' : undefined} style={{ overflow: 'auto', whiteSpace: 'pre-wrap' }} ta={'center'} size={'h2'}>
 								<Box p={'sm'} className={'blur'} style={{borderRadius: '25px'}}>
 									{ entry.isKanka
-										? <span dangerouslySetInnerHTML={{__html: entry.description ?? ''}}></span>
+										? <span onClick={(e) => openInNewWindow(e)} dangerouslySetInnerHTML={{__html: entry.description ?? ''}}></span>
 										: entry.description
 									}
 								</Box>
@@ -306,5 +331,6 @@ export function DisplayPage({}: DisplayPageProps) {
 }
 
 interface DisplayModel extends DisplayEntry {
+	backLink?: string;
 	isKanka: boolean;
 }
