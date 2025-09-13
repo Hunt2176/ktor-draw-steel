@@ -1,7 +1,7 @@
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Carousel } from "@mantine/carousel";
-import { BackgroundImage, Box, Burger, Drawer, Flex, Image, Stack, Title, Text, Button, Modal, Divider, Group, Grid, Popover, Anchor } from "@mantine/core";
+import { BackgroundImage, Box, Burger, Button, Divider, Drawer, Flex, Grid, Group, Image, Modal, Popover, Stack, Text, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArkErrors } from "arktype";
@@ -11,9 +11,11 @@ import { useCampaign, useWatchCampaign } from "hooks/api_hooks.ts";
 import React, { Fragment, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createDisplayEntry, deleteDisplayEntry, uploadFile } from "services/api.ts";
-import { KankaCharacter } from "types/kanka_types.ts";
+import { KankaBase, KankaBaseModel, KankaCharacterModel, KankaHasEntryModel, KankaHasParsedEntryModel } from "types/kanka_types.ts";
 import { DisplayEntry } from "types/models.ts";
+import { PartialOmit } from "types/types.ts";
 import { parseIntOrUndefined } from "utils.ts";
+import { z } from "zod/v4";
 
 export interface DisplayPageProps {}
 
@@ -80,14 +82,37 @@ export function DisplayPage({}: DisplayPageProps) {
 	
 	const kankaCharacters = useQuery({
 		queryKey: ['kankaCharacters', campaign?.campaign.id],
-		queryFn: async (): Promise<{ data: KankaCharacter[] }> => {
-			const toReturn = { data: [] as KankaCharacter[] };
+		queryFn: async (): Promise<{ data: KankaBase[] }> => {
+			const toReturn = { data: [] as KankaBase[] };
 			const campaignId = campaign?.campaign.kankaApiId;
 			if (campaignId == null) {
 				return toReturn;
 			}
 			
-			return (await fetch(`/kanka/campaigns/${campaignId}/characters`)).json();
+			const fetchJson = async (url: string): Promise<KankaBase[]> => {
+				const res = await fetch(url);
+				const json = await res.json();
+				try {
+					 return z.looseObject(KankaBaseModel.shape).array().parse(json.data);
+				} catch (e) {
+					throw e;
+				}
+			}
+			
+			try {
+				const arrays = await Promise.all([
+					fetchJson(`/kanka/campaigns/${campaignId}/characters`),
+					fetchJson(`/kanka/campaigns/${campaignId}/locations`),
+					fetchJson(`/kanka/campaigns/${campaignId}/creatures`),
+					fetchJson(`/kanka/campaigns/${campaignId}/events`),
+				]);
+				
+				toReturn.data = arrays.flat(1);
+				return toReturn;
+			}
+			catch (e) {
+				return Promise.reject(e);
+			}
 		}
 	});
 	
@@ -99,18 +124,46 @@ export function DisplayPage({}: DisplayPageProps) {
 		const cEntries = campaign?.entries ?? [];
 		const kEntries = kankaCharacters.data?.data ?? [];
 		
-		const entries = [
+		const entries: DisplayModel[] = [
 			...cEntries.map(e => ({ ...e, isKanka: false })),
-			...kEntries.map(e => ({
-				id: -e.id,
-				backLink: e.urls.view,
-				title: e.name,
-				description: e.entry_parsed?.replaceAll('\\"', '"') ?? null,
-				pictureUrl: e.image_full ?? null,
-				type: 'Portrait' as const,
-				campaign: campaignId!,
-				isKanka: true,
-			})),
+			...kEntries.map(e => {
+				const transformEntry = (s?: string) => {
+					if (s == null) {
+						return null;
+					}
+					
+					return s.replaceAll('\\"', '"');
+				}
+				
+				const retVal: DisplayModel = {
+					id: -e.id,
+					title: e.name,
+					backLink: undefined,
+					description: null,
+					campaign: campaignId!,
+					pictureUrl: e.image_full ?? null,
+					type: 'Portrait',
+					isKanka: true
+				};
+				
+				const parsedEntryModel = KankaHasParsedEntryModel.safeParse(e);
+				if (parsedEntryModel.success && parsedEntryModel.data.entry_parsed) {
+					retVal.description = transformEntry(parsedEntryModel.data.entry_parsed);
+				}
+				else {
+					const entryModel = KankaHasEntryModel.safeParse(e);
+					if (entryModel.success && entryModel.data.entry) {
+						retVal.description = transformEntry(entryModel.data.entry);
+					}
+				}
+				
+				const parsedUrl = KankaCharacterModel.pick({ urls: true }).safeParse(e);
+				if (parsedUrl.success && parsedUrl.data.urls.view) {
+					retVal.backLink = parsedUrl.data.urls.view;
+				}
+				
+				return retVal;
+			}),
 		];
 		
 		entries.sort((a, b) => {

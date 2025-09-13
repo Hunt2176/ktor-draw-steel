@@ -1,5 +1,8 @@
 import { type } from "arktype";
 
+// Partial of type T but with Key still originally required
+export type PartialOmit<T, Key extends keyof T> = Partial<Omit<T, Key>> & Pick<T, Key>;
+
 const RootScope = type.scope({
 	'string.relativeUrl': /^(?![a-zA-Z][a-zA-Z0-9+\-.]*:).+/,
 	HasId: {

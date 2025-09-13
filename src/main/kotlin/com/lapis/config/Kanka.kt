@@ -33,7 +33,7 @@ fun Application.setupKankaRouting()
 	routing {
 		get("/kanka/{...}") {
 			if (apiKey == null) {
-				call.respondText("Kanka integration is disabled", status = io.ktor.http.HttpStatusCode.ServiceUnavailable)
+				call.respondText("Kanka integration is disabled", status = HttpStatusCode.ServiceUnavailable)
 				return@get
 			}
 			
