@@ -1,4 +1,4 @@
-import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal, Box } from "@mantine/core";
+import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal, Box, RingProgressProps } from "@mantine/core";
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useContext, useMemo, useRef, useState } from "react";
@@ -92,28 +92,84 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 	});
 	
 	const hpBar = useMemo(() => {
+		const overColor = 'yellow';
+		const underColor = 'dark';
+		
 		const color = (hp.percent > 0.5)
 			? 'green'
 			: (hp.percent > 0.25)
 				? 'orange'
 				: 'red';
 		
-		const label = <>
-			<Text c={color} ta="center" fw={700} size={'lg'} ref={hpRef} style={{textShadow: '0px 0px 2px rgba(0,0,0,0.3)'}}>
-				{hp.current}/{hp.max}
+		let rootColor: string | undefined;
+		let sections: RingProgressProps['sections'] = [
+			{
+				value: hp.percent * 100,
+				color: color
+			},
+		];
+		
+		let currentText = hp.current;
+		let maxText = hp.max;
+		
+		let currentHpColor = color;
+		
+		if (hp.current > hp.max) {
+			rootColor = 'green';
+			
+			const offset = hp.current - hp.max;
+			currentHpColor = overColor;
+			
+			sections = [
+				{
+					value: (offset / hp.max) * 100,
+					color: overColor
+				}
+			];
+		}
+		else if (hp.current <= 0) {
+			rootColor = 'red';
+			
+			if (hp.current < 0) {
+				const newMax = hp.max / 2;
+				maxText = -newMax;
+				
+				sections = [
+					{
+						value: (Math.abs(hp.current) / newMax) * 100,
+						color: underColor
+					}
+				];
+			}
+		}
+		
+		const textProps = {
+			c: color,
+			size: 'lg',
+			style: { textShadow: '0px 0px 2px rgba(0,0,0,0.3)' },
+			fw: 700,
+			span: true,
+		};
+		
+		const label = <Box ta={'center'}>
+			<Text {...textProps} c={currentHpColor}>
+				{currentText}
 			</Text>
-		</>
+			<Text {...textProps}>
+				/
+			</Text>
+			<Text {...textProps}>
+				{maxText}
+			</Text>
+		</Box>
 		
 		const ring = (
-			<RingProgress label={label}
+			<RingProgress roundCaps
+			              label={label}
 			              size={100}
 			              transitionDuration={250}
-			              sections={[
-				              {
-					              value: hp.percent * 100,
-					              color: color
-				              }
-			              ]}></RingProgress>);
+			              rootColor={rootColor}
+			              sections={sections}></RingProgress>);
 		
 		return (
 			<Popover trapFocus withArrow arrowSize={12}>
@@ -125,11 +181,12 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				</Popover.Dropdown>
 			</Popover>
 		);
-	}, [hp.percent, hp.current, hp.max]);
+	}, [hp.percent, hp.current, hp.max, hp.temporary]);
 	
 	const recoveriesBar = useMemo(() => {
 		const ring = (
 			<RingProgress
+				roundCaps
 				label={
 					<Text style={{textShadow: '0px 0px 2px rgba(0,0,0,0.3)'}} c={'blue'} ta="center" fw={700} size={'lg'}>
 						{recoveries.current}/{recoveries.max}
@@ -156,7 +213,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				</Popover.Dropdown>
 			</Popover>
 		);
-	}, [recoveries.percent, recoveries.current, recoveries.max]);
+	}, [recoveries.percent, recoveries.current, recoveries.max, recoveries.temporary]);
 	
 	const image = useMemo(() => (
 		<Image fit={'cover'}

@@ -46,19 +46,20 @@ export interface CharacterPool {
 	current: number;
 	max: number;
 	percent: number;
+	temporary: number
 }
 
 export class Character {
 	static getHp(char: Character): CharacterPool {
 		const current = char.maxHp + char.temporaryHp - char.removedHp;
 		const percent = current / char.maxHp;
-		return { current, max: char.maxHp, percent };
+		return { current, max: char.maxHp, percent, temporary: char.temporaryHp };
 	}
 	
 	static getRecoveries(char: Character): CharacterPool {
 		const current = Math.max(char.maxRecoveries + char.temporaryRecoveries - char.removedRecoveries, 0);
 		const percent = current / char.maxRecoveries;
-		return { current, max: char.maxRecoveries, percent };
+		return { current, max: char.maxRecoveries, percent, temporary: char.temporaryRecoveries };
 	}
 	
 	static new() {
