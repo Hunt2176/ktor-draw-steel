@@ -30,10 +30,27 @@ class CharacterRepository(database: Database) : BaseRepository<ExposedCharacter,
 			
 			val res = this@CharacterRepository.transaction {
 				val character = ExposedCharacter.findById(call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")) ?: error("Character not found")
-				val removed = character.removedHp
+				val removed = character.removedHp.coerceAtLeast(0)
+				
 				val newRemoved = when (update.type) {
 					CharacterHealthModifier.Type.HEAL -> removed - update.mod
-					CharacterHealthModifier.Type.DAMAGE -> removed + update.mod
+					CharacterHealthModifier.Type.DAMAGE ->
+					{
+						if (character.temporaryHp > 0) {
+							val tempAfter = character.temporaryHp - update.mod
+							character.temporaryHp = tempAfter.coerceAtLeast(0)
+
+							if (tempAfter >= 0)
+							{
+								return@transaction character.toDTO()
+							}
+							
+							removed + (-tempAfter).coerceAtLeast(0)
+						}
+						else {
+							removed + update.mod
+						}
+					}
 				}
 				
 				character.removedHp = newRemoved.coerceAtLeast(0)
@@ -49,13 +66,29 @@ class CharacterRepository(database: Database) : BaseRepository<ExposedCharacter,
 			
 			val res = this@CharacterRepository.transaction {
 				val character = ExposedCharacter.findById(call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")) ?: error("Character not found")
-				val removed = character.removedRecoveries
+				val removed = character.removedRecoveries.coerceAtLeast(0)
 				val newRemoved = when (update.type) {
 					CharacterRecoveriesModifier.Type.INCREASE -> removed - update.mod
-					CharacterRecoveriesModifier.Type.DECREASE -> removed + update.mod
+					CharacterRecoveriesModifier.Type.DECREASE ->
+					{
+						if (character.temporaryRecoveries > 0) {
+							val tempAfter = character.temporaryRecoveries - update.mod
+							character.temporaryRecoveries = tempAfter.coerceAtLeast(0)
+
+							if (tempAfter >= 0)
+							{
+								return@transaction character.toDTO()
+							}
+							
+							removed + (-tempAfter).coerceAtLeast(0)
+						}
+						else {
+							removed + update.mod
+						}
+					}
 				}
 				
-				character.removedRecoveries = newRemoved.coerceIn(0..character.maxRecoveries)
+				character.removedRecoveries = newRemoved.coerceAtLeast(0)
 				return@transaction character.toDTO()
 			}
 			
