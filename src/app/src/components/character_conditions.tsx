@@ -1,6 +1,7 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon, Button, Modal, Pill, Select, Stack, TextInput } from "@mantine/core";
+import { ActionIcon, Button, FocusTrap, Modal, Pill, Radio, Select, Stack, Text, TextInput } from "@mantine/core";
+import { Form } from "@mantine/form";
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -61,14 +62,17 @@ export function CharacterConditions({ character, mode }: CharacterConditionsProp
 			children: `Are you sure you want to remove ${condition?.name} from ${character.name}?`,
 			confirmProps: {
 				color: 'red',
-				children: 'Remove'
+				children: 'Remove',
+				...{
+					'data-autofocus': true
+				} as any
 			},
 			cancelProps: {
 				children: 'Cancel'
 			},
 			onConfirm: () => {
 				deleteConditionMutation.mutate(condition.id);
-			}
+			},
 		});
 		
 		openModals.current.add(id);
@@ -123,26 +127,24 @@ interface ConditionEditorProps {
 
 function ConditionEditor({ character, onSubmit }: ConditionEditorProps) {
 	const [name, setName] = useInputState<string>('');
-	const [type, setType] = useInputState<CharacterConditionUpdate['endType'] | string>('endOfTurn');
+	const [type, setType] = useInputState<CharacterConditionUpdate['endType'] | string>('save');
 	
 	const disabled = !name || (type != 'endOfTurn' && type != 'save');
 	
 	return (
-		<Stack>
-			<TextInput autoFocus={true} label={'Name'} value={name} onChange={setName} />
-			<Select label={'End Type'} value={type} data={[
-				{
-					value: 'endOfTurn',
-					label: 'End of Turn'
-				},
-				{
-					value: 'save',
-					label: 'Save'
-				}
-			]} onChange={setType}>
-			
-			</Select>
-			<Button disabled={disabled} onClick={() => onSubmit({ name, character, endType: type as any })}>Submit</Button>
-		</Stack>
+		<form>
+			<FocusTrap>
+				<Stack>
+					<TextInput data-autofocus label={'Name'} value={name} onChange={setName} />
+					<Radio.Group label={'End Type'}
+					             value={type}
+					             onChange={setType}>
+						<Radio mt={'xs'} value={'save'} label={'Save'}></Radio>
+						<Radio mt={'xs'} value={'endOfTurn'} label={'End of Turn'}></Radio>
+					</Radio.Group>
+					<Button type={'submit'} disabled={disabled} onClick={() => onSubmit({ name, character, endType: type as any })}>Submit</Button>
+				</Stack>
+			</FocusTrap>
+		</form>
 	);
 }
