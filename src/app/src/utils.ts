@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 export function parseIntOrUndefined(val: any): number | undefined {
 	if (val == null) {
 		return undefined;
@@ -13,6 +15,19 @@ export function parseIntOrUndefined(val: any): number | undefined {
 	}
 	
 	return parsed;
+}
+
+export const builder = <T extends ReactNode>(fn: () => (T | null | undefined)): T | null => {
+	const res = fn();
+	return res ?? null;
+}
+
+export const nonNullBuilder = <E, T extends ReactNode>(val: E, fn: (val: NonNullable<E>) => (T | null | undefined)): T | null => {
+	if (val == null) {
+		return null;
+	}
+	
+	return builder(() => fn(val));
 }
 
 export function parseFloatOrUndefined(val: any): number | undefined {

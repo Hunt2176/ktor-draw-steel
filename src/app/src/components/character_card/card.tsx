@@ -7,7 +7,7 @@ import { usePromise } from "hooks/promise_hook.ts";
 import { deleteCharacter, modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "services/api.ts";
 import { ErrorContext } from "services/contexts.ts";
 import { Character } from "types/models.ts";
-import { parseIntOrUndefined, toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "utils.ts";
+import { builder, nonNullBuilder, parseIntOrUndefined, toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "utils.ts";
 
 
 export interface CharacterCardProps {
@@ -226,20 +226,25 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 							<Group gap={0}>
 								{hpBar}
 								{recoveriesBar}
-								{ children?.gauges &&
-									children.gauges
-								}
 							</Group>
+							{
+								nonNullBuilder(children?.gauges, (gauges) => (
+									<Group gap={0}>
+										{gauges}
+									</Group>
+								))
+							}
 						</Stack>
 						{
-							children?.right &&
-							<Box style={{flexShrink: 1}}>
-								{children.right}
-							</Box>
+							nonNullBuilder(children?.right, (cardEl) => (
+								<Box style={{flexShrink: 1}}>
+									{cardEl}
+								</Box>
+							))
 						}
 					</Group>
-					{ children?.bottom &&
-						children.bottom
+					{
+						nonNullBuilder(children?.bottom, (el) => el)
 					}
 				</Stack>
 			</Card>

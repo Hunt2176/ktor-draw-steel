@@ -4,16 +4,19 @@ import { ActionIcon, Button, Modal, Pill, Select, Stack, TextInput } from "@mant
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { addCharacterCondition, CharacterConditionUpdate, deleteCharacterCondition } from "services/api.ts";
 import { Character, CharacterCondition } from "types/models.ts";
+import { builder } from "utils.ts";
 
 export interface CharacterConditionsProps {
 	character: Character
-	editing?: boolean
+	mode?: CharacterConditionMode
 }
 
-export function CharacterConditions({ character }: CharacterConditionsProps) {
+type CharacterConditionMode = 'button' | 'list' | 'all';
+
+export function CharacterConditions({ character, mode }: CharacterConditionsProps) {
 	const [showModal, modalHandles] = useDisclosure(false);
 	const openModals = useRef(new Set<string>());
 	
@@ -71,20 +74,46 @@ export function CharacterConditions({ character }: CharacterConditionsProps) {
 		openModals.current.add(id);
 	}, [deleteConditionMutation, character.name]);
 	
+	const buttonView = useMemo(() => {
+		return <>
+			<ActionIcon onClick={modalHandles.open}>
+				<FontAwesomeIcon icon={faPlus} />
+			</ActionIcon>
+		</>;
+	}, []);
+	
+	const listView = useMemo(() => {
+		return <>
+			<Pill.Group>
+				{character.conditions.map((c) => {
+					return <Pill key={c.id} c={'blue'} size={'md'} onRemove={() => deleteCallback(c)} withRemoveButton>{c.name}</Pill>
+				})}
+			</Pill.Group>
+		</>;
+	}, [character.conditions]);
+	
 	return <>
 		<Modal title={'Add Condition'} opened={showModal} onClose={modalHandles.close} trapFocus>
 			<ConditionEditor character={character.id} onSubmit={createConditionMutation.mutate} />
 		</Modal>
-		
-		<Pill.Group>
-			{character.conditions.map((c) => {
-				return <Pill key={c.id} c={'blue'} size={'md'} onRemove={() => deleteCallback(c)} withRemoveButton>{c.name}</Pill>
-			})}
-			<ActionIcon onClick={modalHandles.open}>
-				<FontAwesomeIcon icon={faPlus} />
-			</ActionIcon>
-		</Pill.Group>
-	</>;
+		{
+			builder(() => {
+				switch (mode ?? 'all') {
+					case 'button':
+						return buttonView;
+					case 'list':
+						return listView;
+					case 'all':
+						return <>
+							{buttonView}
+							{listView}
+						</>;
+					default:
+						return null;
+				}
+			})
+		}
+	</>
 }
 
 interface ConditionEditorProps {
