@@ -218,37 +218,39 @@ export function DisplayPage({}: DisplayPageProps) {
 				</Stack>
 			</>;
 			
-			if (entry.pictureUrl) {
-				switch (entry.type) {
-					case 'Background': {
-						el = <>
-							<BackgroundImage h={'100%'} src={entry.pictureUrl}>
-								<Flex direction={'column'}
-								      h={'100%'}
-								      justify={'end'}
-								      align={'center'}
-								      pb={'xs'}>
-									{el}
+			const typeToUse = entry.type === 'Background' && entry.pictureUrl != null ? 'Background' : entry.type;
+			
+			switch (typeToUse) {
+				case 'Background': {
+					el = <>
+						<BackgroundImage h={'100%'} src={entry.pictureUrl!}>
+							<Flex direction={'column'}
+							      h={'100%'}
+							      justify={'end'}
+							      align={'center'}
+							      pb={'xs'}>
+								{el}
+							</Flex>
+						</BackgroundImage>
+					</>
+					
+					break;
+				}
+				case 'Portrait': {
+					el = <>
+						<Box>
+							<Box h={ entry.pictureUrl ? '60cqh' : '40cqh'}>
+								<Flex h={'100%'} justify={'center'} align={'center'}>
+									<Image w={'auto'} h={'100%'} fit={'contain'} radius={25} src={entry.pictureUrl}/>
 								</Flex>
-							</BackgroundImage>
-						</>
-						
-						break;
-					}
-					case 'Portrait': {
-						el = <>
-							<Box>
-								<Box h={'60cqh'}>
-									<Flex h={'100%'} justify={'center'} align={'center'}>
-										<Image w={'auto'} h={'100%'} fit={'contain'} radius={25} src={entry.pictureUrl}/>
-									</Flex>
-								</Box>
-								<Box h={'40cqh'}>
-									{el}
-								</Box>
 							</Box>
-						</>;
-					}
+							<Box h={'40cqh'}>
+								{el}
+							</Box>
+						</Box>
+					</>;
+					
+					break;
 				}
 			}
 			
