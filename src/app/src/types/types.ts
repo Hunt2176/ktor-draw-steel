@@ -32,6 +32,7 @@ const RootScope = type.scope({
 		temporaryHp: 'number',
 		removedRecoveries: 'number',
 		maxRecoveries: 'number',
+		temporaryRecoveries: 'number',
 		resourceName: 'string | null',
 		victories: 'number',
 		user: 'number',

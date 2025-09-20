@@ -130,7 +130,11 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 	const recoveriesBar = useMemo(() => {
 		const ring = (
 			<RingProgress
-				label={<Text style={{textShadow: '0px 0px 2px rgba(0,0,0,0.3)'}} c={'blue'} ta="center" fw={700} size={'lg'}>{recoveries.current}/{recoveries.max}</Text>}
+				label={
+					<Text style={{textShadow: '0px 0px 2px rgba(0,0,0,0.3)'}} c={'blue'} ta="center" fw={700} size={'lg'}>
+						{recoveries.current}/{recoveries.max}
+					</Text>
+				}
 				size={100}
 				transitionDuration={250}
 				sections={[
@@ -254,7 +258,9 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modHp, setModHp] = useInputState<number | string>('');
 		const [tempHp, setTempHp] = useInputState<number | string>(character.temporaryHp == 0 ? '' : character.temporaryHp);
+		
 		const [modRecoveries, setModRecoveries] = useInputState<number | string>('');
+		const [tempRecoveries, setTempRecoveries] = useInputState<number | string>(character.temporaryRecoveries == 0 ? '' : character.temporaryRecoveries);
 		
 		const [updatePromise, setUpdatePromise] = useState<Promise<unknown>>();
 		
@@ -267,6 +273,16 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 			}
 			
 			const p = saveMutation.mutateAsync({ temporaryHp: toSet });
+			setUpdatePromise(p);
+		}
+		
+		function saveTempRecoveries() {
+			const toSet = parseIntOrUndefined(tempRecoveries);
+			if (toSet == null || toSet === character.temporaryRecoveries || toSet < 0) {
+				return;
+			}
+			
+			const p = saveMutation.mutateAsync({ temporaryRecoveries: toSet });
 			setUpdatePromise(p);
 		}
 		
@@ -318,6 +334,11 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 			return tHp == null || isNaN(tHp) || tempHp === character.temporaryHp || tHp < 0;
 		}, [character.temporaryHp, tempHp])
 		
+		const tempRecoveriesButtonDisabled = useMemo(() => {
+			const tRec = parseInt(tempRecoveries as string);
+			return tRec == null || isNaN(tRec) || tempRecoveries === character.temporaryRecoveries || tRec < 0;
+		}, [character.temporaryRecoveries, tempRecoveries])
+		
 		switch (type) {
 			case 'hp':
 				return (
@@ -344,21 +365,27 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				);
 			case 'recoveries':
 				return (
-					<Stack>
-						<NumberInput label={'Modify Recoveries'}
-						             value={modRecoveries}
-						             onChange={setModRecoveries}
-						             min={0}/>
-						<Grid>
-							<GridCol span={6}>
-								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'INCREASE')}>Add</Button>
-							</GridCol>
-							<GridCol span={6}>
-								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'DECREASE')}>Remove</Button>
-							</GridCol>
-						</Grid>
-					</Stack>
-				);
+					<div>
+						<Stack>
+							<NumberInput label={'Modify Recoveries'}
+							             value={modRecoveries}
+							             onChange={setModRecoveries}
+							             min={0}/>
+							<Button.Group>
+								<Button fullWidth disabled={promiseState.loading} color={'green'} onClick={() => submitModification('removedRecoveries', 'INCREASE')}>Increase</Button>
+								<Button fullWidth disabled={promiseState.loading} color={'red'} onClick={() => submitModification('removedRecoveries', 'DECREASE')}>Decrease</Button>
+							</Button.Group>
+						</Stack>
+						<Divider my={'sm'} />
+						<Stack>
+							<NumberInput label={'Temporary Recoveries'}
+							             value={tempRecoveries}
+							             onChange={setTempRecoveries}
+							             min={0}/>
+							<Button fullWidth disabled={tempRecoveriesButtonDisabled} onClick={() => saveTempRecoveries()}>Submit</Button>
+						</Stack>
+					</div>
+			);
 		}
 	}
 	

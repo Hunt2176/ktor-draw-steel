@@ -30,6 +30,7 @@ export interface Character extends HasId, HasName {
 	temporaryHp: number;
 	removedRecoveries: number;
 	maxRecoveries: number;
+	temporaryRecoveries: number;
 	resourceName: string | null;
 	victories: number;
 	user: number;
@@ -55,7 +56,7 @@ export class Character {
 	}
 	
 	static getRecoveries(char: Character): CharacterPool {
-		const current = Math.max(char.maxRecoveries - char.removedRecoveries, 0);
+		const current = Math.max(char.maxRecoveries + char.temporaryRecoveries - char.removedRecoveries, 0);
 		const percent = current / char.maxRecoveries;
 		return { current, max: char.maxRecoveries, percent };
 	}
@@ -73,6 +74,7 @@ export class Character {
 			maxHp: 0,
 			temporaryHp: 0,
 			removedRecoveries: 0,
+			temporaryRecoveries: 0,
 			maxRecoveries: 0,
 			resourceName: null,
 			victories: 0,

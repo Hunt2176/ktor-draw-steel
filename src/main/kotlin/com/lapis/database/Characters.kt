@@ -102,6 +102,7 @@ object Characters : IntIdTable(), HasName, HasCampaign
 	
 	val removedRecoveries = integer("removed_recoveries").default(0)
 	val maxRecoveries = integer("max_recoveries").default(0)
+	val temporaryRecoveries = integer("temporary_recoveries").default(0)
 	
 	val victories = integer("victories").default(0)
 	
@@ -137,6 +138,7 @@ class ExposedCharacter(
 	
 	var removedRecoveries by Characters.removedRecoveries
 	var maxRecoveries by Characters.maxRecoveries
+	var temporaryRecoveries by Characters.temporaryRecoveries
 	
 	var victories by Characters.victories
 	
@@ -170,6 +172,7 @@ class ExposedCharacter(
 		
 		json["removedRecoveries"]?.jsonPrimitive?.int?.let { removedRecoveries = it }
 		json["maxRecoveries"]?.jsonPrimitive?.int?.let { maxRecoveries = it }
+		json["temporaryRecoveries"]?.jsonPrimitive?.int?.let { temporaryRecoveries = it }
 		
 		json["offstage"]?.jsonPrimitive?.boolean?.let { offstage = it }
 		json["resourceName"]?.jsonPrimitive?.contentOrNull?.let { resourceName = it }
@@ -197,6 +200,7 @@ data class CharacterDTO (
 	val temporaryHp: Int,
 	val removedRecoveries: Int,
 	val maxRecoveries: Int,
+	val temporaryRecoveries: Int,
 	val victories: Int,
 	val campaign: Int,
 	val user: Int,
@@ -224,6 +228,7 @@ data class CharacterDTO (
 				entity.temporaryHp,
 				entity.removedRecoveries,
 				entity.maxRecoveries,
+				entity.temporaryRecoveries,
 				entity.victories,
 				entity.campaign.id.value,
 				entity.user.id.value,
