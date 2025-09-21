@@ -166,16 +166,20 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 		
 		if (character.minions > 0) {
 			const colors: MantineColor[] = ['red', 'orange', 'green', 'grape', 'teal'];
-			rootColor = undefined; // show unfilled portion between minion chunks
+			// Show unfilled portions between minion chunks
+			rootColor = underColor;
 			sections = [];
 
 			const num = character.minions;
 			const chunk = hp.max / num;
 
 			if (chunk > 0) {
+				// Clamp for minion calculations
+				const effectiveCurrent = Math.max(0, Math.min(hp.current, hp.max));
+
 				for (let i = 0; i < num; i++) {
 					const start = i * chunk;
-					const filledInChunk = Math.max(0, Math.min(hp.current - start, chunk)); // clamp to [0, chunk]
+					const filledInChunk = Math.max(0, Math.min(effectiveCurrent - start, chunk)); // clamp to [0, chunk]
 					const value = (filledInChunk / chunk) * (100 / num); // scale per-chunk to whole ring
 					if (value > 0) {
 						sections.push({
@@ -184,6 +188,11 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 						});
 					}
 				}
+
+				// Remaining minions text
+				const remainingMinions = Math.min(num, Math.ceil(effectiveCurrent / chunk));
+				const remainingMinionText = `${remainingMinions} Minion${remainingMinions === 1 ? '' : 's'}`;
+				ringFooter = <Text {...textProps} ta="center">{remainingMinionText}</Text>;
 			}
 		}
 		
@@ -200,7 +209,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 		return (
 			<Popover trapFocus withArrow arrowSize={12}>
 				<Popover.Target>
-					<Stack>
+					<Stack px={'sm'} gap={0}>
 						{ring}
 						{ringFooter}
 					</Stack>
