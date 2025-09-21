@@ -56,6 +56,50 @@ export function toVararg<T>(val: Vararg<T>): T[] {
 	return [val];
 }
 
+export type SortBy<T> = keyof T | ((val: T) => any);
+export type SortDir = 'ASC' | 'DESC';
+export type SortOption<T> = { sortBy: SortBy<T>, dir: SortDir };
+
+export function sortFn<T>(sortBy: SortBy<T>, dir: SortDir = 'DESC'): (a: T, b: T) => number {
+	return (a: T, b: T) => {
+		let aVal: any;
+		let bVal: any;
+		
+		if (typeof sortBy === 'function') {
+			aVal = sortBy(a);
+			bVal = sortBy(b);
+		}
+		else {
+			aVal = a[sortBy];
+			bVal = b[sortBy];
+		}
+		
+		const mod = dir === 'ASC' ? 1 : -1;
+		
+		if (aVal < bVal) {
+			return -1 * mod;
+		}
+		else if (aVal > bVal) {
+			return 1 * mod;
+		}
+		return 0;
+	}
+}
+
+export function multiSort<T>(sortBy: SortOption<T>[]): (a: T, b: T) => number {
+	return (a: T, b: T) => {
+		for (const sortOption of sortBy) {
+			const fn = sortFn(sortOption.sortBy, sortOption.dir);
+			const res = fn(a, b);
+			if (res !== 0) {
+				return res;
+			}
+		}
+		
+		return 0;
+	}
+}
+
 export type TypeOrProvider<Type, ParamType = unknown> = Type | ((params: ParamType) => Type);
 export function toTypeOrProvider<Type, ParamType = unknown>(val: TypeOrProvider<Type, ParamType>): (params: ParamType) => Type {
 	if (typeof val === 'function') {

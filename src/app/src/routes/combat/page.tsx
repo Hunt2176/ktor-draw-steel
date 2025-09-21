@@ -11,7 +11,7 @@ import { CharacterSelector } from "components/character_selector/character_selec
 import { useCampaign, useCombat, useWatchCampaign } from "hooks/api_hooks.ts";
 import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
 import { Character, Combatant } from "types/models.ts";
-import { parseIntOrUndefined } from "utils.ts";
+import { multiSort, parseIntOrUndefined } from "utils.ts";
 import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex, Switch, SimpleGrid } from "@mantine/core";
 
 export interface CombatPageProps {
@@ -201,6 +201,20 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				</Card>
 				<SimpleGrid cols={{ base: 1, '750px': 2, '1300px': 3 }} type={'container'} spacing={'xs'} verticalSpacing={'xs'}>
 					{availableMap?.get(available)?.map(c => [combatantMap.get(c.id), c] as const)
+						.toSorted(multiSort([
+							{
+								sortBy: (e) => e[1].offstage,
+								dir: 'ASC'
+							},
+							{
+								sortBy: (e) => Character.getHp(e[1]).current,
+								dir: 'ASC'
+							},
+							{
+								sortBy: (e) => e[1].name.toLowerCase(),
+								dir: 'ASC'
+							}
+						]))
 						.map(([combatant, c]) => {
 								if (combatant == null) {
 									return <></>;

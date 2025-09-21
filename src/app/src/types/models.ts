@@ -49,20 +49,20 @@ export interface CharacterPool {
 	temporary: number
 }
 
-export class Character {
-	static getHp(char: Character): CharacterPool {
+export namespace Character {
+	export function getHp(char: Character): CharacterPool {
 		const current = char.maxHp + char.temporaryHp - char.removedHp;
 		const percent = current / char.maxHp;
 		return { current, max: char.maxHp, percent, temporary: char.temporaryHp };
 	}
 	
-	static getRecoveries(char: Character): CharacterPool {
+	export function getRecoveries(char: Character): CharacterPool {
 		const current = Math.max(char.maxRecoveries + char.temporaryRecoveries - char.removedRecoveries, 0);
 		const percent = current / char.maxRecoveries;
 		return { current, max: char.maxRecoveries, percent, temporary: char.temporaryRecoveries };
 	}
 	
-	static new() {
+	export function empty() {
 		return {
 			id: -1,
 			name: '',
@@ -87,8 +87,6 @@ export class Character {
 			conditions: [],
 		} as Character;
 	}
-	
-	private constructor() {}
 }
 
 export type Combatant = HasId & {
