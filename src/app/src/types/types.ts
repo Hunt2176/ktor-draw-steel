@@ -41,6 +41,7 @@ const RootScope = type.scope({
 		campaign: 'number',
 		conditions: 'CharacterCondition[]',
 		offstage: 'boolean',
+		minions: 'number'
 	},
 	Campaign: {
 		'...': 'BaseEntity',

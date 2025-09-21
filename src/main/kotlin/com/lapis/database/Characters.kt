@@ -139,6 +139,7 @@ object Characters : IntIdTable(), HasName, HasCampaign
 	
 	val victories = integer("victories").default(0)
 	
+	val minions = integer("minions").default(0).check { it greaterEq 0 }
 	val offstage = bool("offstage").default(false)
 	val resourceName = text("resource_name").nullable()
 	val pictureUrl = varchar("picture_url", 255).nullable()
@@ -175,6 +176,7 @@ class ExposedCharacter(
 	
 	var victories by Characters.victories
 	
+	var minions by Characters.minions
 	var offstage by Characters.offstage
 	var resourceName by Characters.resourceName
 	var pictureUrl by Characters.pictureUrl
@@ -207,6 +209,7 @@ class ExposedCharacter(
 		json["maxRecoveries"]?.jsonPrimitive?.int?.let { maxRecoveries = it }
 		json["temporaryRecoveries"]?.jsonPrimitive?.int?.let { temporaryRecoveries = it }
 		
+		json["minions"]?.jsonPrimitive?.int?.let { minions = it }
 		json["offstage"]?.jsonPrimitive?.boolean?.let { offstage = it }
 		json["resourceName"]?.jsonPrimitive?.contentOrNull?.let { resourceName = it }
 		json["victories"]?.jsonPrimitive?.int?.let { victories = it }
@@ -237,6 +240,7 @@ data class CharacterDTO (
 	val victories: Int,
 	val campaign: Int,
 	val user: Int,
+	val minions: Int,
 	val offstage: Boolean,
 	val resourceName: String?,
 	val pictureUrl: String?,
@@ -265,6 +269,7 @@ data class CharacterDTO (
 				entity.victories,
 				entity.campaign.id.value,
 				entity.user.id.value,
+				entity.minions,
 				entity.offstage,
 				entity.resourceName,
 				entity.pictureUrl,

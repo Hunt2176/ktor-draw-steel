@@ -1,7 +1,7 @@
-import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal, Box, RingProgressProps } from "@mantine/core";
+import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal, Box, RingProgressProps, MantineColor } from "@mantine/core";
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useContext, useMemo, useRef, useState } from "react";
+import React, { ReactNode, useContext, useMemo, useRef, useState } from "react";
 import { CharacterEditor, CharacterEditorCore } from "components/character_editor/character_editor.tsx";
 import { usePromise } from "hooks/promise_hook.ts";
 import { deleteCharacter, modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "services/api.ts";
@@ -101,6 +101,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				? 'orange'
 				: 'red';
 		
+		let ringFooter: ReactNode = undefined;
 		let rootColor: string | undefined;
 		let sections: RingProgressProps['sections'] = [
 			{
@@ -151,7 +152,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 			span: true,
 		};
 		
-		const label = <Box ta={'center'}>
+		let label = <Box ta={'center'}>
 			<Text {...textProps} c={currentHpColor}>
 				{currentText}
 			</Text>
@@ -163,25 +164,53 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 			</Text>
 		</Box>
 		
+		if (character.minions > 0) {
+			const colors: MantineColor[] = ['red', 'orange', 'green', 'grape', 'teal'];
+			rootColor = undefined; // show unfilled portion between minion chunks
+			sections = [];
+
+			const num = character.minions;
+			const chunk = hp.max / num;
+
+			if (chunk > 0) {
+				for (let i = 0; i < num; i++) {
+					const start = i * chunk;
+					const filledInChunk = Math.max(0, Math.min(hp.current - start, chunk)); // clamp to [0, chunk]
+					const value = (filledInChunk / chunk) * (100 / num); // scale per-chunk to whole ring
+					if (value > 0) {
+						sections.push({
+							value,
+							color: colors[i % colors.length],
+						});
+					}
+				}
+			}
+		}
+		
 		const ring = (
 			<RingProgress roundCaps
 			              label={label}
 			              size={100}
 			              transitionDuration={250}
 			              rootColor={rootColor}
-			              sections={sections}></RingProgress>);
+			              sections={sections}></RingProgress>
+		);
+		
 		
 		return (
 			<Popover trapFocus withArrow arrowSize={12}>
 				<Popover.Target>
-					{ring}
+					<Stack>
+						{ring}
+						{ringFooter}
+					</Stack>
 				</Popover.Target>
 				<Popover.Dropdown>
 					<OverlayDisplay type={'hp'}/>
 				</Popover.Dropdown>
 			</Popover>
 		);
-	}, [hp.percent, hp.current, hp.max, hp.temporary]);
+	}, [hp.percent, hp.current, hp.max, hp.temporary, character.minions]);
 	
 	const recoveriesBar = useMemo(() => {
 		const ring = (
@@ -213,7 +242,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				</Popover.Dropdown>
 			</Popover>
 		);
-	}, [recoveries.percent, recoveries.current, recoveries.max, recoveries.temporary]);
+	}, [recoveries.percent, recoveries.current, recoveries.max, recoveries.temporary, character.minions]);
 	
 	const image = useMemo(() => (
 		<Image fit={'cover'}

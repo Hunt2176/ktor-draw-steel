@@ -379,6 +379,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		<Modal title={'Quick Add'} opened={showQuickAdd} onClose={showQuickAddHandler.close} onEnterTransitionEnd={() => setQuickAddConfig({})}>
 			<TextInput label="Name" value={quickAddConfig['name'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, name: e.target.value})} />
 			<TextInput label={'Max HP'} type={'number'} min={0} value={quickAddConfig['maxHp'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, maxHp: parseIntOrUndefined(e.target.value)})} />
+			<NumberInput label={'Minions'} min={0} value={ quickAddConfig['minions'] ?? 0 } onChange={(e) => setQuickAddConfig({...quickAddConfig, minions: parseIntOrUndefined(e) ?? 0})}></NumberInput>
 			<Switch mt={'xs'} label={'Offstage'} checked={quickAddConfig['offstage'] ?? true} onChange={(e) => setQuickAddConfig({...quickAddConfig, offstage: e.target.checked})} />
 			<Divider my={'md'} />
 			<Group justify={'end'}>

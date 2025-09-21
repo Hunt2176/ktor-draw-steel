@@ -37,6 +37,7 @@ export interface Character extends HasId, HasName {
 	pictureUrl: string | null;
 	border: string | null;
 	offstage: boolean;
+	minions: number;
 	
 	campaign: number;
 	conditions: CharacterCondition[];
@@ -84,6 +85,7 @@ export namespace Character {
 			pictureUrl: null,
 			border: null,
 			offstage: false,
+			minions: 0,
 			conditions: [],
 		} as Character;
 	}
