@@ -205,7 +205,7 @@ export function DisplayPage({}: DisplayPageProps) {
 					{entry.description
 						? <>
 							<Title mah={entry.type === 'Background' ? '40%' : undefined} style={{ overflow: 'auto', whiteSpace: 'pre-wrap' }} ta={'center'} size={'h2'}>
-								<Box p={'sm'} className={'blur'} style={{borderRadius: '25px'}}>
+								<Box p={'sm'} className={'glass'} style={{borderRadius: '25px'}}>
 									{ entry.isKanka
 										? <span onClick={(e) => openInNewWindow(e)} dangerouslySetInnerHTML={{__html: entry.description ?? ''}}></span>
 										: entry.description

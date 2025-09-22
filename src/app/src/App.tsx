@@ -25,12 +25,12 @@ const App = () => {
 		components: {
 			Card: Card.extend({
 				classNames: {
-					root: 'blur'
+					root: 'glass'
 				}
 			}),
 			Popover: Popover.extend({
 				classNames: {
-					dropdown: 'blur'
+					dropdown: 'glass'
 				}
 			})
 		}

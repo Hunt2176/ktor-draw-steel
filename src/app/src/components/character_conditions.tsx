@@ -5,7 +5,7 @@ import { Form } from "@mantine/form";
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { FormEvent, FormEventHandler, useCallback, useEffect, useMemo, useRef } from "react";
 import { addCharacterCondition, CharacterConditionUpdate, deleteCharacterCondition } from "services/api.ts";
 import { Character, CharacterCondition } from "types/models.ts";
 import { builder } from "utils.ts";
@@ -131,8 +131,14 @@ function ConditionEditor({ character, onSubmit }: ConditionEditorProps) {
 	
 	const disabled = !name || (type != 'endOfTurn' && type != 'save');
 	
+	const submitCallback = useCallback((event: FormEvent) => {
+		onSubmit({ name, character, endType: type as any });
+		
+		event.preventDefault();
+	}, [onSubmit, name, character, type]);
+	
 	return (
-		<form>
+		<form onSubmit={submitCallback}>
 			<FocusTrap>
 				<Stack>
 					<TextInput data-autofocus label={'Name'} value={name} onChange={setName} />
@@ -142,7 +148,7 @@ function ConditionEditor({ character, onSubmit }: ConditionEditorProps) {
 						<Radio mt={'xs'} value={'save'} label={'Save'}></Radio>
 						<Radio mt={'xs'} value={'endOfTurn'} label={'End of Turn'}></Radio>
 					</Radio.Group>
-					<Button type={'submit'} disabled={disabled} onClick={() => onSubmit({ name, character, endType: type as any })}>Submit</Button>
+					<Button type={'submit'} disabled={disabled}>Submit</Button>
 				</Stack>
 			</FocusTrap>
 		</form>
