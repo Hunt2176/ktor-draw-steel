@@ -1,6 +1,6 @@
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ActionIcon, Button, FocusTrap, Modal, Pill, Radio, Select, Stack, Text, TextInput } from "@mantine/core";
+import { ActionIcon, Autocomplete, Button, FocusTrap, Modal, Pill, Radio, Select, Stack, Text, TextInput } from "@mantine/core";
 import { Form } from "@mantine/form";
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
@@ -141,7 +141,7 @@ function ConditionEditor({ character, onSubmit }: ConditionEditorProps) {
 		<form onSubmit={submitCallback}>
 			<FocusTrap>
 				<Stack>
-					<TextInput data-autofocus label={'Name'} value={name} onChange={setName} />
+					<Autocomplete data={conditionOptions} data-autofocus label="Name" value={name} onChange={setName}></Autocomplete>
 					<Radio.Group label={'End Type'}
 					             value={type}
 					             onChange={setType}>
@@ -154,3 +154,15 @@ function ConditionEditor({ character, onSubmit }: ConditionEditorProps) {
 		</form>
 	);
 }
+
+const conditionOptions = [
+	'Bleeding',
+	'Dazed',
+	'Frightened',
+	'Grabbed',
+	'Prone',
+	'Restrained',
+	'Slowed',
+	'Taunted',
+	'Weakened'
+];
