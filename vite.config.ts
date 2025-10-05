@@ -14,15 +14,15 @@ export default defineConfig({
     }
   },
   plugins: [
-		tailwindcss(),
     react({
       babel: {
         plugins: [
+          ['babel-plugin-react-compiler'],
           ['module:@preact/signals-react-transform'],
-          ["babel-plugin-react-compiler"],
         ]
       }
     }),
+		tailwindcss(),
     tsconfigPaths()
   ],
   build: {
