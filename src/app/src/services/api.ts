@@ -52,6 +52,16 @@ export async function saveCharacter(id: number, character: Partial<Character>) {
 	return (await res.json()) as Character;
 }
 
+export async function deleteCharacter(id: number): Promise<void> {
+	const res = await fetch(`/api/characters/${id}`, {
+		method: 'DELETE',
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to delete character');
+	}
+}
+
 export type ModifyCharacterHpUpdate = {
 	mod: number;
 	type: 'HEAL' | 'DAMAGE';

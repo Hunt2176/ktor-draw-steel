@@ -1,6 +1,7 @@
-import { Button, Checkbox } from "@mantine/core";
+import { Button, Checkbox, Stack } from "@mantine/core";
 import { Fragment, useId, useState } from "react";
 import { Character } from "types/models.ts";
+import { multiSort } from "utils.ts";
 
 type CharacterSelection = {
 	[id: number]: boolean;
@@ -31,16 +32,21 @@ export function CharacterSelector({ characters, onChange, selected }: CharacterS
 	}
 	
 	return <>
-		<Button size="sm" onClick={selectAll}>Select All</Button>
-		{characters.map((c) => {
-			return (
-				<Fragment key={c.id}>
-					<Checkbox id={`${selectorId}-${c.id}`}
-				           label={c.name}
-				           checked={selection[c.id] ?? false}
-				           onChange={(e) => updateValue(c.id, e.target.checked)}/>
-				</Fragment>
-			)
-		})}
+		<Stack gap="sm">
+			<Button size="sm" onClick={selectAll}>Select All</Button>
+			{ characters.toSorted(multiSort(
+				[
+					{ sortBy: 'offstage', dir: 'ASC' },
+					{ sortBy: 'name', dir: 'ASC' },
+				])).map((c) => {
+				return (
+					<Checkbox key={c.id}
+					          id={`${selectorId}-${c.id}`}
+					          label={c.name}
+					          checked={selection[c.id] ?? false}
+					          onChange={(e) => updateValue(c.id, e.target.checked)}/>
+				)
+			})}
+		</Stack>
 	</>
 }

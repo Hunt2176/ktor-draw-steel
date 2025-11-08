@@ -1,13 +1,13 @@
-import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal, Box } from "@mantine/core";
+import { Card, Button, Divider, Grid, GridCol, Group, Image, NumberInput, Popover, RingProgress, Stack, Text, Modal, Box, RingProgressProps, MantineColor } from "@mantine/core";
 import { useDisclosure, useInputState } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useContext, useMemo, useRef, useState } from "react";
+import React, { ReactNode, useContext, useMemo, useRef, useState } from "react";
 import { CharacterEditor, CharacterEditorCore } from "components/character_editor/character_editor.tsx";
 import { usePromise } from "hooks/promise_hook.ts";
-import { modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "services/api.ts";
+import { deleteCharacter, modifyCharacterHp, ModifyCharacterHpUpdate, modifyCharacterRecovery, ModifyCharacterRecoveryUpdate, saveCharacter } from "services/api.ts";
 import { ErrorContext } from "services/contexts.ts";
 import { Character } from "types/models.ts";
-import { parseIntOrUndefined, toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "utils.ts";
+import { builder, nonNullBuilder, parseIntOrUndefined, toTypeOrProvider, toVararg, TypeOrProvider, Vararg } from "utils.ts";
 
 
 export interface CharacterCardProps {
@@ -80,46 +80,156 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 		},
 	});
 	
+	const deleteMutation = useMutation({
+		mutationFn: async () => {
+			return deleteCharacter(character.id);
+		},
+		onSuccess: () => {
+			return queryClient.invalidateQueries({
+				queryKey: ['character', character.id]
+			});
+		}
+	});
+	
 	const hpBar = useMemo(() => {
+		const overColor = 'yellow';
+		const underColor = 'dark';
+		
 		const color = (hp.percent > 0.5)
 			? 'green'
 			: (hp.percent > 0.25)
 				? 'orange'
 				: 'red';
 		
-		const label = <>
-			<Text c={color} ta="center" fw={700} size={'lg'} ref={hpRef} style={{textShadow: '0px 0px 2px rgba(0,0,0,0.3)'}}>
-				{hp.current}/{hp.max}
+		let ringFooter: ReactNode = undefined;
+		let rootColor: string | undefined;
+		let sections: RingProgressProps['sections'] = [
+			{
+				value: hp.percent * 100,
+				color: color
+			},
+		];
+		
+		let currentText = hp.current;
+		let maxText = hp.max;
+		
+		let currentHpColor = color;
+		
+		if (hp.current > hp.max) {
+			rootColor = 'green';
+			
+			const offset = hp.current - hp.max;
+			currentHpColor = overColor;
+			
+			sections = [
+				{
+					value: (offset / hp.max) * 100,
+					color: overColor
+				}
+			];
+		}
+		else if (hp.current <= 0) {
+			rootColor = 'red';
+			
+			if (hp.current < 0) {
+				const newMax = hp.max / 2;
+				maxText = -newMax;
+				
+				sections = [
+					{
+						value: (Math.abs(hp.current) / newMax) * 100,
+						color: underColor
+					}
+				];
+			}
+		}
+		
+		const textProps = {
+			c: color,
+			size: 'lg',
+			style: { textShadow: '0px 0px 2px rgba(0,0,0,0.3)' },
+			fw: 700,
+			span: true,
+		};
+		
+		let label = <Box ta={'center'}>
+			<Text {...textProps} c={currentHpColor}>
+				{currentText}
 			</Text>
-		</>
+			<Text {...textProps}>
+				/
+			</Text>
+			<Text {...textProps}>
+				{maxText}
+			</Text>
+		</Box>
+		
+		if (character.minions > 0) {
+			const colors: MantineColor[] = ['red', 'orange', 'green', 'grape', 'teal'];
+			// Show unfilled portions between minion chunks
+			rootColor = underColor;
+			sections = [];
+
+			const num = character.minions;
+			const chunk = hp.max / num;
+
+			if (chunk > 0) {
+				// Clamp for minion calculations
+				const effectiveCurrent = Math.max(0, Math.min(hp.current, hp.max));
+
+				for (let i = 0; i < num; i++) {
+					const start = i * chunk;
+					const filledInChunk = Math.max(0, Math.min(effectiveCurrent - start, chunk)); // clamp to [0, chunk]
+					const value = (filledInChunk / chunk) * (100 / num); // scale per-chunk to whole ring
+					if (value > 0) {
+						sections.push({
+							value,
+							color: colors[i % colors.length],
+						});
+					}
+				}
+
+				// Remaining minions text
+				const remainingMinions = Math.min(num, Math.ceil(effectiveCurrent / chunk));
+				const remainingMinionText = `${remainingMinions} Minion${remainingMinions === 1 ? '' : 's'}`;
+				ringFooter = <Text {...textProps} ta="center">{remainingMinionText}</Text>;
+			}
+		}
 		
 		const ring = (
-			<RingProgress label={label}
+			<RingProgress roundCaps
+			              label={label}
 			              size={100}
 			              transitionDuration={250}
-			              sections={[
-				              {
-					              value: hp.percent * 100,
-					              color: color
-				              }
-			              ]}></RingProgress>);
+			              rootColor={rootColor}
+			              sections={sections}></RingProgress>
+		);
+		
 		
 		return (
 			<Popover trapFocus withArrow arrowSize={12}>
 				<Popover.Target>
-					{ring}
+					<Stack px={'sm'} gap={0}>
+						{ring}
+						{ringFooter}
+					</Stack>
 				</Popover.Target>
 				<Popover.Dropdown>
 					<OverlayDisplay type={'hp'}/>
 				</Popover.Dropdown>
 			</Popover>
 		);
-	}, [hp.percent, hp.current, hp.max]);
+	}, [hp.percent, hp.current, hp.max, hp.temporary, character.minions]);
 	
 	const recoveriesBar = useMemo(() => {
 		const ring = (
 			<RingProgress
-				label={<Text style={{textShadow: '0px 0px 2px rgba(0,0,0,0.3)'}} c={'blue'} ta="center" fw={700} size={'lg'}>{recoveries.current}/{recoveries.max}</Text>}
+				roundCaps
+				label={
+					<Text style={{textShadow: '0px 0px 2px rgba(0,0,0,0.3)'}} c={'blue'} ta="center" fw={700} size={'lg'}>
+						{recoveries.current}/{recoveries.max}
+					</Text>
+				}
 				size={100}
 				transitionDuration={250}
 				sections={[
@@ -141,7 +251,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				</Popover.Dropdown>
 			</Popover>
 		);
-	}, [recoveries.percent, recoveries.current, recoveries.max]);
+	}, [recoveries.percent, recoveries.current, recoveries.max, recoveries.temporary, character.minions]);
 	
 	const image = useMemo(() => (
 		<Image fit={'cover'}
@@ -215,20 +325,25 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 							<Group gap={0}>
 								{hpBar}
 								{recoveriesBar}
-								{ children?.gauges &&
-									children.gauges
-								}
 							</Group>
+							{
+								nonNullBuilder(children?.gauges, (gauges) => (
+									<Group gap={0}>
+										{gauges}
+									</Group>
+								))
+							}
 						</Stack>
 						{
-							children?.right &&
-							<Box style={{flexShrink: 1}}>
-								{children.right}
-							</Box>
+							nonNullBuilder(children?.right, (cardEl) => (
+								<Box style={{flexShrink: 1}}>
+									{cardEl}
+								</Box>
+							))
 						}
 					</Group>
-					{ children?.bottom &&
-						children.bottom
+					{
+						nonNullBuilder(children?.bottom, (el) => el)
 					}
 				</Stack>
 			</Card>
@@ -238,7 +353,9 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 	function OverlayDisplay({ type }: CharacterCardOverlayProps) {
 		const [modHp, setModHp] = useInputState<number | string>('');
 		const [tempHp, setTempHp] = useInputState<number | string>(character.temporaryHp == 0 ? '' : character.temporaryHp);
+		
 		const [modRecoveries, setModRecoveries] = useInputState<number | string>('');
+		const [tempRecoveries, setTempRecoveries] = useInputState<number | string>(character.temporaryRecoveries == 0 ? '' : character.temporaryRecoveries);
 		
 		const [updatePromise, setUpdatePromise] = useState<Promise<unknown>>();
 		
@@ -251,6 +368,16 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 			}
 			
 			const p = saveMutation.mutateAsync({ temporaryHp: toSet });
+			setUpdatePromise(p);
+		}
+		
+		function saveTempRecoveries() {
+			const toSet = parseIntOrUndefined(tempRecoveries);
+			if (toSet == null || toSet === character.temporaryRecoveries || toSet < 0) {
+				return;
+			}
+			
+			const p = saveMutation.mutateAsync({ temporaryRecoveries: toSet });
 			setUpdatePromise(p);
 		}
 		
@@ -302,6 +429,11 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 			return tHp == null || isNaN(tHp) || tempHp === character.temporaryHp || tHp < 0;
 		}, [character.temporaryHp, tempHp])
 		
+		const tempRecoveriesButtonDisabled = useMemo(() => {
+			const tRec = parseInt(tempRecoveries as string);
+			return tRec == null || isNaN(tRec) || tempRecoveries === character.temporaryRecoveries || tRec < 0;
+		}, [character.temporaryRecoveries, tempRecoveries])
+		
 		switch (type) {
 			case 'hp':
 				return (
@@ -328,21 +460,27 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				);
 			case 'recoveries':
 				return (
-					<Stack>
-						<NumberInput label={'Modify Recoveries'}
-						             value={modRecoveries}
-						             onChange={setModRecoveries}
-						             min={0}/>
-						<Grid>
-							<GridCol span={6}>
-								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'INCREASE')}>Add</Button>
-							</GridCol>
-							<GridCol span={6}>
-								<Button fullWidth disabled={promiseState.loading} onClick={() => submitModification('removedRecoveries', 'DECREASE')}>Remove</Button>
-							</GridCol>
-						</Grid>
-					</Stack>
-				);
+					<div>
+						<Stack>
+							<NumberInput label={'Modify Recoveries'}
+							             value={modRecoveries}
+							             onChange={setModRecoveries}
+							             min={0}/>
+							<Button.Group>
+								<Button fullWidth disabled={promiseState.loading} color={'green'} onClick={() => submitModification('removedRecoveries', 'INCREASE')}>Increase</Button>
+								<Button fullWidth disabled={promiseState.loading} color={'red'} onClick={() => submitModification('removedRecoveries', 'DECREASE')}>Decrease</Button>
+							</Button.Group>
+						</Stack>
+						<Divider my={'sm'} />
+						<Stack>
+							<NumberInput label={'Temporary Recoveries'}
+							             value={tempRecoveries}
+							             onChange={setTempRecoveries}
+							             min={0}/>
+							<Button fullWidth disabled={tempRecoveriesButtonDisabled} onClick={() => saveTempRecoveries()}>Submit</Button>
+						</Stack>
+					</div>
+			);
 		}
 	}
 	

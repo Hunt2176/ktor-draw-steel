@@ -10,7 +10,7 @@ export interface AnchoredProps {
 export function Anchored({ position, children }: AnchoredProps) {
 	const childrenArray = useMemo(() => React.Children.toArray(children), [children]);
 	return <>
-		<Box display={'inline-block'} p={'sm'} w={'fit-content'} className={`blur ${position}-anchored`}>
+		<Box display={'inline-block'} p={'sm'} w={'fit-content'} className={`glass ${position}-anchored`}>
 			{
 				childrenArray.map((child, index) =>
 					<Fragment key={index}>{child}</Fragment>

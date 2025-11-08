@@ -106,7 +106,7 @@ export function CampaignDetail() {
 	
 	
 	const newCharacterModal = useMemo(() => {
-		const model = Character.new();
+		const model = Character.empty();
 		
 		return (
 			<Modal.Stack>

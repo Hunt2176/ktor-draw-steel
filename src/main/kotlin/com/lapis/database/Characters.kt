@@ -30,10 +30,27 @@ class CharacterRepository(database: Database) : BaseRepository<ExposedCharacter,
 			
 			val res = this@CharacterRepository.transaction {
 				val character = ExposedCharacter.findById(call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")) ?: error("Character not found")
-				val removed = character.removedHp
+				val removed = character.removedHp.coerceAtLeast(0)
+				
 				val newRemoved = when (update.type) {
 					CharacterHealthModifier.Type.HEAL -> removed - update.mod
-					CharacterHealthModifier.Type.DAMAGE -> removed + update.mod
+					CharacterHealthModifier.Type.DAMAGE ->
+					{
+						if (character.temporaryHp > 0) {
+							val tempAfter = character.temporaryHp - update.mod
+							character.temporaryHp = tempAfter.coerceAtLeast(0)
+
+							if (tempAfter >= 0)
+							{
+								return@transaction character.toDTO()
+							}
+							
+							removed + (-tempAfter).coerceAtLeast(0)
+						}
+						else {
+							removed + update.mod
+						}
+					}
 				}
 				
 				character.removedHp = newRemoved.coerceAtLeast(0)
@@ -49,13 +66,29 @@ class CharacterRepository(database: Database) : BaseRepository<ExposedCharacter,
 			
 			val res = this@CharacterRepository.transaction {
 				val character = ExposedCharacter.findById(call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")) ?: error("Character not found")
-				val removed = character.removedRecoveries
+				val removed = character.removedRecoveries.coerceAtLeast(0)
 				val newRemoved = when (update.type) {
 					CharacterRecoveriesModifier.Type.INCREASE -> removed - update.mod
-					CharacterRecoveriesModifier.Type.DECREASE -> removed + update.mod
+					CharacterRecoveriesModifier.Type.DECREASE ->
+					{
+						if (character.temporaryRecoveries > 0) {
+							val tempAfter = character.temporaryRecoveries - update.mod
+							character.temporaryRecoveries = tempAfter.coerceAtLeast(0)
+
+							if (tempAfter >= 0)
+							{
+								return@transaction character.toDTO()
+							}
+							
+							removed + (-tempAfter).coerceAtLeast(0)
+						}
+						else {
+							removed + update.mod
+						}
+					}
 				}
 				
-				character.removedRecoveries = newRemoved.coerceIn(0..character.maxRecoveries)
+				character.removedRecoveries = newRemoved.coerceAtLeast(0)
 				return@transaction character.toDTO()
 			}
 			
@@ -102,9 +135,11 @@ object Characters : IntIdTable(), HasName, HasCampaign
 	
 	val removedRecoveries = integer("removed_recoveries").default(0)
 	val maxRecoveries = integer("max_recoveries").default(0)
+	val temporaryRecoveries = integer("temporary_recoveries").default(0)
 	
 	val victories = integer("victories").default(0)
 	
+	val minions = integer("minions").default(0).check { it greaterEq 0 }
 	val offstage = bool("offstage").default(false)
 	val resourceName = text("resource_name").nullable()
 	val pictureUrl = varchar("picture_url", 255).nullable()
@@ -137,9 +172,11 @@ class ExposedCharacter(
 	
 	var removedRecoveries by Characters.removedRecoveries
 	var maxRecoveries by Characters.maxRecoveries
+	var temporaryRecoveries by Characters.temporaryRecoveries
 	
 	var victories by Characters.victories
 	
+	var minions by Characters.minions
 	var offstage by Characters.offstage
 	var resourceName by Characters.resourceName
 	var pictureUrl by Characters.pictureUrl
@@ -170,7 +207,9 @@ class ExposedCharacter(
 		
 		json["removedRecoveries"]?.jsonPrimitive?.int?.let { removedRecoveries = it }
 		json["maxRecoveries"]?.jsonPrimitive?.int?.let { maxRecoveries = it }
+		json["temporaryRecoveries"]?.jsonPrimitive?.int?.let { temporaryRecoveries = it }
 		
+		json["minions"]?.jsonPrimitive?.int?.let { minions = it }
 		json["offstage"]?.jsonPrimitive?.boolean?.let { offstage = it }
 		json["resourceName"]?.jsonPrimitive?.contentOrNull?.let { resourceName = it }
 		json["victories"]?.jsonPrimitive?.int?.let { victories = it }
@@ -197,9 +236,11 @@ data class CharacterDTO (
 	val temporaryHp: Int,
 	val removedRecoveries: Int,
 	val maxRecoveries: Int,
+	val temporaryRecoveries: Int,
 	val victories: Int,
 	val campaign: Int,
 	val user: Int,
+	val minions: Int,
 	val offstage: Boolean,
 	val resourceName: String?,
 	val pictureUrl: String?,
@@ -224,9 +265,11 @@ data class CharacterDTO (
 				entity.temporaryHp,
 				entity.removedRecoveries,
 				entity.maxRecoveries,
+				entity.temporaryRecoveries,
 				entity.victories,
 				entity.campaign.id.value,
 				entity.user.id.value,
+				entity.minions,
 				entity.offstage,
 				entity.resourceName,
 				entity.pictureUrl,

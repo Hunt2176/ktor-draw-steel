@@ -2,6 +2,7 @@ import * as path from "node:path";
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from "vite-tsconfig-paths";
+import tailwindcss from '@tailwindcss/vite';
 
 const fromRoot = (append: string) => path.resolve(__dirname, append)
 
@@ -16,11 +17,12 @@ export default defineConfig({
     react({
       babel: {
         plugins: [
+          ['babel-plugin-react-compiler'],
           ['module:@preact/signals-react-transform'],
-          ["babel-plugin-react-compiler"],
         ]
       }
     }),
+		tailwindcss(),
     tsconfigPaths()
   ],
   build: {
@@ -32,14 +34,15 @@ export default defineConfig({
       '/watch': 'ws://localhost:8080',
       '/files': 'http://localhost:8080',
       '/api': 'http://localhost:8080',
-      '/static': 'http://localhost:8080'
+      '/static': 'http://localhost:8080',
+	    '/kanka': 'http://localhost:8080',
     }
   },
   css: {
     preprocessorOptions: {
       scss: {
         api: 'modern-compiler',
-        includePaths: ['node_modules']
+        // includePaths: ['node_modules']
       }
     }
   },

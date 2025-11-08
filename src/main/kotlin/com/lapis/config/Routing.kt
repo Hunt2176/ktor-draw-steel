@@ -21,6 +21,7 @@ fun Application.configureRouting()
 	}
 	
 	setupFileHandling()
+	setupKankaRouting()
 	
 	routing {
 		staticResources("/static", "static")

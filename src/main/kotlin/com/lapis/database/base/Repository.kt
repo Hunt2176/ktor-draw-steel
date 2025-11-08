@@ -29,8 +29,21 @@ class BaseRepository<EType: Entity<Int>, ECType: EntityClass<Int, EType>> (
 ) : ScopedTransactionProvider
 {
 	init {
+		setup()
+	}
+	
+	private final fun setup() {
 		transaction {
 			SchemaUtils.create(entityClass.table)
+			val statements = SchemaUtils.addMissingColumnsStatements(entityClass.table)
+			if (statements.isEmpty()) {
+				return@transaction
+			}
+			else {
+				statements.forEach {
+					exec(it)
+				}
+			}
 		}
 	}
 	

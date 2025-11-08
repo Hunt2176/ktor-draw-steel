@@ -11,8 +11,8 @@ import { CharacterSelector } from "components/character_selector/character_selec
 import { useCampaign, useCombat, useWatchCampaign } from "hooks/api_hooks.ts";
 import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
 import { Character, Combatant } from "types/models.ts";
-import { parseIntOrUndefined } from "utils.ts";
-import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex, Switch } from "@mantine/core";
+import { multiSort, parseIntOrUndefined } from "utils.ts";
+import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex, Switch, SimpleGrid } from "@mantine/core";
 
 export interface CombatPageProps {
 
@@ -199,98 +199,124 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 				<Card>
 					<Title ta={'center'} order={3}>{available ? 'Available' : 'Unavailable'}</Title>
 				</Card>
-				{availableMap?.get(available)?.map(c => {
-					const combatant = combatantMap.get(c.id);
-					return combatant && (
-						<CharacterCard key={c.id} onPortraitClick={() => navigate(`/characters/${c.id}`)} character={c} type={'tile'}>
-							{{
-								[available ? 'right' : 'left']: (
-									<CharacterCardExtra>
-										{(props) => <>
-											<Box mr={!available ? 'xs' : undefined}
-											     ml={available ? 'xs' : undefined}
-												   ta={available ? 'end' : undefined}
-											     flex={available ? 1 : undefined}>
-												<Box mb={'xs'}>
-													<ActionIcon
-														onClick={() => activeCombatantMutation.mutate({combatant, active: !combatant.available})}>
-														<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft}/>
-													</ActionIcon>
-												</Box>
-												<Box>
-													<ActionIcon onClick={props.edit}>
-														<FontAwesomeIcon icon={faPencil}/>
-													</ActionIcon>
-												</Box>
-											</Box>
-										</>}
-									</CharacterCardExtra>
-								),
-								gauges: (
-									<CharacterCardExtra>
-										<Flex justify={'center'} style={{alignSelf: 'stretch'}}>
-											<Popover trapFocus withArrow>
-												<Popover.Target>
-													<Button color={'indigo'} variant={'subtle'} h={'auto'} fw={700}>
-														<Stack gap={0}>
-															<Text size={'lg'} fw={700}>
-																{c.resourceName ?? 'Resources'}
-															</Text>
-															<Text size={'lg'} fw={700}>
-																{combatant.resources}
-															</Text>
-														</Stack>
-													</Button>
-												</Popover.Target>
-												<Popover.Dropdown>
-													<CombatantValueUpdate combatantId={combatant.id} name={c.resourceName ?? undefined} valueKey={'resources'} />
-												</Popover.Dropdown>
-											</Popover>
-										</Flex>
-										<Flex justify={'center'} style={{alignSelf: 'stretch'}}>
-											<Popover trapFocus withArrow>
-												<Popover.Target>
-													<Button style={{alignSelf: 'stretch'}} color={'blue'} variant={'subtle'} h={'auto'} fw={700}>
-														<Stack gap={0}>
-															<Text size={'lg'} fw={700}>
-																Surges
-															</Text>
-															<Text size={'lg'} fw={700}>
-																{combatant.surges}
-															</Text>
-														</Stack>
-													</Button>
-												</Popover.Target>
-												<Popover.Dropdown>
-													<CombatantValueUpdate combatantId={combatant.id} valueKey={'surges'} />
-												</Popover.Dropdown>
-											</Popover>
-										</Flex>
-									</CharacterCardExtra>
-								),
-								bottom: (
-									<CharacterCardExtra>
-										<Box>
-											<CharacterConditions editing={true} character={c} />
-										</Box>
-									</CharacterCardExtra>
+				<SimpleGrid cols={{ base: 1, '750px': 2, '1300px': 3 }} type={'container'} spacing={'xs'} verticalSpacing={'xs'}>
+					{availableMap?.get(available)?.map(c => [combatantMap.get(c.id), c] as const)
+						.toSorted(multiSort([
+							{
+								sortBy: (e) => e[1].offstage,
+								dir: 'ASC'
+							},
+							{
+								sortBy: (e) => Character.getHp(e[1]).current,
+								dir: 'ASC'
+							},
+							{
+								sortBy: (e) => e[1].name.toLowerCase(),
+								dir: 'ASC'
+							}
+						]))
+						.map(([combatant, c]) => {
+								if (combatant == null) {
+									return <></>;
+								}
+								
+								return (
+									<CharacterCard key={c.id} onPortraitClick={() => navigate(`/characters/${c.id}`)} character={c}
+									               type={'tile'}>
+										{{
+											[available ? 'right' : 'left']: (
+												<CharacterCardExtra>
+													{(props) => <>
+														<Box mr={!available ? 'xs' : undefined}
+														     ml={available ? 'xs' : undefined}
+														     ta={available ? 'end' : undefined}
+														     flex={available ? 1 : undefined}>
+															<Box mb={'xs'}>
+																<ActionIcon
+																	onClick={() => activeCombatantMutation.mutate({
+																		combatant,
+																		active: !combatant.available
+																	})}>
+																	<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft}/>
+																</ActionIcon>
+															</Box>
+															<Box mb={'xs'}>
+																<ActionIcon onClick={props.edit}>
+																	<FontAwesomeIcon icon={faPencil}/>
+																</ActionIcon>
+															</Box>
+															<Box>
+																<CharacterConditions mode={'button'} character={c}></CharacterConditions>
+															</Box>
+														</Box>
+													</>}
+												</CharacterCardExtra>
+											),
+											gauges: (
+												<CharacterCardExtra>
+													<Flex justify={'center'} style={{alignSelf: 'stretch'}}>
+														<Popover trapFocus withArrow>
+															<Popover.Target>
+																<Button color={'indigo'} variant={'subtle'} h={'auto'} fw={700}>
+																	<Stack gap={0}>
+																		<Text size={'lg'} fw={700}>
+																			{c.resourceName ?? 'Resources'}
+																		</Text>
+																		<Text size={'lg'} fw={700}>
+																			{combatant.resources}
+																		</Text>
+																	</Stack>
+																</Button>
+															</Popover.Target>
+															<Popover.Dropdown>
+																<CombatantValueUpdate combatantId={combatant.id} name={c.resourceName ?? undefined}
+																                      valueKey={'resources'}/>
+															</Popover.Dropdown>
+														</Popover>
+													</Flex>
+													<Flex justify={'center'} style={{alignSelf: 'stretch'}}>
+														<Popover trapFocus withArrow>
+															<Popover.Target>
+																<Button style={{alignSelf: 'stretch'}} color={'blue'} variant={'subtle'} h={'auto'}
+																        fw={700}>
+																	<Stack gap={0}>
+																		<Text size={'lg'} fw={700}>
+																			Surges
+																		</Text>
+																		<Text size={'lg'} fw={700}>
+																			{combatant.surges}
+																		</Text>
+																	</Stack>
+																</Button>
+															</Popover.Target>
+															<Popover.Dropdown>
+																<CombatantValueUpdate combatantId={combatant.id} valueKey={'surges'}/>
+															</Popover.Dropdown>
+														</Popover>
+													</Flex>
+												</CharacterCardExtra>
+											),
+											bottom: (
+												<CharacterCardExtra>
+													<Box>
+														<CharacterConditions mode={'list'} character={c}/>
+													</Box>
+												</CharacterCardExtra>
+											)
+										}}
+									</CharacterCard>
 								)
-							}}
-						</CharacterCard>
-					)}
-				)}
+							}
+						)}
+				</SimpleGrid>
 			</Stack>
 		);
 		
 		return (
-			<Grid align={'start'} variant={'fluid'} gutter={2}>
-				<GridCol span={'auto'}>
-					{getDisplay(true)}
-				</GridCol>
-				<GridCol span={'auto'}>
-					{getDisplay(false)}
-				</GridCol>
-			</Grid>
+			<SimpleGrid cols={2} spacing={'xs'}>
+				{getDisplay(true)}
+				{getDisplay(false)}
+			</SimpleGrid>
 		);
 	}, [availableMap, activeCombatantMutation, combatantMap, navigate]);
 	
@@ -353,6 +379,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		<Modal title={'Quick Add'} opened={showQuickAdd} onClose={showQuickAddHandler.close} onEnterTransitionEnd={() => setQuickAddConfig({})}>
 			<TextInput label="Name" value={quickAddConfig['name'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, name: e.target.value})} />
 			<TextInput label={'Max HP'} type={'number'} min={0} value={quickAddConfig['maxHp'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, maxHp: parseIntOrUndefined(e.target.value)})} />
+			<NumberInput label={'Minions'} min={0} value={ quickAddConfig['minions'] ?? 0 } onChange={(e) => setQuickAddConfig({...quickAddConfig, minions: parseIntOrUndefined(e) ?? 0})}></NumberInput>
 			<Switch mt={'xs'} label={'Offstage'} checked={quickAddConfig['offstage'] ?? true} onChange={(e) => setQuickAddConfig({...quickAddConfig, offstage: e.target.checked})} />
 			<Divider my={'md'} />
 			<Group justify={'end'}>

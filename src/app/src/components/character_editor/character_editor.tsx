@@ -111,6 +111,11 @@ export function CharacterEditor({ uploadStackId, character, onSubmit }: Characte
 			        checked={stateVars['offstage'][0]}
 			        onChange={(e) => onEdit('offstage', e.target.checked)}/>
 			
+			<NumberInput label="Minions"
+			             min={0}
+			             value={wrapNumberValue(stateVars['minions'][0])}
+			             onChange={(e) => onEdit('minions', parseIntOrUndefined(e) ?? 0)}/>
+			
 			<Divider/>
 			{ stateVars['pictureUrl'][0] &&
 				<Image src={stateVars['pictureUrl'][0]}></Image>

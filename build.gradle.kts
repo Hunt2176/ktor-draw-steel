@@ -30,7 +30,7 @@ allOpen {
 }
 
 application {
-	mainClass.set("io.ktor.server.netty.EngineMain")
+	mainClass.set("com.lapis.ApplicationKt")
 	
 	val isDevelopment: Boolean = project.ext.has("development")
 	applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
@@ -69,6 +69,8 @@ dependencies {
 	implementation("io.insert-koin:koin-core:$koin_version")
 	implementation("io.insert-koin:koin-ktor:$koin_version")
 	implementation("org.xerial:sqlite-jdbc:$sqlite_version")
+	implementation("io.ktor:ktor-client-core-jvm")
+	implementation("io.ktor:ktor-client-logging")
 	implementation("io.ktor:ktor-server-auto-head-response-jvm")
 	implementation("io.ktor:ktor-server-core-jvm")
 	implementation("io.ktor:ktor-server-resources-jvm")
@@ -92,6 +94,7 @@ dependencies {
 	implementation("io.ktor:ktor-server-netty-jvm")
 	implementation("ch.qos.logback:logback-classic:$logback_version")
 	implementation("io.ktor:ktor-server-config-yaml-jvm")
+	implementation("io.ktor:ktor-client-cio-jvm:3.0.3")
 	testImplementation("io.ktor:ktor-server-test-host-jvm")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
