@@ -1,18 +1,19 @@
 import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useDisclosure, useInputState, usePrevious } from "@mantine/hooks";
+import { useDisclosure } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ValueModifier, ValueModifierChangeEvent } from "components/value-modifier.tsx";
 import { usePreviousRef } from "hooks/usePreviousRef.ts";
 import React, { useId, useMemo, useRef, useState } from "react";
-import { data, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { CharacterCard, CharacterCardExtra } from "components/character_card/card.tsx";
 import { CharacterConditions } from "components/character_conditions.tsx";
 import { CharacterSelector } from "components/character_selector/character_selector.tsx";
 import { useCampaign, useCombat, useWatchCampaign } from "hooks/api_hooks.ts";
-import { CombatModificationUpdate, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
+import { CombatModificationUpdate, modifyHeroTokens, ModifyRequest, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
 import { Character, Combatant } from "types/models.ts";
 import { multiSort, parseIntOrUndefined } from "utils.ts";
-import { Text, Box, Button, Card, Checkbox, Divider, Grid, GridCol, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex, Switch, SimpleGrid } from "@mantine/core";
+import { Text, Box, Button, Card, Checkbox, Divider, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex, Switch, SimpleGrid } from "@mantine/core";
 
 export interface CombatPageProps {
 
@@ -108,6 +109,18 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		}
 	});
 	
+	const campaignUpdateMutation = useMutation({
+		mutationKey: ['campaign', campaign?.campaign.id],
+		mutationFn: async (update: ModifyRequest) => {
+			const id = campaign?.campaign.id;
+			if (id == null) {
+				throw new Error('No campaign');
+			}
+			
+			return modifyHeroTokens(id, update);
+		},
+	})
+	
 	const combatModificationMutation = useMutation({
 		mutationFn: (mod: CombatModificationUpdate) => {
 			if (combat == null) {
@@ -159,39 +172,6 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 		}, new Map<boolean, Character[]>());
 	}, [campaign?.characters, combat?.combatants]);
 	
-	function CombatantValueUpdate({combatantId, name, valueKey}: { combatantId: number, name?: string, valueKey: 'resources' | 'surges' }) {
-		const [value, setValue] = useInputState<number | string>('');
-		
-		const toDisplay = useMemo(() => valueKey === 'resources' ? name ?? 'Resources' : 'Surges', [valueKey, name]);
-		
-		const execute = (type: 'increase' | 'decrease') => {
-			const toUpdate = parseIntOrUndefined(value);
-			if (toUpdate == null) return;
-			
-			combatantUpdateMutation.mutate([combatantId, { type, value: toUpdate, key: valueKey }]);
-		}
-		
-		return <>
-			<Stack>
-				<Stack>
-					<NumberInput label={`Modify ${toDisplay}`}
-					             value={value}
-					             min={0}
-					             autoFocus
-					             onChange={setValue}/>
-					<Button.Group>
-						<Button onClick={() => execute('increase')} color={'green'}>
-							Increase
-						</Button>
-						<Button onClick={() => execute('decrease')} color={'red'}>
-							Decrease
-						</Button>
-					</Button.Group>
-				</Stack>
-			</Stack>
-		</>
-	}
-	
 	const characterDisplay = useMemo(() => {
 		
 		const getDisplay = (available: boolean) => (
@@ -218,6 +198,17 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 						.map(([combatant, c]) => {
 								if (combatant == null) {
 									return <></>;
+								}
+								
+								const updateValue = (key: Extract<keyof Combatant,'resources' | 'surges'>, event: ValueModifierChangeEvent) => {
+									combatantUpdateMutation.mutate([
+										combatant.id,
+										{
+											key,
+											type: event.type.toLowerCase() as any,
+											value: event.modifyBy
+										}
+									]);
 								}
 								
 								return (
@@ -269,8 +260,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 																</Button>
 															</Popover.Target>
 															<Popover.Dropdown>
-																<CombatantValueUpdate combatantId={combatant.id} name={c.resourceName ?? undefined}
-																                      valueKey={'resources'}/>
+																<ValueModifier label={'Modify Resources'} onChange={(ev) => updateValue('resources', ev)}></ValueModifier>
 															</Popover.Dropdown>
 														</Popover>
 													</Flex>
@@ -290,7 +280,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 																</Button>
 															</Popover.Target>
 															<Popover.Dropdown>
-																<CombatantValueUpdate combatantId={combatant.id} valueKey={'surges'}/>
+																<ValueModifier label={'Modify Surges'} onChange={(ev) => updateValue('surges', ev)}></ValueModifier>
 															</Popover.Dropdown>
 														</Popover>
 													</Flex>
@@ -429,12 +419,25 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 						</Button>
 						<Text ta={'center'} fw={700}>Round {combat.round}</Text>
 					</Stack>
-					<Box>
+					<Stack gap={'sm'}>
 						<Button onClick={showNextRoundHandler.open}>
 							<Text mr={2}>Next Round</Text>
 							<FontAwesomeIcon icon={faArrowRight}></FontAwesomeIcon>
 						</Button>
-					</Box>
+						<Stack justify={'center'} align={'center'}>
+							<Popover trapFocus withArrow>
+								<Popover.Target>
+									<Button h={'auto'} variant={'transparent'}>
+										Hero Tokens {campaign.campaign.heroTokens}
+									</Button>
+								</Popover.Target>
+								<Popover.Dropdown>
+									<ValueModifier label={'Modify Hero Tokens'}
+									               onChange={(ev) => campaignUpdateMutation.mutate(ev)}></ValueModifier>
+								</Popover.Dropdown>
+							</Popover>
+						</Stack>
+					</Stack>
 				</Group>
 			</Card>
 			{characterDisplay}

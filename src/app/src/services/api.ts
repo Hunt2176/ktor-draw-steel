@@ -1,10 +1,27 @@
 import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant, DisplayEntry } from "types/models.ts";
 import axios from 'axios';
 
+export interface ModifyRequest {
+	modifyBy: number,
+	type: 'INCREASE' | 'DECREASE'
+}
+
+function createModifyRepositoryRequest<T>(api: string, type: string): (id: number, request: ModifyRequest) => Promise<T> {
+	return async (id, request) => {
+		const res = await axios.patch(`${api}${id}/modify/${type}`, request);
+		
+		return (await res.data) as T;
+	}
+}
+
 export async function updateCampaign(id: number, campaign: Partial<Campaign>) {
 	const res = await axios.patch(`/api/campaigns/${id}`, campaign);
 	
 	return (await res.data) as CampaignDetails;
+}
+
+export async function modifyHeroTokens(campaignId: number, request: ModifyRequest) {
+	return createModifyRepositoryRequest<CampaignDetails>('/api/campaigns/', 'heroTokens')(campaignId, request);
 }
 
 export async function fetchCampaigns(): Promise<CampaignDetails[]> {

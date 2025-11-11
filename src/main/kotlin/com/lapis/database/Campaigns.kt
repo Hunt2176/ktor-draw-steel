@@ -79,6 +79,14 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 	
 	override fun Route.additionalRouteSetup()
 	{
+		
+		createValueModificationRoute("heroTokens") { item, ev ->
+			when (ev.type) {
+				ValueModificationRequest.Type.INCREASE -> item.heroTokens = (item.heroTokens + ev.modifyBy).coerceAtLeast(0)
+				ValueModificationRequest.Type.DECREASE -> item.heroTokens = (item.heroTokens - ev.modifyBy).coerceAtLeast(0)
+			}
+		}
+		
 		get("{id}/combats") {
 			val id = call.parameters["id"]?.toIntOrNull()
 			if (id == null) {
@@ -128,6 +136,7 @@ class CampaignRepository(database: Database) : BaseRepository<ExposedCampaign, E
 object Campaigns : IntIdTable(), HasName {
 	override val name: Column<String> = varchar("name", 100)
 	val background = text("background").nullable()
+	val heroTokens = integer("hero_tokens").default(0).check { it greaterEq 0 }
 	val kankaApiId = integer("kanka_api_id").nullable()
 }
 
@@ -138,6 +147,7 @@ class ExposedCampaign(
 	
 	var name by Campaigns.name
 	var background by Campaigns.background
+	var heroTokens by Campaigns.heroTokens
 	var kankaApiId by Campaigns.kankaApiId
 	
 	override fun toDTO(): CampaignDTO {
@@ -148,6 +158,7 @@ class ExposedCampaign(
 	{
 		json["name"]?.jsonPrimitive?.content?.let { name = it }
 		json["background"]?.jsonPrimitive?.content?.let { background = it }
+		json["heroTokens"]?.jsonPrimitive?.intOrNull?.let { heroTokens = it }
 		json["kankaApiId"]?.jsonPrimitive?.intOrNull?.let { kankaApiId = it }
 	}
 }
@@ -156,12 +167,13 @@ class ExposedCampaign(
 data class CampaignDTO(
 	val id: Int,
 	val name: String,
+	val heroTokens: Int,
 	val background: String?,
 	val kankaApiId: Int?,
 ) {
 	companion object {
 		fun fromEntity(entity: ExposedCampaign): CampaignDTO {
-			return CampaignDTO(entity.id.value, entity.name, entity.background, entity.kankaApiId)
+			return CampaignDTO(entity.id.value, entity.name, entity.heroTokens, entity.background, entity.kankaApiId)
 		}
 	}
 }
