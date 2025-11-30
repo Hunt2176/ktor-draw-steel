@@ -6,6 +6,7 @@ export type User = HasId;
 export interface Campaign extends HasId, HasName {
 	background?: string;
 	heroTokens: number;
+	kankaApiId?: string;
 }
 
 export const DisplayEntryType = Object.freeze({
