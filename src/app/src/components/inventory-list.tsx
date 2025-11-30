@@ -48,6 +48,9 @@ export function InventoryList(props: InventoryListProps) {
 			}
 			
 			return createInventoryItem(characterId, { name, quantity });
+		},
+		onSuccess: () => {
+			newItemOpenActions.close();
 		}
 	});
 	
@@ -119,7 +122,7 @@ export function InventoryList(props: InventoryListProps) {
 					</Grid>
 					<Modal title={'New Item'} opened={newItemOpen} onClose={newItemOpenActions.close}>
 						<Stack>
-							<TextInput label={'Name'} placeholder={'Name'} value={newName} onChange={setNewName}></TextInput>
+							<TextInput data-autofocus label={'Name'} placeholder={'Name'} value={newName} onChange={setNewName}></TextInput>
 							<NumberInput label={'Quantity'}
 							             placeholder={'Quantity'}
 							             value={newQuantity}
