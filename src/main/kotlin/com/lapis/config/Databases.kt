@@ -37,6 +37,7 @@ fun Application.configureDatabases()
 			CharacterRepository(database).also { repo -> repoModule.single { repo } },
 			CombatRepository(database).also { repo -> repoModule.single { repo } },
 			CombatantRepository(database).also { repo -> repoModule.single { repo } },
+			InventoryItemRepository(database).also { repo -> repoModule.single { repo }},
 			BaseRepository(ExposedUser, database, BaseRepositoryEntityMapper(ExposedUser::toDTO) {
 				customizeFromJson(it)
 			}),

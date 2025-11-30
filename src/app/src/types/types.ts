@@ -76,13 +76,20 @@ const RootScope = type.scope({
 		type: '"Background" | "Portrait"',
 		campaign: 'number',
 	},
-	EntityType: '"ExposedDisplayEntry" | "ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition" | "ExposedCharacterCondition"',
+	InventoryItem: {
+		'...': 'HasId & HasName',
+		characterId: 'number',
+		quantity: 'number',
+	},
+	
+	EntityType: '"ExposedInventoryItem" | "ExposedDisplayEntry" | "ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition" | "ExposedCharacterCondition"',
+	
 	SocketEvent: {
 		campaignId: 'number',
 		changeType: '"Updated" | "Created" | "Removed"',
 		entityType: 'EntityType | null',
 		dataId: 'number | null',
-		data: 'Campaign | Character | Combat | Combatant | CharacterCondition | DisplayEntry | null',
+		data: 'InventoryItem | Campaign | Character | Combat | Combatant | CharacterCondition | DisplayEntry | null',
 	}
 });
 

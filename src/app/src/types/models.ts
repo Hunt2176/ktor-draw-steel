@@ -41,6 +41,11 @@ export interface CharacterCondition extends HasId, HasName {
 	endType: CharacterConditionEndType;
 }
 
+export interface InventoryItem extends HasId, HasName {
+	characterId: number;
+	quantity: number;
+}
+
 export interface Character extends HasId, HasName {
 	might: number;
 	agility: number;
@@ -60,6 +65,7 @@ export interface Character extends HasId, HasName {
 	border: string | null;
 	offstage: boolean;
 	minions: number;
+	inventory: InventoryItem[];
 	
 	campaign: number;
 	conditions: CharacterCondition[];
@@ -109,6 +115,7 @@ export namespace Character {
 			offstage: false,
 			minions: 0,
 			conditions: [],
+			inventory: []
 		} as Character;
 	}
 }

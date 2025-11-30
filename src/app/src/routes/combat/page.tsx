@@ -1,7 +1,8 @@
-import { faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
+import { faBriefcase, faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { InventoryList } from "components/inventory-list.tsx";
 import { ValueModifier, ValueModifierChangeEvent } from "components/value-modifier.tsx";
 import { usePreviousRef } from "hooks/usePreviousRef.ts";
 import React, { useId, useMemo, useRef, useState } from "react";
@@ -37,6 +38,8 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	
 	const modCharacterBefore = useRef<Record<number, boolean>>({});
 	const modCharacterAfter = useRef<Record<number, boolean>>({});
+	
+	const [showInventoryFor, setShowInventoryFor] = useState<number | null>(null);
 	
 	const id = useMemo(() => parseIntOrUndefined(params.id), [params.id]);
 	
@@ -236,9 +239,19 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 																	<FontAwesomeIcon icon={faPencil}/>
 																</ActionIcon>
 															</Box>
-															<Box>
+															<Box mb={'xs'}>
 																<CharacterConditions mode={'button'} character={c}></CharacterConditions>
 															</Box>
+															<Box>
+																<ActionIcon onClick={() => setShowInventoryFor(c.id)}>
+																	<FontAwesomeIcon icon={faBriefcase}></FontAwesomeIcon>
+																</ActionIcon>
+															</Box>
+															<Modal title={`Inventory for ${c.name}`}
+															       opened={showInventoryFor === c.id}
+															       onClose={() => setShowInventoryFor(null)}>
+																<InventoryList characterId={c.id} items={c.inventory}></InventoryList>
+															</Modal>
 														</Box>
 													</>}
 												</CharacterCardExtra>
