@@ -5,6 +5,7 @@ import { useDisclosure, useInputState } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { ConfirmationPopover } from "components/confirmation-popover.tsx";
 import { ValueModifier, ValueModifierChangeEvent } from "components/value-modifier.tsx";
+import { useMemo } from "react";
 import { createInventoryItem, deleteInventoryItem, modifyInventoryItemQuantity } from "services/api.ts";
 import { InventoryItem } from "types/models.ts";
 import { parseIntOrUndefined } from "utils.ts";
@@ -59,58 +60,59 @@ export function InventoryList(props: InventoryListProps) {
 			return deleteInventoryItem(itemId);
 		}
 	});
-	
-	const tableRows = items.map(item => {
-		return (
-			<Table.Tr key={item.id}>
-				<Table.Td>
-					<Text>{ item.name }</Text>
-				</Table.Td>
-				<Table.Td>
-					<Popover>
-						<Popover.Target>
-							<Text>{ item.quantity }</Text>
-						</Popover.Target>
-						<Popover.Dropdown>
-							<ValueModifier label={'Modify Quantity'}
-							               onChange={(event) => {
-								               quantityMod.mutate({item: item.id, event: event})
-							               }}></ValueModifier>
-						</Popover.Dropdown>
-					</Popover>
-				</Table.Td>
-				<Table.Td align={'right'}>
-					<ConfirmationPopover title={`Remove ${item.name}`}
-					                     message={'Are you sure?'}
-					                     onAccept={() => removeItemMod.mutate(item.id)}>
-						{(open) => {
-							return (
-								<ActionIcon onClick={open} color={'red'}>
-									<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-								</ActionIcon>
-							);
-						}
-						}
-					</ConfirmationPopover>
-				</Table.Td>
-			</Table.Tr>
-		)
-	});
-	
-	const tableElement = (
-		<Table>
-			<Table.Thead>
-				<Table.Tr>
-					<Table.Th>Item</Table.Th>
-					<Table.Th>Quantity</Table.Th>
-					<Table.Th></Table.Th>
+
+	const tableElement = useMemo(() => {
+		const rows = items.map(item => {
+			return (
+				<Table.Tr key={item.id}>
+					<Table.Td>
+						<Text>{ item.name }</Text>
+					</Table.Td>
+					<Table.Td>
+						<Popover>
+							<Popover.Target>
+								<Text>{ item.quantity }</Text>
+							</Popover.Target>
+							<Popover.Dropdown>
+								<ValueModifier label={'Modify Quantity'}
+											onChange={(event) => {
+												quantityMod.mutate({item: item.id, event: event})
+											}}></ValueModifier>
+							</Popover.Dropdown>
+						</Popover>
+					</Table.Td>
+					<Table.Td align={'right'}>
+						<ConfirmationPopover title={`Remove ${item.name}`}
+											message={'Are you sure?'}
+											onAccept={() => removeItemMod.mutate(item.id)}>
+							{(open) => {
+								return (
+									<ActionIcon onClick={open} color={'red'}>
+										<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
+									</ActionIcon>
+								);
+							}}
+						</ConfirmationPopover>
+					</Table.Td>
 				</Table.Tr>
-			</Table.Thead>
-			<Table.Tbody>
-				{ ...tableRows }
-			</Table.Tbody>
-		</Table>
-	)
+			)
+		});
+
+		return (
+			<Table>
+				<Table.Thead>
+					<Table.Tr>
+						<Table.Th>Item</Table.Th>
+						<Table.Th>Quantity</Table.Th>
+						<Table.Th></Table.Th>
+					</Table.Tr>
+				</Table.Thead>
+				<Table.Tbody>
+					{ ...rows }
+				</Table.Tbody>
+			</Table>
+		);
+	}, [items, quantityMod, removeItemMod]);
 	
 	const newItemEl = (characterId != null)
 			? <>

@@ -13,8 +13,8 @@ import { CharacterSelector } from "components/character_selector/character_selec
 import { useCampaign, useCombat, useWatchCampaign } from "hooks/api_hooks.ts";
 import { CombatModificationUpdate, modifyHeroTokens, ModifyRequest, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
 import { Character, Combatant } from "types/models.ts";
-import { multiSort, parseIntOrUndefined } from "utils.ts";
-import { Text, Box, Button, Card, Checkbox, Divider, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex, Switch, SimpleGrid } from "@mantine/core";
+import { multiSort, nonNullBuilder, parseIntOrUndefined, trimToNull } from "utils.ts";
+import { Text, Box, Button, Card, Checkbox, Divider, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex, Switch, SimpleGrid, Image } from "@mantine/core";
 
 export interface CombatPageProps {
 
@@ -384,6 +384,13 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 			<TextInput label={'Max HP'} type={'number'} min={0} value={quickAddConfig['maxHp'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, maxHp: parseIntOrUndefined(e.target.value)})} />
 			<NumberInput label={'Minions'} min={0} value={ quickAddConfig['minions'] ?? 0 } onChange={(e) => setQuickAddConfig({...quickAddConfig, minions: parseIntOrUndefined(e) ?? 0})}></NumberInput>
 			<Switch mt={'xs'} label={'Offstage'} checked={quickAddConfig['offstage'] ?? true} onChange={(e) => setQuickAddConfig({...quickAddConfig, offstage: e.target.checked})} />
+			<Divider my={'md'} />
+			{
+				nonNullBuilder(trimToNull(quickAddConfig['pictureUrl']), (pictureUrl) => {
+					return <Image mb={'md'} src={pictureUrl}></Image>;
+				})
+			}
+			<TextInput label={'Picture URL'} onChange={(e) => setQuickAddConfig({ ...quickAddConfig, pictureUrl: e.target.value })}></TextInput>
 			<Divider my={'md'} />
 			<Group justify={'end'}>
 				<Button disabled={quickAddConfig['name'] == null || quickAddConfig['maxHp'] == null}
