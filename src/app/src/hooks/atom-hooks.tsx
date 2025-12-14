@@ -1,8 +1,6 @@
-import { Atom, atom } from 'jotai';
-import { atomFamily } from "jotai/utils";
-import { useEffect, useMemo, useRef } from "react";
-import { AtomFamily, BasicWritableAtom } from "types/atom_types.ts";
-import { Comparer } from "types/types.ts";
+import { atom } from 'jotai';
+import { useMemo } from "react";
+import { BasicWritableAtom } from "types/atom_types.ts";
 
 export function useNumericAtom(initialValue: BasicWritableAtom<number> | number) {
 	return useMemo(() => {
@@ -42,25 +40,4 @@ export function useNumericAtom(initialValue: BasicWritableAtom<number> | number)
 			});
 		
 	}, [initialValue]);
-}
-
-export function useAtomFamily<FN extends (...args: any[]) => Atom<any>>(init: FN, comparer?: Comparer<Parameters<FN>>): AtomFamily<Parameters<FN>, ReturnType<FN>> {
-	const familyRef = useRef<AtomFamily<Parameters<FN>, ReturnType<FN>>>()
-	
-	useEffect(() => {
-		const family = atomFamily((args: Parameters<FN>) => {
-			return init(...args);
-		}, comparer);
-		
-		familyRef.current = family as any;
-		
-		return () => {
-			const all = family.getParams();
-			for (const param of all) {
-				family.remove(param);
-			}
-		}
-	}, []);
-	
-	return familyRef.current!;
 }
