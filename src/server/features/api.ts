@@ -1,18 +1,6 @@
-import { and, eq, inArray } from "drizzle-orm";
-import { z } from "zod";
-import {
-    campaigns,
-    characterConditions,
-    characters,
-    combatants,
-    combats,
-    db,
-    displayEntries,
-    inventoryItems,
-    users,
-} from "../db.js";
-import { compact, parseBody, parseId, responseJson, responseText } from "../core/http.js";
-import { notifyCampaign } from "../core/socket.js";
+export { handleApi } from "./api/index.js";
+
+/*
 
 const modifyValueSchema = z.object({
     modifyBy: z.number().int().nonnegative(),
@@ -417,6 +405,11 @@ export async function handleApi(req: Request, pathname: string): Promise<Respons
         return responseText("Method not allowed", 405);
     }
 
+/*
+
+
+
+
     match = pathname.match(/^\/api\/campaigns\/(\d+)\/modify\/heroTokens$/);
     if (match && req.method === "PATCH") {
         const id = parseId(match[1]);
@@ -598,6 +591,8 @@ export async function handleApi(req: Request, pathname: string): Promise<Respons
 
         return responseText("Method not allowed", 405);
     }
+
+
 
     match = pathname.match(/^\/api\/characters\/(\d+)\/modify\/health$/);
     if (match && req.method === "PATCH") {
@@ -1526,5 +1521,7 @@ export async function handleApi(req: Request, pathname: string): Promise<Respons
         return responseText("Method not allowed", 405);
     }
 
-    return responseText("Not found", 404);
-}
+
+*/
+
+
