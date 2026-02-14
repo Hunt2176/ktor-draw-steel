@@ -7,12 +7,12 @@ import { displayEntryRowToDto } from "../dto.js";
 import { ApiRouter } from "../router.js";
 
 export function registerDisplayEntryRoutes(router: ApiRouter) {
-    router.route("GET", /^\/api\/displayEntry$/, () => {
+    router.route("GET", "/api/displayEntry", () => {
         const rows = db.select().from(displayEntries).all();
         return responseJson(rows.map(displayEntryRowToDto));
     });
 
-    router.route("POST", /^\/api\/displayEntry$/, async ({ req }) => {
+    router.route("POST", "/api/displayEntry", async ({ req }) => {
         const body = await parseBody(req, displayEntryCreateSchema);
         if (body instanceof Response) {
             return body;
@@ -29,7 +29,7 @@ export function registerDisplayEntryRoutes(router: ApiRouter) {
         return responseJson(dto, 201);
     });
 
-    router.route("GET", /^\/api\/displayEntry\/(\d+)$/, ({ params }) => {
+    router.route("GET", "/api/displayEntry/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -43,7 +43,7 @@ export function registerDisplayEntryRoutes(router: ApiRouter) {
         return responseJson(displayEntryRowToDto(row));
     });
 
-    router.route("PATCH", /^\/api\/displayEntry\/(\d+)$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/displayEntry/:id", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -73,7 +73,7 @@ export function registerDisplayEntryRoutes(router: ApiRouter) {
         return responseJson(displayEntryRowToDto(row));
     });
 
-    router.route("DELETE", /^\/api\/displayEntry\/(\d+)$/, ({ params }) => {
+    router.route("DELETE", "/api/displayEntry/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;

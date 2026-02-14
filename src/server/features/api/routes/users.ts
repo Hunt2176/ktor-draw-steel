@@ -5,12 +5,12 @@ import { userCreateSchema, userPatchSchema } from "../schemas.js";
 import { ApiRouter } from "../router.js";
 
 export function registerUserRoutes(router: ApiRouter) {
-    router.route("GET", /^\/api\/users$/, () => {
+    router.route("GET", "/api/users", () => {
         const rows = db.select().from(users).all();
         return responseJson(rows);
     });
 
-    router.route("POST", /^\/api\/users$/, async ({ req }) => {
+    router.route("POST", "/api/users", async ({ req }) => {
         const body = await parseBody(req, userCreateSchema);
         if (body instanceof Response) {
             return body;
@@ -20,7 +20,7 @@ export function registerUserRoutes(router: ApiRouter) {
         return responseJson(inserted, 201);
     });
 
-    router.route("GET", /^\/api\/users\/(\d+)$/, ({ params }) => {
+    router.route("GET", "/api/users/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -34,7 +34,7 @@ export function registerUserRoutes(router: ApiRouter) {
         return responseJson(row);
     });
 
-    router.route("PATCH", /^\/api\/users\/(\d+)$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/users/:id", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -58,7 +58,7 @@ export function registerUserRoutes(router: ApiRouter) {
         return responseJson(row);
     });
 
-    router.route("DELETE", /^\/api\/users\/(\d+)$/, ({ params }) => {
+    router.route("DELETE", "/api/users/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;

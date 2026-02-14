@@ -7,9 +7,9 @@ import { buildCharacterDtos, campaignRowToDto, getCampaignDetails, getCombatDtoB
 import { ApiRouter } from "../router.js";
 
 export function registerCampaignRoutes(router: ApiRouter) {
-    router.route("GET", /^\/api\/campaigns$/, () => responseJson(getCampaignDetails()));
+    router.route("GET", "/api/campaigns", () => responseJson(getCampaignDetails()));
 
-    router.route("POST", /^\/api\/campaigns$/, async ({ req }) => {
+    router.route("POST", "/api/campaigns", async ({ req }) => {
         const body = await parseBody(req, campaignCreateSchema);
         if (body instanceof Response) {
             return body;
@@ -27,7 +27,7 @@ export function registerCampaignRoutes(router: ApiRouter) {
         return responseJson(dto, 201);
     });
 
-    router.route("GET", /^\/api\/campaigns\/(\d+)$/, ({ params }) => {
+    router.route("GET", "/api/campaigns/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -41,7 +41,7 @@ export function registerCampaignRoutes(router: ApiRouter) {
         return responseJson(details);
     });
 
-    router.route("PATCH", /^\/api\/campaigns\/(\d+)$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/campaigns/:id", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -72,7 +72,7 @@ export function registerCampaignRoutes(router: ApiRouter) {
         return responseJson(details);
     });
 
-    router.route("DELETE", /^\/api\/campaigns\/(\d+)$/, ({ params }) => {
+    router.route("DELETE", "/api/campaigns/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -88,7 +88,7 @@ export function registerCampaignRoutes(router: ApiRouter) {
         return responseText("Entity deleted", 200);
     });
 
-    router.route("PATCH", /^\/api\/campaigns\/(\d+)\/modify\/heroTokens$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/campaigns/:id/modify/heroTokens", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -116,7 +116,7 @@ export function registerCampaignRoutes(router: ApiRouter) {
         return responseJson(details);
     });
 
-    router.route("GET", /^\/api\/campaigns\/(\d+)\/combats$/, ({ params }) => {
+    router.route("GET", "/api/campaigns/:id/combats", ({ params }) => {
         const campaignId = parseId(params[0]);
         if (campaignId instanceof Response) {
             return campaignId;
@@ -131,7 +131,7 @@ export function registerCampaignRoutes(router: ApiRouter) {
         return responseJson(rows.map((row) => getCombatDtoById(row.id)).filter((row) => row != null));
     });
 
-    router.route("GET", /^\/api\/campaigns\/(\d+)\/characters$/, ({ params }) => {
+    router.route("GET", "/api/campaigns/:id/characters", ({ params }) => {
         const campaignId = parseId(params[0]);
         if (campaignId instanceof Response) {
             return campaignId;

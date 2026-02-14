@@ -7,7 +7,7 @@ import { getCharacterDtoById } from "../dto.js";
 import { ApiRouter } from "../router.js";
 
 export function registerCombatantRoutes(router: ApiRouter) {
-    router.route("GET", /^\/api\/combatants$/, () => {
+    router.route("GET", "/api/combatants", () => {
         const rows = db.select().from(combatants).all();
         const result = rows
             .map((row) => ({
@@ -23,7 +23,7 @@ export function registerCombatantRoutes(router: ApiRouter) {
         return responseJson(result);
     });
 
-    router.route("POST", /^\/api\/combatants$/, async ({ req }) => {
+    router.route("POST", "/api/combatants", async ({ req }) => {
         const body = await parseBody(req, combatantCreateSchema);
         if (body instanceof Response) {
             return body;
@@ -60,7 +60,7 @@ export function registerCombatantRoutes(router: ApiRouter) {
         return responseJson(dto, 201);
     });
 
-    router.route("GET", /^\/api\/combatants\/(\d+)$/, ({ params }) => {
+    router.route("GET", "/api/combatants/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -81,7 +81,7 @@ export function registerCombatantRoutes(router: ApiRouter) {
         });
     });
 
-    router.route("PATCH", /^\/api\/combatants\/(\d+)$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/combatants/:id", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -125,7 +125,7 @@ export function registerCombatantRoutes(router: ApiRouter) {
         return responseJson(dto);
     });
 
-    router.route("DELETE", /^\/api\/combatants\/(\d+)$/, ({ params }) => {
+    router.route("DELETE", "/api/combatants/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -146,13 +146,12 @@ export function registerCombatantRoutes(router: ApiRouter) {
         return responseText("Entity deleted", 200);
     });
 
-    router.route("PATCH", /^\/api\/combatants\/(\d+)\/(resources|surges)$/, async ({ req, params }) => {
-        const id = parseId(params[0]);
+    const modifyCombatantValue = async (req: Request, combatantIdParam: string, key: "resources" | "surges") => {
+        const id = parseId(combatantIdParam);
         if (id instanceof Response) {
             return id;
         }
 
-        const key = params[1];
         const body = await parseBody(req, combatantValueSchema);
         if (body instanceof Response) {
             return body;
@@ -192,5 +191,10 @@ export function registerCombatantRoutes(router: ApiRouter) {
         }
 
         return responseJson(dto);
-    });
+    };
+
+    router.route("PATCH", "/api/combatants/:id/resources", async ({ req, params }) =>
+        modifyCombatantValue(req, params[0], "resources"));
+    router.route("PATCH", "/api/combatants/:id/surges", async ({ req, params }) =>
+        modifyCombatantValue(req, params[0], "surges"));
 }

@@ -7,12 +7,12 @@ import { characterConditionRowToDto } from "../dto.js";
 import { ApiRouter } from "../router.js";
 
 export function registerCharacterConditionRoutes(router: ApiRouter) {
-    router.route("GET", /^\/api\/characterConditions$/, () => {
+    router.route("GET", "/api/characterConditions", () => {
         const rows = db.select().from(characterConditions).all();
         return responseJson(rows.map(characterConditionRowToDto));
     });
 
-    router.route("POST", /^\/api\/characterConditions$/, async ({ req }) => {
+    router.route("POST", "/api/characterConditions", async ({ req }) => {
         const body = await parseBody(req, characterConditionCreateSchema);
         if (body instanceof Response) {
             return body;
@@ -30,7 +30,7 @@ export function registerCharacterConditionRoutes(router: ApiRouter) {
         return responseJson(dto, 201);
     });
 
-    router.route("GET", /^\/api\/characterConditions\/(\d+)$/, ({ params }) => {
+    router.route("GET", "/api/characterConditions/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -44,7 +44,7 @@ export function registerCharacterConditionRoutes(router: ApiRouter) {
         return responseJson(characterConditionRowToDto(row));
     });
 
-    router.route("PATCH", /^\/api\/characterConditions\/(\d+)$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/characterConditions/:id", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -78,7 +78,7 @@ export function registerCharacterConditionRoutes(router: ApiRouter) {
         return responseJson(characterConditionRowToDto(row));
     });
 
-    router.route("DELETE", /^\/api\/characterConditions\/(\d+)$/, ({ params }) => {
+    router.route("DELETE", "/api/characterConditions/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;

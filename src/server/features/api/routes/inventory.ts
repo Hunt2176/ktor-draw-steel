@@ -7,12 +7,12 @@ import { inventoryRowToDto } from "../dto.js";
 import { ApiRouter } from "../router.js";
 
 export function registerInventoryRoutes(router: ApiRouter) {
-    router.route("GET", /^\/api\/inventoryItem$/, () => {
+    router.route("GET", "/api/inventoryItem", () => {
         const rows = db.select().from(inventoryItems).all();
         return responseJson(rows.map(inventoryRowToDto));
     });
 
-    router.route("POST", /^\/api\/inventoryItem$/, async ({ req }) => {
+    router.route("POST", "/api/inventoryItem", async ({ req }) => {
         const body = await parseBody(req, inventoryCreateSchema);
         if (body instanceof Response) {
             return body;
@@ -29,7 +29,7 @@ export function registerInventoryRoutes(router: ApiRouter) {
         return responseJson(dto, 201);
     });
 
-    router.route("GET", /^\/api\/inventoryItem\/(\d+)$/, ({ params }) => {
+    router.route("GET", "/api/inventoryItem/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -43,7 +43,7 @@ export function registerInventoryRoutes(router: ApiRouter) {
         return responseJson(inventoryRowToDto(row));
     });
 
-    router.route("PATCH", /^\/api\/inventoryItem\/(\d+)$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/inventoryItem/:id", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -77,7 +77,7 @@ export function registerInventoryRoutes(router: ApiRouter) {
         return responseJson(inventoryRowToDto(row));
     });
 
-    router.route("DELETE", /^\/api\/inventoryItem\/(\d+)$/, ({ params }) => {
+    router.route("DELETE", "/api/inventoryItem/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -98,7 +98,7 @@ export function registerInventoryRoutes(router: ApiRouter) {
         return responseText("Entity deleted", 200);
     });
 
-    router.route("PATCH", /^\/api\/inventoryItem\/(\d+)\/modify\/quantity$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/inventoryItem/:id/modify/quantity", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;

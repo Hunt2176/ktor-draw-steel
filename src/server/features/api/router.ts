@@ -4,6 +4,7 @@ export type ApiContext = {
     method: string;
     url: URL;
     params: string[];
+    namedParams: Record<string, string>;
 };
 
 type MaybeResponse = Response | null | undefined;
@@ -15,11 +16,60 @@ type ErrorInterceptor = (ctx: ApiContext, error: unknown) => Promise<MaybeRespon
 
 type RouteHandler = (ctx: ApiContext) => Promise<Response> | Response;
 
+export type RoutePattern = string | RegExp;
+
 type Route = {
     method: string;
     pattern: RegExp;
+    paramNames: string[];
     handler: RouteHandler;
 };
+
+function escapeRegexSegment(segment: string): string {
+    return segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function compilePattern(pattern: RoutePattern): { regex: RegExp; paramNames: string[] } {
+    if (pattern instanceof RegExp) {
+        return { regex: pattern, paramNames: [] };
+    }
+
+    const normalized = pattern.startsWith("/") ? pattern : `/${pattern}`;
+    if (normalized === "/") {
+        return { regex: /^\/$/, paramNames: [] };
+    }
+
+    const parts = normalized.split("/").filter(Boolean);
+    const paramNames: string[] = [];
+    let source = "^";
+
+    for (let index = 0; index < parts.length; index += 1) {
+        const part = parts[index];
+        const isLast = index === parts.length - 1;
+
+        if (part === "*") {
+            if (isLast) {
+                source += "(?:/(.*))?";
+            } else {
+                source += "/(.*)";
+            }
+            paramNames.push("*");
+            continue;
+        }
+
+        if (part.startsWith(":")) {
+            const name = part.slice(1).trim();
+            paramNames.push(name);
+            source += "/([^/]+)";
+            continue;
+        }
+
+        source += `/${escapeRegexSegment(part)}`;
+    }
+
+    source += "$";
+    return { regex: new RegExp(source), paramNames };
+}
 
 export class ApiRouter {
     private requestInterceptors: RequestInterceptor[] = [];
@@ -48,14 +98,21 @@ export class ApiRouter {
         return this;
     }
 
-    route(method: string, pattern: RegExp, handler: RouteHandler): this {
+    route(method: string, pattern: RoutePattern, handler: RouteHandler): this {
+        const compiled = compilePattern(pattern);
+
         this.routes.push({
             method: method.toUpperCase(),
-            pattern,
+            pattern: compiled.regex,
+            paramNames: compiled.paramNames,
             handler,
         });
 
         return this;
+    }
+
+    routeAll(pattern: RoutePattern, handler: RouteHandler): this {
+        return this.route("*", pattern, handler);
     }
 
     async handle(req: Request, pathname: string): Promise<Response> {
@@ -65,6 +122,7 @@ export class ApiRouter {
             method: req.method.toUpperCase(),
             url: new URL(req.url),
             params: [],
+            namedParams: {},
         };
 
         try {
@@ -77,7 +135,7 @@ export class ApiRouter {
 
             let matched: Route | undefined;
             for (const route of this.routes) {
-                if (route.method !== ctx.method) {
+                if (route.method !== "*" && route.method !== ctx.method) {
                     continue;
                 }
 
@@ -87,7 +145,15 @@ export class ApiRouter {
                 }
 
                 matched = route;
-                ctx.params = match.slice(1);
+                ctx.params = match.slice(1).map((value) => decodeURIComponent(value));
+                ctx.namedParams = {};
+                for (let index = 0; index < route.paramNames.length; index += 1) {
+                    const name = route.paramNames[index];
+                    const value = ctx.params[index];
+                    if (name && name !== "*" && value != null) {
+                        ctx.namedParams[name] = value;
+                    }
+                }
                 break;
             }
 

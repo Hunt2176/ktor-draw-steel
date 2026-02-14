@@ -12,12 +12,12 @@ import { buildCharacterDtos, getCharacterDtoById } from "../dto.js";
 import { ApiRouter } from "../router.js";
 
 export function registerCharacterRoutes(router: ApiRouter) {
-    router.route("GET", /^\/api\/characters$/, () => {
+    router.route("GET", "/api/characters", () => {
         const rows = db.select().from(characters).all();
         return responseJson(buildCharacterDtos(rows));
     });
 
-    router.route("POST", /^\/api\/characters$/, async ({ req }) => {
+    router.route("POST", "/api/characters", async ({ req }) => {
         const body = await parseBody(req, characterCreateSchema);
         if (body instanceof Response) {
             return body;
@@ -61,7 +61,7 @@ export function registerCharacterRoutes(router: ApiRouter) {
         return responseJson(dto, 201);
     });
 
-    router.route("GET", /^\/api\/characters\/(\d+)$/, ({ params }) => {
+    router.route("GET", "/api/characters/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -75,7 +75,7 @@ export function registerCharacterRoutes(router: ApiRouter) {
         return responseJson(dto);
     });
 
-    router.route("PATCH", /^\/api\/characters\/(\d+)$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/characters/:id", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -119,7 +119,7 @@ export function registerCharacterRoutes(router: ApiRouter) {
         return responseJson(dto);
     });
 
-    router.route("DELETE", /^\/api\/characters\/(\d+)$/, ({ params }) => {
+    router.route("DELETE", "/api/characters/:id", ({ params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -135,7 +135,7 @@ export function registerCharacterRoutes(router: ApiRouter) {
         return responseText("Entity deleted", 200);
     });
 
-    router.route("PATCH", /^\/api\/characters\/(\d+)\/modify\/health$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/characters/:id/modify/health", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
@@ -177,7 +177,7 @@ export function registerCharacterRoutes(router: ApiRouter) {
         return responseJson(dto);
     });
 
-    router.route("PATCH", /^\/api\/characters\/(\d+)\/modify\/recoveries$/, async ({ req, params }) => {
+    router.route("PATCH", "/api/characters/:id/modify/recoveries", async ({ req, params }) => {
         const id = parseId(params[0]);
         if (id instanceof Response) {
             return id;
