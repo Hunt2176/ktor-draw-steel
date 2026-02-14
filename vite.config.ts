@@ -3,6 +3,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from "vite-tsconfig-paths";
 import tailwindcss from '@tailwindcss/vite';
+import jotaiDebugLabel from 'jotai/babel/plugin-debug-label'
+import jotaiReactRefresh from 'jotai/babel/plugin-react-refresh'
+
 
 const fromRoot = (append: string) => path.resolve(__dirname, append)
 
@@ -18,6 +21,8 @@ export default defineConfig({
       babel: {
         plugins: [
           ['babel-plugin-react-compiler'],
+	        jotaiReactRefresh,
+	        jotaiDebugLabel,
           ['module:@preact/signals-react-transform'],
         ]
       }
@@ -29,6 +34,9 @@ export default defineConfig({
     outDir: fromRoot('build/resources/main/static/app'),
     emptyOutDir: true,
   },
+	optimizeDeps: {
+		include: ['']
+	},
   server: {
     proxy: {
       '/watch': 'ws://localhost:8080',

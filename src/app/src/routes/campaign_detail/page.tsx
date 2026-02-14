@@ -1,6 +1,7 @@
-import { faBook, faImage, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faBook, faBriefcase, faImage, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { InventoryList } from "components/inventory-list.tsx";
 import { Fragment, useContext, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Anchored } from "components/anchored.tsx";
@@ -42,6 +43,8 @@ export function CampaignDetail() {
 	useWatchCampaign(id);
 	const { data: campaign } = useCampaign(id);
 	const { data: combats } = useCombatsForCampaign(campaign?.campaign.id);
+	
+	const [characterInventory, setCharacterInventory] = useState<Character | null>(null);
 	
 	const updateCampaignBackgroundMutation = useMutation({
 		mutationFn: (url?: string) => {
@@ -219,7 +222,19 @@ export function CampaignDetail() {
 			}
 			
 			const characterEl = (
-				<CharacterCard onPortraitClick={() => navigate(`/characters/${character.id}`)} key={character.id} character={character} type={'tile'}/>
+				<CharacterCard onPortraitClick={() => navigate(`/characters/${character.id}`)} key={character.id} character={character} type={'tile'}>
+					{
+						{
+							'right': (
+								<>
+									<ActionIcon onClick={() => setCharacterInventory(character)}>
+										<FontAwesomeIcon icon={faBriefcase}></FontAwesomeIcon>
+									</ActionIcon>
+								</>
+							),
+						}
+					}
+				</CharacterCard>
 			)
 			
 			if (index % 5 == 0) {
@@ -271,9 +286,24 @@ export function CampaignDetail() {
 	    </Stack>
 	), [campaign, characterElements, combatElements, navigate]);
 	
+	if (characterInventory != null && campaign != null) {
+		const matched = campaign.characters.find(c => c.id === characterInventory.id);
+		if (matched && matched != characterInventory) {
+			setCharacterInventory(matched);
+		}
+	}
+	
 	if (campaign) {
 		return (
 			<>
+				<Modal title={`Inventory for ${characterInventory?.name}`}
+				       opened={characterInventory != null}
+				       onClose={() => setCharacterInventory(null)}>
+					{ characterInventory != null
+						? <InventoryList characterId={characterInventory.id} items={characterInventory.inventory}></InventoryList>
+						: <></>
+					}
+				</Modal>
 				<UploadModal show={showBackgroundUpload}
 				             accept=".png,.jpg,.jpeg,.webp"
 				             onHide={() => setShowBackgroundUpload(false)}

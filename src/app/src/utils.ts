@@ -1,5 +1,18 @@
 import { ReactNode } from "react";
 
+export function trimToNull(val: any) {
+	if (typeof val !== 'string') {
+		return null;
+	}
+	
+	const trimmed = val.trim();
+	if (trimmed.length === 0) {
+		return null;
+	}
+	
+	return trimmed;
+}
+
 export function parseIntOrUndefined(val: any): number | undefined {
 	if (val == null) {
 		return undefined;

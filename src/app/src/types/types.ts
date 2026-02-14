@@ -3,6 +3,8 @@ import { type } from "arktype";
 // Partial of type T but with Key still originally required
 export type PartialOmit<T, Key extends keyof T> = Partial<Omit<T, Key>> & Pick<T, Key>;
 
+export type Comparer<T> = (a: T, b: T) => boolean;
+
 const RootScope = type.scope({
 	'string.relativeUrl': /^(?![a-zA-Z][a-zA-Z0-9+\-.]*:).+/,
 	HasId: {
@@ -74,13 +76,20 @@ const RootScope = type.scope({
 		type: '"Background" | "Portrait"',
 		campaign: 'number',
 	},
-	EntityType: '"ExposedDisplayEntry" | "ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition" | "ExposedCharacterCondition"',
+	InventoryItem: {
+		'...': 'HasId & HasName',
+		characterId: 'number',
+		quantity: 'number',
+	},
+	
+	EntityType: '"ExposedInventoryItem" | "ExposedDisplayEntry" | "ExposedCampaign" | "ExposedCharacter" | "ExposedCombat" | "ExposedCombatant" | "ExposedCondition" | "ExposedCharacterCondition"',
+	
 	SocketEvent: {
 		campaignId: 'number',
 		changeType: '"Updated" | "Created" | "Removed"',
 		entityType: 'EntityType | null',
 		dataId: 'number | null',
-		data: 'Campaign | Character | Combat | Combatant | CharacterCondition | DisplayEntry | null',
+		data: 'InventoryItem | Campaign | Character | Combat | Combatant | CharacterCondition | DisplayEntry | null',
 	}
 });
 

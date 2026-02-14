@@ -1,10 +1,27 @@
-import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant, DisplayEntry } from "types/models.ts";
+import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant, DisplayEntry, InventoryItem } from "types/models.ts";
 import axios from 'axios';
+
+export interface ModifyRequest {
+	modifyBy: number,
+	type: 'INCREASE' | 'DECREASE'
+}
+
+function createModifyRepositoryRequest<T>(api: string, type: string): (id: number, request: ModifyRequest) => Promise<T> {
+	return async (id, request) => {
+		const res = await axios.patch(`${api}${id}/modify/${type}`, request);
+		
+		return (await res.data) as T;
+	}
+}
 
 export async function updateCampaign(id: number, campaign: Partial<Campaign>) {
 	const res = await axios.patch(`/api/campaigns/${id}`, campaign);
 	
 	return (await res.data) as CampaignDetails;
+}
+
+export async function modifyHeroTokens(campaignId: number, request: ModifyRequest) {
+	return createModifyRepositoryRequest<CampaignDetails>('/api/campaigns/', 'heroTokens')(campaignId, request);
 }
 
 export async function fetchCampaigns(): Promise<CampaignDetails[]> {
@@ -59,6 +76,39 @@ export async function deleteCharacter(id: number): Promise<void> {
 	
 	if (!res.ok) {
 		throw new Error('Failed to delete character');
+	}
+}
+
+export async function createInventoryItem(character: number, item: Pick<InventoryItem, 'name' | 'quantity'>) {
+	const toSend = {
+		character,
+		...item
+	}
+	
+	const res = await fetch(`/api/inventoryItem`, {
+		method: 'POST',
+		body: JSON.stringify(toSend),
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to create inventory item');
+	}
+	
+	return (await res.json()) as InventoryItem;
+}
+
+export const modifyInventoryItemQuantity = createModifyRepositoryRequest<InventoryItem>('/api/inventoryItem/', 'quantity');
+
+export async function deleteInventoryItem(id: number): Promise<void> {
+	const res = await fetch(`/api/inventoryItem/${id}`, {
+		method: 'DELETE',
+	});
+	
+	if (!res.ok) {
+		throw new Error('Failed to delete inventory item');
 	}
 }
 

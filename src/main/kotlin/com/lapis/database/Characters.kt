@@ -11,6 +11,7 @@ import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ReferenceOption
 
@@ -186,6 +187,7 @@ class ExposedCharacter(
 	var user by ExposedUser referencedOn Characters.user
 	
 	val conditions by ExposedCharacterCondition referrersOn CharacterConditions.character
+	val inventory by ExposedInventoryItem referrersOn InventoryItem.character
 	
 	override fun toDTO(): CharacterDTO {
 		return CharacterDTO.fromEntity(this)
@@ -222,6 +224,32 @@ class ExposedCharacter(
 	}
 }
 
+interface HasCharacter {
+	val character: Column<EntityID<Int>>
+	
+	companion object {
+		fun createField(table: IntIdTable): Column<EntityID<Int>> {
+			return table.reference("character",
+				Characters,
+				onDelete = ReferenceOption.CASCADE,
+				onUpdate = ReferenceOption.CASCADE
+			)
+		}
+	}
+}
+
+interface HasExposedCharacter {
+	var character: ExposedCharacter
+	
+	companion object {
+		fun HasExposedCharacter.deserializeExposedCharacter(json: JsonObject) {
+			json["character"]?.jsonPrimitive?.intOrNull?.let {
+				character = ExposedCharacter.findById(it) ?: error("Cannot find character with ID $it")
+			}
+		}
+	}
+}
+
 @Serializable
 data class CharacterDTO (
 	val id: Int,
@@ -245,7 +273,8 @@ data class CharacterDTO (
 	val resourceName: String?,
 	val pictureUrl: String?,
 	val border: String?,
-	val conditions: List<CharacterConditionDTO>
+	val conditions: List<CharacterConditionDTO>,
+	val inventory: List<InventoryItemDTO>
 )
 {
 	companion object
@@ -274,7 +303,8 @@ data class CharacterDTO (
 				entity.resourceName,
 				entity.pictureUrl,
 				entity.border,
-				entity.conditions.map { it.toDTO() }
+				entity.conditions.map { it.toDTO() },
+				entity.inventory.map { it.toDTO() }
 			)
 		}
 	}

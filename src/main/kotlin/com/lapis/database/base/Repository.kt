@@ -5,6 +5,8 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.Deferred
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -13,6 +15,7 @@ import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.transactions.transactionManager
 
@@ -43,6 +46,24 @@ class BaseRepository<EType: Entity<Int>, ECType: EntityClass<Int, EType>> (
 				statements.forEach {
 					exec(it)
 				}
+			}
+		}
+	}
+	
+	fun fetchById(id: Int): EType? {
+		return transaction {
+			entityClass.findById(id)
+		}
+	}
+	
+	fun RoutingContext.fetchById(): EType? {
+		return transaction {
+			val id = call.parameters["id"]?.toIntOrNull()
+			if (id == null) {
+				null
+			}
+			else {
+				entityClass.findById(id)
 			}
 		}
 	}
@@ -148,6 +169,24 @@ class BaseRepository<EType: Entity<Int>, ECType: EntityClass<Int, EType>> (
 		}
 	}
 	
+	protected fun Route.createValueModificationRoute(type: String, onCall: suspend (item: EType, req: ValueModificationRequest) -> Unit) {
+		patch("/{id}/modify/$type") {
+			asyncTransaction {
+				val e = fetchById()
+				val req = call.receive<ValueModificationRequest>()
+				if (e == null) {
+					call.respond(HttpStatusCode.NotFound, "Entity not found")
+				}
+				else {
+					onCall(e, req)
+					
+					val dto = mapper.toDTO(e)
+					call.respond(dto)
+				}
+			}.await()
+		}
+	}
+	
 	internal fun registerRoutes(baseRoute: Route) {
 		val name = entityClass.table.tableName.toCamelCase()
 		baseRoute.route("/$name") {
@@ -157,6 +196,17 @@ class BaseRepository<EType: Entity<Int>, ECType: EntityClass<Int, EType>> (
 			postJson()
 			patchEntity()
 			additionalRouteSetup()
+		}
+	}
+	
+	@Serializable
+	protected data class ValueModificationRequest(
+		val modifyBy: Int,
+		val type: Type
+	) {
+		enum class Type {
+			INCREASE,
+			DECREASE
 		}
 	}
 }
@@ -169,6 +219,14 @@ interface ScopedTransactionProvider {
 			database.transactionManager.defaultReadOnly,
 			database,
 			statement
+		)
+	
+	suspend fun <T> asyncTransaction(statement: suspend Transaction.() -> T): Deferred<T> =
+		suspendedTransactionAsync(
+			db = database,
+			transactionIsolation = database.transactionManager.defaultIsolationLevel,
+			readOnly = database.transactionManager.defaultReadOnly,
+			statement = statement
 		)
 }
 
