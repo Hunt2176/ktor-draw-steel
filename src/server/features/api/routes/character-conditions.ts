@@ -7,95 +7,96 @@ import { characterConditionRowToDto } from "../dto.js";
 import { ApiRouter } from "../router.js";
 
 export function registerCharacterConditionRoutes(router: ApiRouter) {
-    router.route("GET", "/api/characterConditions", () => {
-        const rows = db.select().from(characterConditions).all();
-        return responseJson(rows.map(characterConditionRowToDto));
+    router.route("/api/characterConditions", {
+        GET: () => {
+            const rows = db.select().from(characterConditions).all();
+            return responseJson(rows.map(characterConditionRowToDto));
+        },
+        POST: async ({ req }) => {
+            const body = await parseBody(req, characterConditionCreateSchema);
+            if (body instanceof Response) {
+                return body;
+            }
+
+            const character = db.select().from(characters).where(eq(characters.id, body.character)).get();
+            if (!character) {
+                return responseText("Character not found", 404);
+            }
+
+            const inserted = db.insert(characterConditions).values(body).returning().get();
+            const dto = characterConditionRowToDto(inserted);
+
+            notifyCampaign(character.campaign, "Created", "ExposedCharacterCondition", inserted.id, dto);
+            return responseJson(dto, 201);
+        },
     });
 
-    router.route("POST", "/api/characterConditions", async ({ req }) => {
-        const body = await parseBody(req, characterConditionCreateSchema);
-        if (body instanceof Response) {
-            return body;
-        }
+    router.route("/api/characterConditions/:id", {
+        GET: ({ params }) => {
+            const id = parseId(params[0]);
+            if (id instanceof Response) {
+                return id;
+            }
 
-        const character = db.select().from(characters).where(eq(characters.id, body.character)).get();
-        if (!character) {
-            return responseText("Character not found", 404);
-        }
+            const row = db.select().from(characterConditions).where(eq(characterConditions.id, id)).get();
+            if (!row) {
+                return responseText("Entity not found", 404);
+            }
 
-        const inserted = db.insert(characterConditions).values(body).returning().get();
-        const dto = characterConditionRowToDto(inserted);
+            return responseJson(characterConditionRowToDto(row));
+        },
+        PATCH: async ({ req, params }) => {
+            const id = parseId(params[0]);
+            if (id instanceof Response) {
+                return id;
+            }
 
-        notifyCampaign(character.campaign, "Created", "ExposedCharacterCondition", inserted.id, dto);
-        return responseJson(dto, 201);
-    });
+            const before = db.select().from(characterConditions).where(eq(characterConditions.id, id)).get();
+            if (!before) {
+                return responseText("Entity not found", 404);
+            }
 
-    router.route("GET", "/api/characterConditions/:id", ({ params }) => {
-        const id = parseId(params[0]);
-        if (id instanceof Response) {
-            return id;
-        }
+            const body = await parseBody(req, characterConditionPatchSchema);
+            if (body instanceof Response) {
+                return body;
+            }
 
-        const row = db.select().from(characterConditions).where(eq(characterConditions.id, id)).get();
-        if (!row) {
-            return responseText("Entity not found", 404);
-        }
+            const update = compact(body);
+            if (Object.keys(update).length > 0) {
+                db.update(characterConditions).set(update).where(eq(characterConditions.id, id)).run();
+            }
 
-        return responseJson(characterConditionRowToDto(row));
-    });
+            const row = db.select().from(characterConditions).where(eq(characterConditions.id, id)).get();
+            if (!row) {
+                return responseText("Entity not found", 404);
+            }
 
-    router.route("PATCH", "/api/characterConditions/:id", async ({ req, params }) => {
-        const id = parseId(params[0]);
-        if (id instanceof Response) {
-            return id;
-        }
+            const character = db.select().from(characters).where(eq(characters.id, row.character)).get();
+            if (character) {
+                notifyCampaign(character.campaign, "Updated", "ExposedCharacterCondition", id, characterConditionRowToDto(row));
+            }
 
-        const before = db.select().from(characterConditions).where(eq(characterConditions.id, id)).get();
-        if (!before) {
-            return responseText("Entity not found", 404);
-        }
+            return responseJson(characterConditionRowToDto(row));
+        },
+        DELETE: ({ params }) => {
+            const id = parseId(params[0]);
+            if (id instanceof Response) {
+                return id;
+            }
 
-        const body = await parseBody(req, characterConditionPatchSchema);
-        if (body instanceof Response) {
-            return body;
-        }
+            const row = db.select().from(characterConditions).where(eq(characterConditions.id, id)).get();
+            if (!row) {
+                return responseText("Entity not found", 404);
+            }
 
-        const update = compact(body);
-        if (Object.keys(update).length > 0) {
-            db.update(characterConditions).set(update).where(eq(characterConditions.id, id)).run();
-        }
+            const character = db.select().from(characters).where(eq(characters.id, row.character)).get();
+            db.delete(characterConditions).where(eq(characterConditions.id, id)).run();
 
-        const row = db.select().from(characterConditions).where(eq(characterConditions.id, id)).get();
-        if (!row) {
-            return responseText("Entity not found", 404);
-        }
+            if (character) {
+                notifyCampaign(character.campaign, "Removed", "ExposedCharacterCondition", id, null);
+            }
 
-        const character = db.select().from(characters).where(eq(characters.id, row.character)).get();
-        if (character) {
-            notifyCampaign(character.campaign, "Updated", "ExposedCharacterCondition", id, characterConditionRowToDto(row));
-        }
-
-        return responseJson(characterConditionRowToDto(row));
-    });
-
-    router.route("DELETE", "/api/characterConditions/:id", ({ params }) => {
-        const id = parseId(params[0]);
-        if (id instanceof Response) {
-            return id;
-        }
-
-        const row = db.select().from(characterConditions).where(eq(characterConditions.id, id)).get();
-        if (!row) {
-            return responseText("Entity not found", 404);
-        }
-
-        const character = db.select().from(characters).where(eq(characters.id, row.character)).get();
-        db.delete(characterConditions).where(eq(characterConditions.id, id)).run();
-
-        if (character) {
-            notifyCampaign(character.campaign, "Removed", "ExposedCharacterCondition", id, null);
-        }
-
-        return responseText("Entity deleted", 200);
+            return responseText("Entity deleted", 200);
+        },
     });
 }

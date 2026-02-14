@@ -17,6 +17,7 @@ type ResponseInterceptor =
 type ErrorInterceptor = (ctx: RequestRouterContext, error: unknown) => Promise<MaybeResponse> | MaybeResponse;
 
 type RouteHandler = (ctx: RequestRouterContext) => Promise<Response> | Response;
+type RouteHandlerMap = Partial<Record<string, RouteHandler>>;
 
 export type RoutePattern = string | RegExp;
 
@@ -100,17 +101,47 @@ export class RequestRouter {
         return this;
     }
 
-    route(method: string, pattern: RoutePattern, handler: RouteHandler): this {
-        const compiled = compilePattern(pattern);
+    route(method: string, pattern: RoutePattern, handler: RouteHandler): this;
+    route(pattern: RoutePattern, handlers: RouteHandlerMap): this;
+    route(
+        methodOrPattern: string | RoutePattern,
+        patternOrHandlers: RoutePattern | RouteHandlerMap,
+        handler?: RouteHandler,
+    ): this {
+        if (
+            typeof methodOrPattern === "string"
+            && (typeof patternOrHandlers === "string" || patternOrHandlers instanceof RegExp)
+            && typeof handler === "function"
+        ) {
+            const compiled = compilePattern(patternOrHandlers);
 
-        this.routes.push({
-            method: method.toUpperCase(),
-            pattern: compiled.regex,
-            paramNames: compiled.paramNames,
-            handler,
-        });
+            this.routes.push({
+                method: methodOrPattern.toUpperCase(),
+                pattern: compiled.regex,
+                paramNames: compiled.paramNames,
+                handler,
+            });
 
-        return this;
+            return this;
+        }
+
+        if (
+            (typeof methodOrPattern === "string" || methodOrPattern instanceof RegExp)
+            && typeof patternOrHandlers === "object"
+            && patternOrHandlers != null
+            && !(patternOrHandlers instanceof RegExp)
+            && handler == null
+        ) {
+            for (const [method, methodHandler] of Object.entries(patternOrHandlers)) {
+                if (typeof methodHandler === "function") {
+                    this.route(method, methodOrPattern, methodHandler);
+                }
+            }
+
+            return this;
+        }
+
+        throw new Error("Invalid route(...) arguments");
     }
 
     routeAll(pattern: RoutePattern, handler: RouteHandler): this {

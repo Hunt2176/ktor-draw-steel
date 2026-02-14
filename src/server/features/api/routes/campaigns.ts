@@ -7,142 +7,149 @@ import { buildCharacterDtos, campaignRowToDto, getCampaignDetails, getCombatDtoB
 import { ApiRouter } from "../router.js";
 
 export function registerCampaignRoutes(router: ApiRouter) {
-    router.route("GET", "/api/campaigns", () => responseJson(getCampaignDetails()));
+    router.route("/api/campaigns", {
+        GET: () => responseJson(getCampaignDetails()),
+        POST: async ({ req }) => {
+            const body = await parseBody(req, campaignCreateSchema);
+            if (body instanceof Response) {
+                return body;
+            }
 
-    router.route("POST", "/api/campaigns", async ({ req }) => {
-        const body = await parseBody(req, campaignCreateSchema);
-        if (body instanceof Response) {
-            return body;
-        }
+            const inserted = db.insert(campaigns).values({
+                name: body.name,
+                background: body.background ?? null,
+                heroTokens: body.heroTokens ?? 0,
+                kankaApiId: body.kankaApiId ?? null,
+            }).returning().get();
 
-        const inserted = db.insert(campaigns).values({
-            name: body.name,
-            background: body.background ?? null,
-            heroTokens: body.heroTokens ?? 0,
-            kankaApiId: body.kankaApiId ?? null,
-        }).returning().get();
-
-        const dto = campaignRowToDto(inserted);
-        notifyCampaign(dto.id, "Created", "ExposedCampaign", dto.id, dto);
-        return responseJson(dto, 201);
+            const dto = campaignRowToDto(inserted);
+            notifyCampaign(dto.id, "Created", "ExposedCampaign", dto.id, dto);
+            return responseJson(dto, 201);
+        },
     });
 
-    router.route("GET", "/api/campaigns/:id", ({ params }) => {
-        const id = parseId(params[0]);
-        if (id instanceof Response) {
-            return id;
-        }
+    router.route("/api/campaigns/:id", {
+        GET: ({ params }) => {
+            const id = parseId(params[0]);
+            if (id instanceof Response) {
+                return id;
+            }
 
-        const details = getCampaignDetails([id])[0];
-        if (!details) {
-            return responseText("Campaign not found", 404);
-        }
+            const details = getCampaignDetails([id])[0];
+            if (!details) {
+                return responseText("Campaign not found", 404);
+            }
 
-        return responseJson(details);
+            return responseJson(details);
+        },
+        PATCH: async ({ req, params }) => {
+            const id = parseId(params[0]);
+            if (id instanceof Response) {
+                return id;
+            }
+
+            const body = await parseBody(req, campaignPatchSchema);
+            if (body instanceof Response) {
+                return body;
+            }
+
+            const update = compact({
+                name: body.name,
+                background: body.background,
+                heroTokens: body.heroTokens,
+                kankaApiId: body.kankaApiId,
+            });
+
+            if (Object.keys(update).length > 0) {
+                db.update(campaigns).set(update).where(eq(campaigns.id, id)).run();
+            }
+
+            const details = getCampaignDetails([id])[0];
+            if (!details) {
+                return responseText("Campaign not found", 404);
+            }
+
+            notifyCampaign(id, "Updated", "ExposedCampaign", id, details.campaign);
+            return responseJson(details);
+        },
+        DELETE: ({ params }) => {
+            const id = parseId(params[0]);
+            if (id instanceof Response) {
+                return id;
+            }
+
+            const existing = db.select().from(campaigns).where(eq(campaigns.id, id)).get();
+            if (!existing) {
+                return responseText("Campaign not found", 404);
+            }
+
+            db.delete(campaigns).where(eq(campaigns.id, id)).run();
+            notifyCampaign(id, "Removed", "ExposedCampaign", id, null);
+            return responseText("Entity deleted", 200);
+        },
     });
 
-    router.route("PATCH", "/api/campaigns/:id", async ({ req, params }) => {
-        const id = parseId(params[0]);
-        if (id instanceof Response) {
-            return id;
-        }
+    router.route("/api/campaigns/:id/modify/heroTokens", {
+        PATCH: async ({ req, params }) => {
+            const id = parseId(params[0]);
+            if (id instanceof Response) {
+                return id;
+            }
 
-        const body = await parseBody(req, campaignPatchSchema);
-        if (body instanceof Response) {
-            return body;
-        }
+            const body = await parseBody(req, modifyValueSchema);
+            if (body instanceof Response) {
+                return body;
+            }
 
-        const update = compact({
-            name: body.name,
-            background: body.background,
-            heroTokens: body.heroTokens,
-            kankaApiId: body.kankaApiId,
-        });
+            const row = db.select().from(campaigns).where(eq(campaigns.id, id)).get();
+            if (!row) {
+                return responseText("Campaign not found", 404);
+            }
 
-        if (Object.keys(update).length > 0) {
-            db.update(campaigns).set(update).where(eq(campaigns.id, id)).run();
-        }
+            const heroTokens = Math.max(0, row.heroTokens + (body.type === "INCREASE" ? body.modifyBy : -body.modifyBy));
+            db.update(campaigns).set({ heroTokens }).where(eq(campaigns.id, id)).run();
 
-        const details = getCampaignDetails([id])[0];
-        if (!details) {
-            return responseText("Campaign not found", 404);
-        }
+            const details = getCampaignDetails([id])[0];
+            if (!details) {
+                return responseText("Campaign not found", 404);
+            }
 
-        notifyCampaign(id, "Updated", "ExposedCampaign", id, details.campaign);
-        return responseJson(details);
+            notifyCampaign(id, "Updated", "ExposedCampaign", id, details.campaign);
+            return responseJson(details);
+        },
     });
 
-    router.route("DELETE", "/api/campaigns/:id", ({ params }) => {
-        const id = parseId(params[0]);
-        if (id instanceof Response) {
-            return id;
-        }
+    router.route("/api/campaigns/:id/combats", {
+        GET: ({ params }) => {
+            const campaignId = parseId(params[0]);
+            if (campaignId instanceof Response) {
+                return campaignId;
+            }
 
-        const existing = db.select().from(campaigns).where(eq(campaigns.id, id)).get();
-        if (!existing) {
-            return responseText("Campaign not found", 404);
-        }
+            const campaignExists = db.select().from(campaigns).where(eq(campaigns.id, campaignId)).get();
+            if (!campaignExists) {
+                return responseText("Campaign not found", 404);
+            }
 
-        db.delete(campaigns).where(eq(campaigns.id, id)).run();
-        notifyCampaign(id, "Removed", "ExposedCampaign", id, null);
-        return responseText("Entity deleted", 200);
+            const rows = db.select().from(combats).where(eq(combats.campaign, campaignId)).all();
+            return responseJson(rows.map((row) => getCombatDtoById(row.id)).filter((row) => row != null));
+        },
     });
 
-    router.route("PATCH", "/api/campaigns/:id/modify/heroTokens", async ({ req, params }) => {
-        const id = parseId(params[0]);
-        if (id instanceof Response) {
-            return id;
-        }
+    router.route("/api/campaigns/:id/characters", {
+        GET: ({ params }) => {
+            const campaignId = parseId(params[0]);
+            if (campaignId instanceof Response) {
+                return campaignId;
+            }
 
-        const body = await parseBody(req, modifyValueSchema);
-        if (body instanceof Response) {
-            return body;
-        }
+            const campaignExists = db.select().from(campaigns).where(eq(campaigns.id, campaignId)).get();
+            if (!campaignExists) {
+                return responseText("Campaign not found", 404);
+            }
 
-        const row = db.select().from(campaigns).where(eq(campaigns.id, id)).get();
-        if (!row) {
-            return responseText("Campaign not found", 404);
-        }
-
-        const heroTokens = Math.max(0, row.heroTokens + (body.type === "INCREASE" ? body.modifyBy : -body.modifyBy));
-        db.update(campaigns).set({ heroTokens }).where(eq(campaigns.id, id)).run();
-
-        const details = getCampaignDetails([id])[0];
-        if (!details) {
-            return responseText("Campaign not found", 404);
-        }
-
-        notifyCampaign(id, "Updated", "ExposedCampaign", id, details.campaign);
-        return responseJson(details);
-    });
-
-    router.route("GET", "/api/campaigns/:id/combats", ({ params }) => {
-        const campaignId = parseId(params[0]);
-        if (campaignId instanceof Response) {
-            return campaignId;
-        }
-
-        const campaignExists = db.select().from(campaigns).where(eq(campaigns.id, campaignId)).get();
-        if (!campaignExists) {
-            return responseText("Campaign not found", 404);
-        }
-
-        const rows = db.select().from(combats).where(eq(combats.campaign, campaignId)).all();
-        return responseJson(rows.map((row) => getCombatDtoById(row.id)).filter((row) => row != null));
-    });
-
-    router.route("GET", "/api/campaigns/:id/characters", ({ params }) => {
-        const campaignId = parseId(params[0]);
-        if (campaignId instanceof Response) {
-            return campaignId;
-        }
-
-        const campaignExists = db.select().from(campaigns).where(eq(campaigns.id, campaignId)).get();
-        if (!campaignExists) {
-            return responseText("Campaign not found", 404);
-        }
-
-        const rows = db.select().from(characters).where(eq(characters.campaign, campaignId)).all();
-        return responseJson(buildCharacterDtos(rows));
+            const rows = db.select().from(characters).where(eq(characters.campaign, campaignId)).all();
+            return responseJson(buildCharacterDtos(rows));
+        },
     });
 }
