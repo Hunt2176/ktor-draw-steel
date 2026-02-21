@@ -1,43 +1,42 @@
-import { join } from "node:path";
-import { BUILT_STATIC_DIR, STATIC_DIR } from "../core/paths.js";
+import { join, resolve, sep } from "node:path";
+import { SITE_DIR } from "../core/paths.js";
 import { responseText } from "../core/http.js";
 
+function resolveSitePath(relativePath: string): string | null {
+	let decodedPath: string;
+
+	// Remove leading slashes to prevent absolute path issues
+	relativePath = relativePath.replace(/^\/+/, "");
+
+	try {
+		decodedPath = decodeURIComponent(relativePath);
+	} catch {
+		return null;
+	}
+
+	const absolutePath = resolve(SITE_DIR, decodedPath);
+	if (absolutePath === SITE_DIR || absolutePath.startsWith(`${SITE_DIR}${sep}`)) {
+		return absolutePath;
+	}
+
+	return null;
+}
+
 export async function serveStatic(pathname: string): Promise<Response> {
-    if (pathname.startsWith("/static/")) {
-        const rel = pathname.replace("/static/", "");
-        const built = Bun.file(join(BUILT_STATIC_DIR, rel));
-        if (await built.exists()) {
-            return new Response(built);
-        }
+	const assetPath = resolveSitePath(pathname) ?? resolveSitePath("index.html");
+	if (!assetPath) {
+		return responseText("Not found", 404);
+	}
 
-        const src = Bun.file(join(STATIC_DIR, rel));
-        if (await src.exists()) {
-            return new Response(src);
-        }
+	const builtAsset = Bun.file(assetPath);
+	if (await builtAsset.exists()) {
+		return new Response(builtAsset);
+	}
 
-        return responseText("Not found", 404);
-    }
+	const builtIndex = Bun.file(join(SITE_DIR, "index.html"));
+	if (await builtIndex.exists()) {
+		return new Response(builtIndex);
+	}
 
-    if (pathname.startsWith("/app/") || pathname === "/") {
-        const rel = pathname === "/" ? "index.html" : pathname.replace("/app/", "");
-
-        const builtAsset = Bun.file(join(BUILT_STATIC_DIR, "app", rel));
-        if (await builtAsset.exists()) {
-            return new Response(builtAsset);
-        }
-
-        const builtIndex = Bun.file(join(BUILT_STATIC_DIR, "app", "index.html"));
-        if (await builtIndex.exists()) {
-            return new Response(builtIndex);
-        }
-
-        const srcIndex = Bun.file(join(STATIC_DIR, "app", "index.html"));
-        if (await srcIndex.exists()) {
-            return new Response(srcIndex);
-        }
-
-        return responseText("Frontend build not found", 404);
-    }
-
-    return responseText("Not found", 404);
+	return responseText("Frontend build not found", 404);
 }

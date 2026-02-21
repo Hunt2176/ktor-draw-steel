@@ -9,7 +9,7 @@ import { registerCombatRoutes } from "./routes/combats.js";
 import { registerCombatantRoutes } from "./routes/combatants.js";
 import { registerUserRoutes } from "./routes/users.js";
 
-const apiRouter = new RequestRouter()
+export const apiRouter = new RequestRouter()
     .interceptRequest((ctx) => {
         if (!ctx.pathname.startsWith("/api")) {
             return new Response(null, { status: 404 });
