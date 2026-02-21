@@ -1,7 +1,9 @@
+import { isMethod, isRequestMethod, type Method, type RequestMethod } from "./method.js";
+
 export type RequestRouterContext = {
     req: Request;
     pathname: string;
-    method: string;
+    method: RequestMethod;
     url: URL;
     params: string[];
     namedParams: Record<string, string>;
@@ -17,12 +19,12 @@ type ResponseInterceptor =
 type ErrorInterceptor = (ctx: RequestRouterContext, error: unknown) => Promise<MaybeResponse> | MaybeResponse;
 
 type RouteHandler = (ctx: RequestRouterContext) => Promise<Response> | Response;
-type RouteHandlerMap = Partial<Record<string, RouteHandler>>;
+type RouteHandlerMap = Partial<Record<Method, RouteHandler>>;
 
 export type RoutePattern = string | RegExp;
 
 type Route = {
-    method: string;
+    method: Method;
     pattern: RegExp;
     paramNames: string[];
     handler: RouteHandler;
@@ -101,10 +103,10 @@ export class RequestRouter {
         return this;
     }
 
-    route(method: string, pattern: RoutePattern, handler: RouteHandler): this;
+    route(method: Method, pattern: RoutePattern, handler: RouteHandler): this;
     route(pattern: RoutePattern, handlers: RouteHandlerMap): this;
     route(
-        methodOrPattern: string | RoutePattern,
+        methodOrPattern: Method | RoutePattern,
         patternOrHandlers: RoutePattern | RouteHandlerMap,
         handler?: RouteHandler,
     ): this {
@@ -113,10 +115,15 @@ export class RequestRouter {
             && (typeof patternOrHandlers === "string" || patternOrHandlers instanceof RegExp)
             && typeof handler === "function"
         ) {
+            const method = methodOrPattern.toUpperCase();
+            if (!isMethod(method)) {
+                throw new Error(`Invalid HTTP method: ${methodOrPattern}`);
+            }
+
             const compiled = compilePattern(patternOrHandlers);
 
             this.routes.push({
-                method: methodOrPattern.toUpperCase(),
+                method,
                 pattern: compiled.regex,
                 paramNames: compiled.paramNames,
                 handler,
@@ -133,8 +140,9 @@ export class RequestRouter {
             && handler == null
         ) {
             for (const [method, methodHandler] of Object.entries(patternOrHandlers)) {
-                if (typeof methodHandler === "function") {
-                    this.route(method, methodOrPattern, methodHandler);
+                const normalizedMethod = method.toUpperCase();
+                if (typeof methodHandler === "function" && isMethod(normalizedMethod)) {
+                    this.route(normalizedMethod, methodOrPattern, methodHandler);
                 }
             }
 
@@ -150,10 +158,15 @@ export class RequestRouter {
 
     async handle(req: Request, server: Bun.Server<unknown> | null = null): Promise<Response> {
         const url = new URL(req.url);
+        const requestMethod = req.method.toUpperCase();
+        if (!isRequestMethod(requestMethod)) {
+            return new Response("Method not allowed", { status: 405 });
+        }
+
         const ctx: RequestRouterContext = {
             req,
             pathname: url.pathname,
-            method: req.method.toUpperCase(),
+            method: requestMethod,
             url,
             params: [],
             namedParams: {},

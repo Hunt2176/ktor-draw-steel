@@ -4,9 +4,9 @@ import { compact, parseBody, parseId, responseJson, responseText } from "../../.
 import { notifyCampaign } from "../../../core/socket.js";
 import { displayEntryCreateSchema, displayEntryPatchSchema } from "../schemas.js";
 import { displayEntryRowToDto } from "../dto.js";
-import { ApiRouter } from "../router.js";
+import type { RequestRouter } from "../../../core/router.js";
 
-export function registerDisplayEntryRoutes(router: ApiRouter) {
+export function registerDisplayEntryRoutes(router: RequestRouter) {
     router.route("/api/displayEntry", {
         GET: () => {
             const rows = db.select().from(displayEntries).all();

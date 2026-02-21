@@ -4,9 +4,9 @@ import { compact, parseBody, parseId, responseJson, responseText } from "../../.
 import { notifyCampaign } from "../../../core/socket.js";
 import { campaignCreateSchema, campaignPatchSchema, modifyValueSchema } from "../schemas.js";
 import { buildCharacterDtos, campaignRowToDto, getCampaignDetails, getCombatDtoById } from "../dto.js";
-import { ApiRouter } from "../router.js";
+import type { RequestRouter } from "../../../core/router.js";
 
-export function registerCampaignRoutes(router: ApiRouter) {
+export function registerCampaignRoutes(router: RequestRouter) {
     router.route("/api/campaigns", {
         GET: () => responseJson(getCampaignDetails()),
         POST: async ({ req }) => {

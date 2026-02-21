@@ -9,9 +9,9 @@ import {
     characterRecoveriesSchema,
 } from "../schemas.js";
 import { buildCharacterDtos, getCharacterDtoById } from "../dto.js";
-import { ApiRouter } from "../router.js";
+import type { RequestRouter } from "../../../core/router.js";
 
-export function registerCharacterRoutes(router: ApiRouter) {
+export function registerCharacterRoutes(router: RequestRouter) {
     router.route("/api/characters", {
         GET: () => {
             const rows = db.select().from(characters).all();

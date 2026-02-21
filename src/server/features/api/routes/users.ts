@@ -2,9 +2,9 @@ import { eq } from "drizzle-orm";
 import { db, users } from "../../../db.js";
 import { compact, parseBody, parseId, responseJson, responseText } from "../../../core/http.js";
 import { userCreateSchema, userPatchSchema } from "../schemas.js";
-import { ApiRouter } from "../router.js";
+import type { RequestRouter } from "../../../core/router.js";
 
-export function registerUserRoutes(router: ApiRouter) {
+export function registerUserRoutes(router: RequestRouter) {
     router.route("/api/users", {
         GET: () => {
             const rows = db.select().from(users).all();

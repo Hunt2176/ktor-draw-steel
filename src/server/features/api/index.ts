@@ -1,5 +1,5 @@
 import { responseJson } from "../../core/http.js";
-import { ApiRouter } from "./router.js";
+import { RequestRouter } from "../../core/router.js";
 import { registerCampaignRoutes } from "./routes/campaigns.js";
 import { registerCharacterRoutes } from "./routes/characters.js";
 import { registerCharacterConditionRoutes } from "./routes/character-conditions.js";
@@ -9,7 +9,7 @@ import { registerCombatRoutes } from "./routes/combats.js";
 import { registerCombatantRoutes } from "./routes/combatants.js";
 import { registerUserRoutes } from "./routes/users.js";
 
-const apiRouter = new ApiRouter()
+const apiRouter = new RequestRouter()
     .interceptRequest((ctx) => {
         if (!ctx.pathname.startsWith("/api")) {
             return new Response(null, { status: 404 });
@@ -48,7 +48,7 @@ export async function handleApi(req: Request, pathname: string): Promise<Respons
         return null;
     }
 
-    const response = await apiRouter.handle(req, pathname);
+    const response = await apiRouter.handle(req);
 
     if (response.status === 404 && !pathname.startsWith("/api")) {
         return null;

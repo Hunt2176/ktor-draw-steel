@@ -4,9 +4,9 @@ import { compact, parseBody, parseId, responseJson, responseText } from "../../.
 import { notifyCampaign } from "../../../core/socket.js";
 import { inventoryCreateSchema, inventoryPatchSchema, modifyValueSchema } from "../schemas.js";
 import { inventoryRowToDto } from "../dto.js";
-import { ApiRouter } from "../router.js";
+import type { RequestRouter } from "../../../core/router.js";
 
-export function registerInventoryRoutes(router: ApiRouter) {
+export function registerInventoryRoutes(router: RequestRouter) {
     router.route("/api/inventoryItem", {
         GET: () => {
             const rows = db.select().from(inventoryItems).all();

@@ -4,9 +4,9 @@ import { compact, parseBody, parseId, responseJson, responseText } from "../../.
 import { notifyCampaign } from "../../../core/socket.js";
 import { characterConditionCreateSchema, characterConditionPatchSchema } from "../schemas.js";
 import { characterConditionRowToDto } from "../dto.js";
-import { ApiRouter } from "../router.js";
+import type { RequestRouter } from "../../../core/router.js";
 
-export function registerCharacterConditionRoutes(router: ApiRouter) {
+export function registerCharacterConditionRoutes(router: RequestRouter) {
     router.route("/api/characterConditions", {
         GET: () => {
             const rows = db.select().from(characterConditions).all();

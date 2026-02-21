@@ -11,9 +11,9 @@ import {
     combatantRequestSchema,
 } from "../schemas.js";
 import { getCharacterDtoById, getCombatDtoById } from "../dto.js";
-import { ApiRouter } from "../router.js";
+import type { RequestRouter } from "../../../core/router.js";
 
-export function registerCombatRoutes(router: ApiRouter) {
+export function registerCombatRoutes(router: RequestRouter) {
     router.route("/api/combats", {
         GET: () => {
             const rows = db.select().from(combats).all();
