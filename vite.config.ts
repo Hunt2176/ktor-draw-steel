@@ -21,29 +21,29 @@ export default defineConfig({
       babel: {
         plugins: [
           ['babel-plugin-react-compiler'],
-	        jotaiReactRefresh,
-	        jotaiDebugLabel,
+          jotaiReactRefresh,
+          jotaiDebugLabel,
           ['module:@preact/signals-react-transform'],
         ]
       }
     }),
-		tailwindcss(),
+    tailwindcss(),
     tsconfigPaths()
   ],
   build: {
-    outDir: fromRoot('build/resources/main/static/app'),
+    outDir: fromRoot('out/site'),
     emptyOutDir: true,
   },
-	optimizeDeps: {
-		include: ['']
-	},
+  optimizeDeps: {
+    include: ['']
+  },
   server: {
     proxy: {
       '/watch': 'ws://localhost:8080',
       '/files': 'http://localhost:8080',
       '/api': 'http://localhost:8080',
-      '/static': 'http://localhost:8080',
-	    '/kanka': 'http://localhost:8080',
+      '/site': 'http://localhost:8080',
+      '/kanka': 'http://localhost:8080',
     }
   },
   css: {
