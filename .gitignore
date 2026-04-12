@@ -41,3 +41,4 @@ files/
 
 node_modules
 /application.yaml
+.env

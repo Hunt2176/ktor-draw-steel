@@ -1,20 +1,23 @@
 # ktor-draw-steel
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
+This project was created using the
+[Ktor Project Generator](https://start.ktor.io).
 
 Here are some useful links to get you started:
 
 - [Ktor Documentation](https://ktor.io/docs/home.html)
 - [Ktor GitHub page](https://github.com/ktorio/ktor)
-- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). You'll need
-  to [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to join.
+- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9).
+  You'll need to
+  [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to
+  join.
 
 ## Features
 
 Here's a list of features included in this project:
 
 | Name                                                                   | Description                                                                        |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | [AutoHeadResponse](https://start.ktor.io/p/auto-head-response)         | Provides automatic responses for HEAD requests                                     |
 | [Routing](https://start.ktor.io/p/routing)                             | Provides a structured routing DSL                                                  |
 | [Resources](https://start.ktor.io/p/resources)                         | Provides type-safe routing                                                         |
@@ -32,10 +35,21 @@ Here's a list of features included in this project:
 
 ## Building & Running
 
+The backend has been migrated to a Hono TypeScript server in `src/backend`.
+
 To build or run the project, use one of the following tasks:
 
+| Task                        | Description                        |
+| --------------------------- | ---------------------------------- |
+| `bun run backend:dev`       | Run the Hono backend in watch mode |
+| `bun run backend:start`     | Run the Hono backend once          |
+| `bun run backend:typecheck` | Type-check the Hono backend source |
+| `bun run db:generate`       | Generate new Drizzle migration SQL |
+| `bun run db:migrate`        | Apply Drizzle migrations           |
+| `bun run dev`               | Run the Vite frontend dev server   |
+
 | Task                          | Description                                                          |
-|-------------------------------|----------------------------------------------------------------------|
+| ----------------------------- | -------------------------------------------------------------------- |
 | `./gradlew test`              | Run the tests                                                        |
 | `./gradlew build`             | Build everything                                                     |
 | `buildFatJar`                 | Build an executable JAR of the server with all dependencies included |
@@ -50,4 +64,3 @@ If the server starts successfully, you'll see the following output:
 2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
 2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
 ```
-
