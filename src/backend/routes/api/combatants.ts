@@ -1,14 +1,21 @@
 import { Hono } from "hono";
-import { allRows, runStatement, toInsertId, type SQLQueryBindings } from "../../db";
+import { asc, eq } from "drizzle-orm";
+import { db, toInsertId } from "../../db";
 import { campaignIdForEntity } from "../../data/socket-data";
 import { getCombatantById } from "../../data/readers";
 import { emitEntityChange } from "../../socket-hub";
+import { combatants } from "../../schema";
 import { asBool, asInt, asString, getChanges, parseBodyObject, parseIdParam } from "../../utils";
 import type { CombatantDTO } from "../../types";
 
 export function registerCombatantRoutes(api: Hono): void {
     api.get("/combatants", (c) => {
-        const rows = allRows<{ id: number }>("SELECT id FROM Combatants ORDER BY id");
+        const rows = db
+            .select({ id: combatants.id })
+            .from(combatants)
+            .orderBy(asc(combatants.id))
+            .all();
+
         const data = rows
             .map((row) => getCombatantById(row.id))
             .filter((item): item is CombatantDTO => item != null);
@@ -43,14 +50,16 @@ export function registerCombatantRoutes(api: Hono): void {
         const surges = Math.max(0, asInt(body.surges) ?? 0);
         const resources = Math.max(0, asInt(body.resources) ?? 0);
 
-        const result = runStatement(
-            "INSERT INTO Combatants (available, surges, resources, combat, character) VALUES (?, ?, ?, ?, ?)",
-            available ? 1 : 0,
-            surges,
-            resources,
-            combat,
-            character,
-        );
+        const result = db
+            .insert(combatants)
+            .values({
+                available: available ? 1 : 0,
+                surges,
+                resources,
+                combat,
+                character,
+            })
+            .run();
 
         const id = toInsertId(result);
         emitEntityChange("Created", "Combatants", id);
@@ -75,7 +84,7 @@ export function registerCombatantRoutes(api: Hono): void {
         const delta = type === "DECREASE" ? -value : value;
         const updated = Math.max(0, combatant.resources + delta);
 
-        runStatement("UPDATE Combatants SET resources = ? WHERE id = ?", updated, id);
+        db.update(combatants).set({ resources: updated }).where(eq(combatants.id, id)).run();
         emitEntityChange("Updated", "Combatants", id);
         return c.json(getCombatantById(id));
     });
@@ -98,7 +107,7 @@ export function registerCombatantRoutes(api: Hono): void {
         const delta = type === "DECREASE" ? -value : value;
         const updated = Math.max(0, combatant.surges + delta);
 
-        runStatement("UPDATE Combatants SET surges = ? WHERE id = ?", updated, id);
+        db.update(combatants).set({ surges: updated }).where(eq(combatants.id, id)).run();
         emitEntityChange("Updated", "Combatants", id);
         return c.json(getCombatantById(id));
     });
@@ -114,51 +123,45 @@ export function registerCombatantRoutes(api: Hono): void {
         }
 
         const body = parseBodyObject(await c.req.json());
-        const updates: string[] = [];
-        const values: SQLQueryBindings[] = [];
+        const updates: Partial<typeof combatants.$inferInsert> = {};
 
         if (Object.prototype.hasOwnProperty.call(body, "available")) {
             const parsed = asBool(body.available);
             if (parsed != null) {
-                updates.push("available = ?");
-                values.push(parsed ? 1 : 0);
+                updates.available = parsed ? 1 : 0;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "surges")) {
             const parsed = asInt(body.surges);
             if (parsed != null) {
-                updates.push("surges = ?");
-                values.push(Math.max(0, parsed));
+                updates.surges = Math.max(0, parsed);
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "resources")) {
             const parsed = asInt(body.resources);
             if (parsed != null) {
-                updates.push("resources = ?");
-                values.push(Math.max(0, parsed));
+                updates.resources = Math.max(0, parsed);
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "combat")) {
             const parsed = asInt(body.combat);
             if (parsed != null) {
-                updates.push("combat = ?");
-                values.push(parsed);
+                updates.combat = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "character")) {
             const parsed = asInt(body.character);
             if (parsed != null) {
-                updates.push("character = ?");
-                values.push(parsed);
+                updates.character = parsed;
             }
         }
 
-        if (updates.length > 0) {
-            runStatement(`UPDATE Combatants SET ${updates.join(", ")} WHERE id = ?`, ...values, id);
+        if (Object.keys(updates).length > 0) {
+            db.update(combatants).set(updates).where(eq(combatants.id, id)).run();
             emitEntityChange("Updated", "Combatants", id);
         }
 
@@ -172,7 +175,7 @@ export function registerCombatantRoutes(api: Hono): void {
         }
 
         const campaignId = campaignIdForEntity("Combatants", id);
-        const deleted = runStatement("DELETE FROM Combatants WHERE id = ?", id);
+        const deleted = db.delete(combatants).where(eq(combatants.id, id)).run();
 
         if (getChanges(deleted) === 0) {
             return c.text("Entity not found", 404);

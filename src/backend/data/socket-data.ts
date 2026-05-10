@@ -1,4 +1,6 @@
-import { firstRow } from "../db";
+import { eq } from "drizzle-orm";
+import { db } from "../db";
+import { characterConditions, characters, combatants, combats, displayEntries, inventoryItems } from "../schema";
 import type { EntityType } from "../types";
 import {
     getCampaignDtoById,
@@ -25,36 +27,54 @@ export function campaignIdForEntity(table: string, id: number): number | null {
         case "Campaigns":
             return id;
         case "Characters": {
-            const row = firstRow<{ campaign: number }>("SELECT campaign FROM Characters WHERE id = ?", id);
+            const row = db
+                .select({ campaign: characters.campaign })
+                .from(characters)
+                .where(eq(characters.id, id))
+                .get();
             return row?.campaign ?? null;
         }
         case "CharacterConditions": {
-            const row = firstRow<{ campaign: number }>(
-                "SELECT c.campaign AS campaign FROM CharacterConditions cc JOIN Characters c ON c.id = cc.character WHERE cc.id = ?",
-                id,
-            );
+            const row = db
+                .select({ campaign: characters.campaign })
+                .from(characterConditions)
+                .innerJoin(characters, eq(characters.id, characterConditions.character))
+                .where(eq(characterConditions.id, id))
+                .get();
             return row?.campaign ?? null;
         }
         case "InventoryItem": {
-            const row = firstRow<{ campaign: number }>(
-                "SELECT c.campaign AS campaign FROM InventoryItem ii JOIN Characters c ON c.id = ii.character WHERE ii.id = ?",
-                id,
-            );
+            const row = db
+                .select({ campaign: characters.campaign })
+                .from(inventoryItems)
+                .innerJoin(characters, eq(characters.id, inventoryItems.character))
+                .where(eq(inventoryItems.id, id))
+                .get();
             return row?.campaign ?? null;
         }
         case "DisplayEntry": {
-            const row = firstRow<{ campaign: number }>("SELECT campaign FROM DisplayEntry WHERE id = ?", id);
+            const row = db
+                .select({ campaign: displayEntries.campaign })
+                .from(displayEntries)
+                .where(eq(displayEntries.id, id))
+                .get();
             return row?.campaign ?? null;
         }
         case "Combats": {
-            const row = firstRow<{ campaign: number }>("SELECT campaign FROM Combats WHERE id = ?", id);
+            const row = db
+                .select({ campaign: combats.campaign })
+                .from(combats)
+                .where(eq(combats.id, id))
+                .get();
             return row?.campaign ?? null;
         }
         case "Combatants": {
-            const row = firstRow<{ campaign: number }>(
-                "SELECT co.campaign AS campaign FROM Combatants cb JOIN Combats co ON co.id = cb.combat WHERE cb.id = ?",
-                id,
-            );
+            const row = db
+                .select({ campaign: combats.campaign })
+                .from(combatants)
+                .innerJoin(combats, eq(combats.id, combatants.combat))
+                .where(eq(combatants.id, id))
+                .get();
             return row?.campaign ?? null;
         }
         default:

@@ -1,4 +1,15 @@
-import { allRows, firstRow } from "../db";
+import { asc, eq, inArray } from "drizzle-orm";
+import { db } from "../db";
+import {
+    campaigns,
+    characterConditions,
+    characters,
+    combatants,
+    combats,
+    displayEntries,
+    inventoryItems,
+    users,
+} from "../schema";
 import type {
     CampaignDTO,
     CampaignDetailsDTO,
@@ -17,10 +28,19 @@ export function readCampaignRow(id: number): {
     hero_tokens: number;
     kanka_api_id: number | null;
 } | null {
-    return firstRow(
-        "SELECT id, name, background, hero_tokens, kanka_api_id FROM Campaigns WHERE id = ?",
-        id,
-    );
+    const row = db
+        .select({
+            id: campaigns.id,
+            name: campaigns.name,
+            background: campaigns.background,
+            hero_tokens: campaigns.heroTokens,
+            kanka_api_id: campaigns.kankaApiId,
+        })
+        .from(campaigns)
+        .where(eq(campaigns.id, id))
+        .get();
+
+    return row ?? null;
 }
 
 export function getCampaignDtoById(id: number): CampaignDTO | null {
@@ -39,40 +59,43 @@ export function getCampaignDtoById(id: number): CampaignDTO | null {
 }
 
 export function getDisplayEntriesByCampaignId(campaignId: number): DisplayEntryDTO[] {
-    const rows = allRows<{
-        id: number;
-        title: string;
-        description: string | null;
-        picture_url: string | null;
-        type: "Portrait" | "Background";
-        campaign: number;
-    }>(
-        "SELECT id, title, description, picture_url, type, campaign FROM DisplayEntry WHERE campaign = ? ORDER BY id",
-        campaignId,
-    );
+    const rows = db
+        .select({
+            id: displayEntries.id,
+            title: displayEntries.title,
+            description: displayEntries.description,
+            pictureUrl: displayEntries.pictureUrl,
+            type: displayEntries.type,
+            campaign: displayEntries.campaign,
+        })
+        .from(displayEntries)
+        .where(eq(displayEntries.campaign, campaignId))
+        .orderBy(asc(displayEntries.id))
+        .all();
 
     return rows.map((row) => ({
         id: row.id,
         title: row.title,
         description: row.description,
-        pictureUrl: row.picture_url,
-        type: row.type,
+        pictureUrl: row.pictureUrl,
+        type: row.type as "Portrait" | "Background",
         campaign: row.campaign,
     }));
 }
 
 export function getDisplayEntryById(id: number): DisplayEntryDTO | null {
-    const row = firstRow<{
-        id: number;
-        title: string;
-        description: string | null;
-        picture_url: string | null;
-        type: "Portrait" | "Background";
-        campaign: number;
-    }>(
-        "SELECT id, title, description, picture_url, type, campaign FROM DisplayEntry WHERE id = ?",
-        id,
-    );
+    const row = db
+        .select({
+            id: displayEntries.id,
+            title: displayEntries.title,
+            description: displayEntries.description,
+            pictureUrl: displayEntries.pictureUrl,
+            type: displayEntries.type,
+            campaign: displayEntries.campaign,
+        })
+        .from(displayEntries)
+        .where(eq(displayEntries.id, id))
+        .get();
 
     if (row == null) {
         return null;
@@ -82,41 +105,44 @@ export function getDisplayEntryById(id: number): DisplayEntryDTO | null {
         id: row.id,
         title: row.title,
         description: row.description,
-        pictureUrl: row.picture_url,
-        type: row.type,
+        pictureUrl: row.pictureUrl,
+        type: row.type as "Portrait" | "Background",
         campaign: row.campaign,
     };
 }
 
 export function getCharacterConditionsByCharacterId(characterId: number): CharacterConditionDTO[] {
-    const rows = allRows<{
-        id: number;
-        character: number;
-        name: string;
-        end_type: "endOfTurn" | "save";
-    }>(
-        "SELECT id, character, name, end_type FROM CharacterConditions WHERE character = ? ORDER BY id",
-        characterId,
-    );
+    const rows = db
+        .select({
+            id: characterConditions.id,
+            character: characterConditions.character,
+            name: characterConditions.name,
+            endType: characterConditions.endType,
+        })
+        .from(characterConditions)
+        .where(eq(characterConditions.character, characterId))
+        .orderBy(asc(characterConditions.id))
+        .all();
 
     return rows.map((row) => ({
         id: row.id,
         character: row.character,
         name: row.name,
-        endType: row.end_type,
+        endType: row.endType as "endOfTurn" | "save",
     }));
 }
 
 export function getCharacterConditionById(id: number): CharacterConditionDTO | null {
-    const row = firstRow<{
-        id: number;
-        character: number;
-        name: string;
-        end_type: "endOfTurn" | "save";
-    }>(
-        "SELECT id, character, name, end_type FROM CharacterConditions WHERE id = ?",
-        id,
-    );
+    const row = db
+        .select({
+            id: characterConditions.id,
+            character: characterConditions.character,
+            name: characterConditions.name,
+            endType: characterConditions.endType,
+        })
+        .from(characterConditions)
+        .where(eq(characterConditions.id, id))
+        .get();
 
     if (row == null) {
         return null;
@@ -126,20 +152,22 @@ export function getCharacterConditionById(id: number): CharacterConditionDTO | n
         id: row.id,
         character: row.character,
         name: row.name,
-        endType: row.end_type,
+        endType: row.endType as "endOfTurn" | "save",
     };
 }
 
 export function getInventoryByCharacterId(characterId: number) {
-    const rows = allRows<{
-        id: number;
-        name: string;
-        character: number;
-        quantity: number;
-    }>(
-        "SELECT id, name, character, quantity FROM InventoryItem WHERE character = ? ORDER BY id",
-        characterId,
-    );
+    const rows = db
+        .select({
+            id: inventoryItems.id,
+            name: inventoryItems.name,
+            character: inventoryItems.character,
+            quantity: inventoryItems.quantity,
+        })
+        .from(inventoryItems)
+        .where(eq(inventoryItems.character, characterId))
+        .orderBy(asc(inventoryItems.id))
+        .all();
 
     return rows.map((row) => ({
         id: row.id,
@@ -150,15 +178,16 @@ export function getInventoryByCharacterId(characterId: number) {
 }
 
 export function getInventoryItemById(id: number) {
-    const row = firstRow<{
-        id: number;
-        name: string;
-        character: number;
-        quantity: number;
-    }>(
-        "SELECT id, name, character, quantity FROM InventoryItem WHERE id = ?",
-        id,
-    );
+    const row = db
+        .select({
+            id: inventoryItems.id,
+            name: inventoryItems.name,
+            character: inventoryItems.character,
+            quantity: inventoryItems.quantity,
+        })
+        .from(inventoryItems)
+        .where(eq(inventoryItems.id, id))
+        .get();
 
     if (row == null) {
         return null;
@@ -173,32 +202,33 @@ export function getInventoryItemById(id: number) {
 }
 
 export function getCharacterById(id: number): CharacterDTO | null {
-    const row = firstRow<{
-        id: number;
-        name: string;
-        might: number;
-        agility: number;
-        reason: number;
-        intuition: number;
-        presence: number;
-        removed_hp: number;
-        max_hp: number;
-        temporary_hp: number;
-        removed_recoveries: number;
-        max_recoveries: number;
-        temporary_recoveries: number;
-        victories: number;
-        campaign: number;
-        user: number;
-        minions: number;
-        offstage: number;
-        resource_name: string | null;
-        picture_url: string | null;
-        border: string | null;
-    }>(
-        "SELECT id, name, might, agility, reason, intuition, presence, removed_hp, max_hp, temporary_hp, removed_recoveries, max_recoveries, temporary_recoveries, victories, campaign, user, minions, offstage, resource_name, picture_url, border FROM Characters WHERE id = ?",
-        id,
-    );
+    const row = db
+        .select({
+            id: characters.id,
+            name: characters.name,
+            might: characters.might,
+            agility: characters.agility,
+            reason: characters.reason,
+            intuition: characters.intuition,
+            presence: characters.presence,
+            removedHp: characters.removedHp,
+            maxHp: characters.maxHp,
+            temporaryHp: characters.temporaryHp,
+            removedRecoveries: characters.removedRecoveries,
+            maxRecoveries: characters.maxRecoveries,
+            temporaryRecoveries: characters.temporaryRecoveries,
+            victories: characters.victories,
+            campaign: characters.campaign,
+            user: characters.user,
+            minions: characters.minions,
+            offstage: characters.offstage,
+            resourceName: characters.resourceName,
+            pictureUrl: characters.pictureUrl,
+            border: characters.border,
+        })
+        .from(characters)
+        .where(eq(characters.id, id))
+        .get();
 
     if (row == null) {
         return null;
@@ -212,19 +242,19 @@ export function getCharacterById(id: number): CharacterDTO | null {
         reason: row.reason,
         intuition: row.intuition,
         presence: row.presence,
-        removedHp: row.removed_hp,
-        maxHp: row.max_hp,
-        temporaryHp: row.temporary_hp,
-        removedRecoveries: row.removed_recoveries,
-        maxRecoveries: row.max_recoveries,
-        temporaryRecoveries: row.temporary_recoveries,
+        removedHp: row.removedHp,
+        maxHp: row.maxHp,
+        temporaryHp: row.temporaryHp,
+        removedRecoveries: row.removedRecoveries,
+        maxRecoveries: row.maxRecoveries,
+        temporaryRecoveries: row.temporaryRecoveries,
         victories: row.victories,
         campaign: row.campaign,
         user: row.user,
         minions: row.minions,
         offstage: row.offstage !== 0,
-        resourceName: row.resource_name,
-        pictureUrl: row.picture_url,
+        resourceName: row.resourceName,
+        pictureUrl: row.pictureUrl,
         border: row.border,
         conditions: getCharacterConditionsByCharacterId(id),
         inventory: getInventoryByCharacterId(id),
@@ -232,10 +262,12 @@ export function getCharacterById(id: number): CharacterDTO | null {
 }
 
 export function getCharactersByCampaignId(campaignId: number): CharacterDTO[] {
-    const ids = allRows<{ id: number }>(
-        "SELECT id FROM Characters WHERE campaign = ? ORDER BY id",
-        campaignId,
-    );
+    const ids = db
+        .select({ id: characters.id })
+        .from(characters)
+        .where(eq(characters.campaign, campaignId))
+        .orderBy(asc(characters.id))
+        .all();
 
     return ids
         .map((row) => getCharacterById(row.id))
@@ -243,24 +275,25 @@ export function getCharactersByCampaignId(campaignId: number): CharacterDTO[] {
 }
 
 export function getAllCharacters(): CharacterDTO[] {
-    const ids = allRows<{ id: number }>("SELECT id FROM Characters ORDER BY id");
+    const ids = db.select({ id: characters.id }).from(characters).orderBy(asc(characters.id)).all();
     return ids
         .map((row) => getCharacterById(row.id))
         .filter((item): item is CharacterDTO => item != null);
 }
 
 export function getCombatantById(id: number): CombatantDTO | null {
-    const row = firstRow<{
-        id: number;
-        available: number;
-        surges: number;
-        resources: number;
-        combat: number;
-        character: number;
-    }>(
-        "SELECT id, available, surges, resources, combat, character FROM Combatants WHERE id = ?",
-        id,
-    );
+    const row = db
+        .select({
+            id: combatants.id,
+            available: combatants.available,
+            surges: combatants.surges,
+            resources: combatants.resources,
+            combat: combatants.combat,
+            character: combatants.character,
+        })
+        .from(combatants)
+        .where(eq(combatants.id, id))
+        .get();
 
     if (row == null) {
         return null;
@@ -282,10 +315,12 @@ export function getCombatantById(id: number): CombatantDTO | null {
 }
 
 export function getCombatantsForCombat(combatId: number): CombatantDTO[] {
-    const rows = allRows<{ id: number }>(
-        "SELECT id FROM Combatants WHERE combat = ? ORDER BY id",
-        combatId,
-    );
+    const rows = db
+        .select({ id: combatants.id })
+        .from(combatants)
+        .where(eq(combatants.combat, combatId))
+        .orderBy(asc(combatants.id))
+        .all();
 
     return rows
         .map((row) => getCombatantById(row.id))
@@ -293,11 +328,11 @@ export function getCombatantsForCombat(combatId: number): CombatantDTO[] {
 }
 
 export function getCombatById(id: number): CombatDTO | null {
-    const row = firstRow<{
-        id: number;
-        round: number;
-        campaign: number;
-    }>("SELECT id, round, campaign FROM Combats WHERE id = ?", id);
+    const row = db
+        .select({ id: combats.id, round: combats.round, campaign: combats.campaign })
+        .from(combats)
+        .where(eq(combats.id, id))
+        .get();
 
     if (row == null) {
         return null;
@@ -312,17 +347,19 @@ export function getCombatById(id: number): CombatDTO | null {
 }
 
 export function getAllCombats(): CombatDTO[] {
-    const rows = allRows<{ id: number }>("SELECT id FROM Combats ORDER BY id");
+    const rows = db.select({ id: combats.id }).from(combats).orderBy(asc(combats.id)).all();
     return rows
         .map((row) => getCombatById(row.id))
         .filter((item): item is CombatDTO => item != null);
 }
 
 export function getCombatsByCampaignId(campaignId: number): CombatDTO[] {
-    const rows = allRows<{ id: number }>(
-        "SELECT id FROM Combats WHERE campaign = ? ORDER BY id",
-        campaignId,
-    );
+    const rows = db
+        .select({ id: combats.id })
+        .from(combats)
+        .where(eq(combats.campaign, campaignId))
+        .orderBy(asc(combats.id))
+        .all();
 
     return rows
         .map((row) => getCombatById(row.id))
@@ -330,15 +367,19 @@ export function getCombatsByCampaignId(campaignId: number): CombatDTO[] {
 }
 
 export function getCampaignDetails(ids?: number[]): CampaignDetailsDTO[] {
-    const campaigns =
-        ids == null || ids.length === 0
-            ? allRows<{ id: number }>("SELECT id FROM Campaigns ORDER BY id")
-            : allRows<{ id: number }>(
-                `SELECT id FROM Campaigns WHERE id IN (${ids.map(() => "?").join(",")}) ORDER BY id`,
-                ...ids,
-            );
+    const campaignRows =
+        ids == null
+            ? db.select({ id: campaigns.id }).from(campaigns).orderBy(asc(campaigns.id)).all()
+            : ids.length === 0
+                ? []
+                : db
+                    .select({ id: campaigns.id })
+                    .from(campaigns)
+                    .where(inArray(campaigns.id, ids))
+                    .orderBy(asc(campaigns.id))
+                    .all();
 
-    return campaigns
+    return campaignRows
         .map((row) => {
             const campaign = getCampaignDtoById(row.id);
             if (campaign == null) {
@@ -355,12 +396,21 @@ export function getCampaignDetails(ids?: number[]): CampaignDetailsDTO[] {
 }
 
 export function getUsers(): UserDTO[] {
-    const rows = allRows<{ id: number; name: string }>("SELECT id, name FROM Users ORDER BY id");
+    const rows = db
+        .select({ id: users.id, name: users.name })
+        .from(users)
+        .orderBy(asc(users.id))
+        .all();
     return rows.map((row) => ({ id: row.id, name: row.name }));
 }
 
 export function getUserById(id: number): UserDTO | null {
-    const row = firstRow<{ id: number; name: string }>("SELECT id, name FROM Users WHERE id = ?", id);
+    const row = db
+        .select({ id: users.id, name: users.name })
+        .from(users)
+        .where(eq(users.id, id))
+        .get();
+
     if (row == null) {
         return null;
     }

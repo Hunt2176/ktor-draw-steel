@@ -1,7 +1,9 @@
 import { Hono } from "hono";
-import { runStatement, toInsertId, type SQLQueryBindings } from "../../db";
+import { eq } from "drizzle-orm";
+import { db, toInsertId } from "../../db";
 import { getCharacterById, getAllCharacters } from "../../data/readers";
 import { emitEntityChange } from "../../socket-hub";
+import { characters } from "../../schema";
 import { asBool, asInt, asNullableString, asString, parseBodyObject, parseIdParam } from "../../utils";
 
 export function registerCharacterRoutes(api: Hono): void {
@@ -32,29 +34,31 @@ export function registerCharacterRoutes(api: Hono): void {
             return c.text("name, campaign, and user are required", 400);
         }
 
-        const result = runStatement(
-            "INSERT INTO Characters (name, might, agility, reason, intuition, presence, removed_hp, max_hp, temporary_hp, removed_recoveries, max_recoveries, temporary_recoveries, victories, minions, offstage, resource_name, picture_url, border, campaign, user) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            name,
-            asInt(body.might) ?? 0,
-            asInt(body.agility) ?? 0,
-            asInt(body.reason) ?? 0,
-            asInt(body.intuition) ?? 0,
-            asInt(body.presence) ?? 0,
-            asInt(body.removedHp) ?? 0,
-            asInt(body.maxHp) ?? 0,
-            asInt(body.temporaryHp) ?? 0,
-            asInt(body.removedRecoveries) ?? 0,
-            asInt(body.maxRecoveries) ?? 0,
-            asInt(body.temporaryRecoveries) ?? 0,
-            asInt(body.victories) ?? 0,
-            Math.max(0, asInt(body.minions) ?? 0),
-            (asBool(body.offstage) ?? false) ? 1 : 0,
-            asNullableString(body.resourceName) ?? null,
-            asNullableString(body.pictureUrl) ?? null,
-            asNullableString(body.border) ?? null,
-            campaign,
-            user,
-        );
+        const result = db
+            .insert(characters)
+            .values({
+                name,
+                might: asInt(body.might) ?? 0,
+                agility: asInt(body.agility) ?? 0,
+                reason: asInt(body.reason) ?? 0,
+                intuition: asInt(body.intuition) ?? 0,
+                presence: asInt(body.presence) ?? 0,
+                removedHp: asInt(body.removedHp) ?? 0,
+                maxHp: asInt(body.maxHp) ?? 0,
+                temporaryHp: asInt(body.temporaryHp) ?? 0,
+                removedRecoveries: asInt(body.removedRecoveries) ?? 0,
+                maxRecoveries: asInt(body.maxRecoveries) ?? 0,
+                temporaryRecoveries: asInt(body.temporaryRecoveries) ?? 0,
+                victories: asInt(body.victories) ?? 0,
+                minions: Math.max(0, asInt(body.minions) ?? 0),
+                offstage: (asBool(body.offstage) ?? false) ? 1 : 0,
+                resourceName: asNullableString(body.resourceName) ?? null,
+                pictureUrl: asNullableString(body.pictureUrl) ?? null,
+                border: asNullableString(body.border) ?? null,
+                campaign,
+                user,
+            })
+            .run();
 
         const id = toInsertId(result);
         emitEntityChange("Created", "Characters", id);
@@ -94,12 +98,14 @@ export function registerCharacterRoutes(api: Hono): void {
             removedHp = Math.max(0, removedHp - mod);
         }
 
-        runStatement(
-            "UPDATE Characters SET temporary_hp = ?, removed_hp = ? WHERE id = ?",
-            temporaryHp,
-            Math.max(0, removedHp),
-            id,
-        );
+        db
+            .update(characters)
+            .set({
+                temporaryHp,
+                removedHp: Math.max(0, removedHp),
+            })
+            .where(eq(characters.id, id))
+            .run();
 
         emitEntityChange("Updated", "Characters", id);
         return c.json(getCharacterById(id));
@@ -137,12 +143,14 @@ export function registerCharacterRoutes(api: Hono): void {
             removedRecoveries = Math.max(0, removedRecoveries - mod);
         }
 
-        runStatement(
-            "UPDATE Characters SET temporary_recoveries = ?, removed_recoveries = ? WHERE id = ?",
-            temporaryRecoveries,
-            Math.max(0, removedRecoveries),
-            id,
-        );
+        db
+            .update(characters)
+            .set({
+                temporaryRecoveries,
+                removedRecoveries: Math.max(0, removedRecoveries),
+            })
+            .where(eq(characters.id, id))
+            .run();
 
         emitEntityChange("Updated", "Characters", id);
         return c.json(getCharacterById(id));
@@ -159,15 +167,50 @@ export function registerCharacterRoutes(api: Hono): void {
         }
 
         const body = parseBodyObject(await c.req.json());
-        const updates: string[] = [];
-        const values: SQLQueryBindings[] = [];
+        const updates: Partial<typeof characters.$inferInsert> = {};
 
         const assignInt = (jsonKey: string, column: string) => {
             if (Object.prototype.hasOwnProperty.call(body, jsonKey)) {
                 const parsed = asInt(body[jsonKey]);
                 if (parsed != null) {
-                    updates.push(`${column} = ?`);
-                    values.push(parsed);
+                    switch (column) {
+                        case "might":
+                            updates.might = parsed;
+                            break;
+                        case "agility":
+                            updates.agility = parsed;
+                            break;
+                        case "reason":
+                            updates.reason = parsed;
+                            break;
+                        case "intuition":
+                            updates.intuition = parsed;
+                            break;
+                        case "presence":
+                            updates.presence = parsed;
+                            break;
+                        case "removed_hp":
+                            updates.removedHp = parsed;
+                            break;
+                        case "max_hp":
+                            updates.maxHp = parsed;
+                            break;
+                        case "temporary_hp":
+                            updates.temporaryHp = parsed;
+                            break;
+                        case "removed_recoveries":
+                            updates.removedRecoveries = parsed;
+                            break;
+                        case "max_recoveries":
+                            updates.maxRecoveries = parsed;
+                            break;
+                        case "temporary_recoveries":
+                            updates.temporaryRecoveries = parsed;
+                            break;
+                        case "victories":
+                            updates.victories = parsed;
+                            break;
+                    }
                 }
             }
         };
@@ -179,8 +222,20 @@ export function registerCharacterRoutes(api: Hono): void {
 
             const parsed = nullable ? asNullableString(body[jsonKey]) : asString(body[jsonKey]);
             if (parsed !== undefined && (nullable || parsed != null)) {
-                updates.push(`${column} = ?`);
-                values.push(parsed);
+                switch (column) {
+                    case "name":
+                        updates.name = parsed as string;
+                        break;
+                    case "resource_name":
+                        updates.resourceName = parsed;
+                        break;
+                    case "picture_url":
+                        updates.pictureUrl = parsed;
+                        break;
+                    case "border":
+                        updates.border = parsed;
+                        break;
+                }
             }
         };
 
@@ -201,16 +256,14 @@ export function registerCharacterRoutes(api: Hono): void {
         if (Object.prototype.hasOwnProperty.call(body, "minions")) {
             const parsed = asInt(body.minions);
             if (parsed != null) {
-                updates.push("minions = ?");
-                values.push(Math.max(0, parsed));
+                updates.minions = Math.max(0, parsed);
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "offstage")) {
             const parsed = asBool(body.offstage);
             if (parsed != null) {
-                updates.push("offstage = ?");
-                values.push(parsed ? 1 : 0);
+                updates.offstage = parsed ? 1 : 0;
             }
         }
 
@@ -221,21 +274,19 @@ export function registerCharacterRoutes(api: Hono): void {
         if (Object.prototype.hasOwnProperty.call(body, "campaign")) {
             const parsed = asInt(body.campaign);
             if (parsed != null) {
-                updates.push("campaign = ?");
-                values.push(parsed);
+                updates.campaign = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "user")) {
             const parsed = asInt(body.user);
             if (parsed != null) {
-                updates.push("user = ?");
-                values.push(parsed);
+                updates.user = parsed;
             }
         }
 
-        if (updates.length > 0) {
-            runStatement(`UPDATE Characters SET ${updates.join(", ")} WHERE id = ?`, ...values, id);
+        if (Object.keys(updates).length > 0) {
+            db.update(characters).set(updates).where(eq(characters.id, id)).run();
             emitEntityChange("Updated", "Characters", id);
         }
 
@@ -253,7 +304,7 @@ export function registerCharacterRoutes(api: Hono): void {
             return c.text("Entity not found", 404);
         }
 
-        runStatement("DELETE FROM Characters WHERE id = ?", id);
+        db.delete(characters).where(eq(characters.id, id)).run();
         emitEntityChange("Removed", "Characters", id, character.campaign);
         return c.text("Entity deleted", 200);
     });

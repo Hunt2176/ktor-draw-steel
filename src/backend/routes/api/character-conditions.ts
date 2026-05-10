@@ -1,14 +1,21 @@
 import { Hono } from "hono";
-import { allRows, runStatement, toInsertId, type SQLQueryBindings } from "../../db";
+import { asc, eq } from "drizzle-orm";
+import { db, toInsertId } from "../../db";
 import { campaignIdForEntity } from "../../data/socket-data";
 import { getCharacterConditionById } from "../../data/readers";
 import { emitEntityChange } from "../../socket-hub";
+import { characterConditions } from "../../schema";
 import { asInt, asString, getChanges, parseBodyObject, parseIdParam } from "../../utils";
 import type { CharacterConditionDTO } from "../../types";
 
 export function registerCharacterConditionRoutes(api: Hono): void {
     api.get("/characterConditions", (c) => {
-        const rows = allRows<{ id: number }>("SELECT id FROM CharacterConditions ORDER BY id");
+        const rows = db
+            .select({ id: characterConditions.id })
+            .from(characterConditions)
+            .orderBy(asc(characterConditions.id))
+            .all();
+
         const data = rows
             .map((row) => getCharacterConditionById(row.id))
             .filter((item): item is CharacterConditionDTO => item != null);
@@ -40,12 +47,14 @@ export function registerCharacterConditionRoutes(api: Hono): void {
             return c.text("character, name, and endType are required", 400);
         }
 
-        const result = runStatement(
-            "INSERT INTO CharacterConditions (character, name, end_type) VALUES (?, ?, ?)",
-            character,
-            name,
-            endType,
-        );
+        const result = db
+            .insert(characterConditions)
+            .values({
+                character,
+                name,
+                endType,
+            })
+            .run();
 
         const id = toInsertId(result);
         emitEntityChange("Created", "CharacterConditions", id);
@@ -63,35 +72,31 @@ export function registerCharacterConditionRoutes(api: Hono): void {
         }
 
         const body = parseBodyObject(await c.req.json());
-        const updates: string[] = [];
-        const values: SQLQueryBindings[] = [];
+        const updates: Partial<typeof characterConditions.$inferInsert> = {};
 
         if (Object.prototype.hasOwnProperty.call(body, "character")) {
             const parsed = asInt(body.character);
             if (parsed != null) {
-                updates.push("character = ?");
-                values.push(parsed);
+                updates.character = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "name")) {
             const parsed = asString(body.name);
             if (parsed != null) {
-                updates.push("name = ?");
-                values.push(parsed);
+                updates.name = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "endType")) {
             const parsed = asString(body.endType);
             if (parsed === "endOfTurn" || parsed === "save") {
-                updates.push("end_type = ?");
-                values.push(parsed);
+                updates.endType = parsed;
             }
         }
 
-        if (updates.length > 0) {
-            runStatement(`UPDATE CharacterConditions SET ${updates.join(", ")} WHERE id = ?`, ...values, id);
+        if (Object.keys(updates).length > 0) {
+            db.update(characterConditions).set(updates).where(eq(characterConditions.id, id)).run();
             emitEntityChange("Updated", "CharacterConditions", id);
         }
 
@@ -105,7 +110,7 @@ export function registerCharacterConditionRoutes(api: Hono): void {
         }
 
         const campaignId = campaignIdForEntity("CharacterConditions", id);
-        const deleted = runStatement("DELETE FROM CharacterConditions WHERE id = ?", id);
+        const deleted = db.delete(characterConditions).where(eq(characterConditions.id, id)).run();
 
         if (getChanges(deleted) === 0) {
             return c.text("Entity not found", 404);

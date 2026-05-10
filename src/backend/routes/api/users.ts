@@ -1,6 +1,8 @@
 import { Hono } from "hono";
-import { runStatement, toInsertId } from "../../db";
+import { eq } from "drizzle-orm";
+import { db, toInsertId } from "../../db";
 import { getUserById, getUsers } from "../../data/readers";
+import { users } from "../../schema";
 import { asString, getChanges, parseBodyObject, parseIdParam } from "../../utils";
 
 export function registerUserRoutes(api: Hono): void {
@@ -28,7 +30,7 @@ export function registerUserRoutes(api: Hono): void {
             return c.text("Name is required", 400);
         }
 
-        const result = runStatement("INSERT INTO Users (name) VALUES (?)", name);
+        const result = db.insert(users).values({ name }).run();
         const id = toInsertId(result);
         return c.json(getUserById(id), 201);
     });
@@ -47,7 +49,7 @@ export function registerUserRoutes(api: Hono): void {
         const name = asString(body.name);
 
         if (name != null) {
-            runStatement("UPDATE Users SET name = ? WHERE id = ?", name, id);
+            db.update(users).set({ name }).where(eq(users.id, id)).run();
         }
 
         return c.json(getUserById(id));
@@ -59,7 +61,7 @@ export function registerUserRoutes(api: Hono): void {
             return c.text("Invalid ID", 400);
         }
 
-        const deleted = runStatement("DELETE FROM Users WHERE id = ?", id);
+        const deleted = db.delete(users).where(eq(users.id, id)).run();
         if (getChanges(deleted) === 0) {
             return c.text("Entity not found", 404);
         }

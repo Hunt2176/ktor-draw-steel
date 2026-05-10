@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { runStatement, toInsertId, type SQLQueryBindings } from "../../db";
+import { eq } from "drizzle-orm";
+import { db, toInsertId } from "../../db";
 import { emitEntityChange } from "../../socket-hub";
 import {
     getCampaignDetails,
@@ -7,6 +8,7 @@ import {
     getCharactersByCampaignId,
     getCombatsByCampaignId,
 } from "../../data/readers";
+import { campaigns } from "../../schema";
 import { asInt, asNullableString, asString, getChanges, parseBodyObject, parseIdParam } from "../../utils";
 
 export function registerCampaignRoutes(api: Hono): void {
@@ -38,13 +40,15 @@ export function registerCampaignRoutes(api: Hono): void {
         const background = asNullableString(body.background) ?? null;
         const kankaApiId = body.kankaApiId == null ? null : asInt(body.kankaApiId);
 
-        const result = runStatement(
-            "INSERT INTO Campaigns (name, background, hero_tokens, kanka_api_id) VALUES (?, ?, ?, ?)",
-            name,
-            background,
-            heroTokens,
-            kankaApiId,
-        );
+        const result = db
+            .insert(campaigns)
+            .values({
+                name,
+                background,
+                heroTokens,
+                kankaApiId,
+            })
+            .run();
 
         const id = toInsertId(result);
         emitEntityChange("Created", "Campaigns", id, id);
@@ -72,7 +76,11 @@ export function registerCampaignRoutes(api: Hono): void {
                 ? Math.max(0, existing.heroTokens - modifyBy)
                 : Math.max(0, existing.heroTokens + modifyBy);
 
-        runStatement("UPDATE Campaigns SET hero_tokens = ? WHERE id = ?", nextValue, id);
+        db
+            .update(campaigns)
+            .set({ heroTokens: nextValue })
+            .where(eq(campaigns.id, id))
+            .run();
         emitEntityChange("Updated", "Campaigns", id, id);
 
         return c.json(getCampaignDtoById(id));
@@ -115,35 +123,29 @@ export function registerCampaignRoutes(api: Hono): void {
         }
 
         const body = parseBodyObject(await c.req.json());
-        const updates: string[] = [];
-        const values: SQLQueryBindings[] = [];
+        const updates: Partial<typeof campaigns.$inferInsert> = {};
 
         const name = asString(body.name);
         if (name != null) {
-            updates.push("name = ?");
-            values.push(name);
+            updates.name = name;
         }
 
         const background = asNullableString(body.background);
         if (background !== undefined) {
-            updates.push("background = ?");
-            values.push(background);
+            updates.background = background;
         }
 
         const heroTokens = asInt(body.heroTokens);
         if (heroTokens != null) {
-            updates.push("hero_tokens = ?");
-            values.push(Math.max(0, heroTokens));
+            updates.heroTokens = Math.max(0, heroTokens);
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "kankaApiId")) {
-            const kankaApiId = body.kankaApiId == null ? null : asInt(body.kankaApiId);
-            updates.push("kanka_api_id = ?");
-            values.push(kankaApiId);
+            updates.kankaApiId = body.kankaApiId == null ? null : asInt(body.kankaApiId);
         }
 
-        if (updates.length > 0) {
-            runStatement(`UPDATE Campaigns SET ${updates.join(", ")} WHERE id = ?`, ...values, id);
+        if (Object.keys(updates).length > 0) {
+            db.update(campaigns).set(updates).where(eq(campaigns.id, id)).run();
             emitEntityChange("Updated", "Campaigns", id, id);
         }
 
@@ -156,7 +158,7 @@ export function registerCampaignRoutes(api: Hono): void {
             return c.text("Invalid ID", 400);
         }
 
-        const deleted = runStatement("DELETE FROM Campaigns WHERE id = ?", id);
+        const deleted = db.delete(campaigns).where(eq(campaigns.id, id)).run();
         if (getChanges(deleted) === 0) {
             return c.text("Entity not found", 404);
         }

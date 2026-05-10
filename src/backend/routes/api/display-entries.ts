@@ -1,14 +1,21 @@
 import { Hono } from "hono";
-import { allRows, runStatement, toInsertId, type SQLQueryBindings } from "../../db";
+import { asc, eq } from "drizzle-orm";
+import { db, toInsertId } from "../../db";
 import { campaignIdForEntity } from "../../data/socket-data";
 import { getDisplayEntryById } from "../../data/readers";
 import { emitEntityChange } from "../../socket-hub";
+import { displayEntries } from "../../schema";
 import { asInt, asNullableString, asString, getChanges, parseBodyObject, parseIdParam } from "../../utils";
 import type { DisplayEntryDTO } from "../../types";
 
 export function registerDisplayEntryRoutes(api: Hono): void {
     api.get("/displayEntry", (c) => {
-        const rows = allRows<{ id: number }>("SELECT id FROM DisplayEntry ORDER BY id");
+        const rows = db
+            .select({ id: displayEntries.id })
+            .from(displayEntries)
+            .orderBy(asc(displayEntries.id))
+            .all();
+
         const data = rows
             .map((row) => getDisplayEntryById(row.id))
             .filter((item): item is DisplayEntryDTO => item != null);
@@ -40,14 +47,16 @@ export function registerDisplayEntryRoutes(api: Hono): void {
             return c.text("title, campaign, and valid type are required", 400);
         }
 
-        const result = runStatement(
-            "INSERT INTO DisplayEntry (title, description, picture_url, type, campaign) VALUES (?, ?, ?, ?, ?)",
-            title,
-            asNullableString(body.description) ?? null,
-            asNullableString(body.pictureUrl) ?? null,
-            type,
-            campaign,
-        );
+        const result = db
+            .insert(displayEntries)
+            .values({
+                title,
+                description: asNullableString(body.description) ?? null,
+                pictureUrl: asNullableString(body.pictureUrl) ?? null,
+                type,
+                campaign,
+            })
+            .run();
 
         const id = toInsertId(result);
         emitEntityChange("Created", "DisplayEntry", id);
@@ -65,51 +74,45 @@ export function registerDisplayEntryRoutes(api: Hono): void {
         }
 
         const body = parseBodyObject(await c.req.json());
-        const updates: string[] = [];
-        const values: SQLQueryBindings[] = [];
+        const updates: Partial<typeof displayEntries.$inferInsert> = {};
 
         if (Object.prototype.hasOwnProperty.call(body, "title")) {
             const parsed = asString(body.title);
             if (parsed != null) {
-                updates.push("title = ?");
-                values.push(parsed);
+                updates.title = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "description")) {
             const parsed = asNullableString(body.description);
             if (parsed !== undefined) {
-                updates.push("description = ?");
-                values.push(parsed);
+                updates.description = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "pictureUrl")) {
             const parsed = asNullableString(body.pictureUrl);
             if (parsed !== undefined) {
-                updates.push("picture_url = ?");
-                values.push(parsed);
+                updates.pictureUrl = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "type")) {
             const parsed = asString(body.type);
             if (parsed === "Portrait" || parsed === "Background") {
-                updates.push("type = ?");
-                values.push(parsed);
+                updates.type = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "campaign")) {
             const parsed = asInt(body.campaign);
             if (parsed != null) {
-                updates.push("campaign = ?");
-                values.push(parsed);
+                updates.campaign = parsed;
             }
         }
 
-        if (updates.length > 0) {
-            runStatement(`UPDATE DisplayEntry SET ${updates.join(", ")} WHERE id = ?`, ...values, id);
+        if (Object.keys(updates).length > 0) {
+            db.update(displayEntries).set(updates).where(eq(displayEntries.id, id)).run();
             emitEntityChange("Updated", "DisplayEntry", id);
         }
 
@@ -123,7 +126,7 @@ export function registerDisplayEntryRoutes(api: Hono): void {
         }
 
         const campaignId = campaignIdForEntity("DisplayEntry", id);
-        const deleted = runStatement("DELETE FROM DisplayEntry WHERE id = ?", id);
+        const deleted = db.delete(displayEntries).where(eq(displayEntries.id, id)).run();
 
         if (getChanges(deleted) === 0) {
             return c.text("Entity not found", 404);

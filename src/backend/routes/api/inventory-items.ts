@@ -1,14 +1,21 @@
 import { Hono } from "hono";
-import { allRows, runStatement, toInsertId, type SQLQueryBindings } from "../../db";
+import { asc, eq } from "drizzle-orm";
+import { db, toInsertId } from "../../db";
 import { campaignIdForEntity } from "../../data/socket-data";
 import { getInventoryItemById } from "../../data/readers";
 import { emitEntityChange } from "../../socket-hub";
+import { inventoryItems } from "../../schema";
 import { asInt, asString, getChanges, parseBodyObject, parseIdParam } from "../../utils";
 import type { InventoryItemDTO } from "../../types";
 
 export function registerInventoryItemRoutes(api: Hono): void {
     api.get("/inventoryItem", (c) => {
-        const rows = allRows<{ id: number }>("SELECT id FROM InventoryItem ORDER BY id");
+        const rows = db
+            .select({ id: inventoryItems.id })
+            .from(inventoryItems)
+            .orderBy(asc(inventoryItems.id))
+            .all();
+
         const data = rows
             .map((row) => getInventoryItemById(row.id))
             .filter((item): item is InventoryItemDTO => item != null);
@@ -40,12 +47,14 @@ export function registerInventoryItemRoutes(api: Hono): void {
             return c.text("name, character, and quantity are required", 400);
         }
 
-        const result = runStatement(
-            "INSERT INTO InventoryItem (name, character, quantity) VALUES (?, ?, ?)",
-            name,
-            character,
-            Math.max(0, quantity),
-        );
+        const result = db
+            .insert(inventoryItems)
+            .values({
+                name,
+                character,
+                quantity: Math.max(0, quantity),
+            })
+            .run();
 
         const id = toInsertId(result);
         emitEntityChange("Created", "InventoryItem", id);
@@ -72,7 +81,11 @@ export function registerInventoryItemRoutes(api: Hono): void {
                 ? Math.max(0, existing.quantity - modifyBy)
                 : Math.max(0, existing.quantity + modifyBy);
 
-        runStatement("UPDATE InventoryItem SET quantity = ? WHERE id = ?", nextValue, id);
+        db
+            .update(inventoryItems)
+            .set({ quantity: nextValue })
+            .where(eq(inventoryItems.id, id))
+            .run();
         emitEntityChange("Updated", "InventoryItem", id);
 
         return c.json(getInventoryItemById(id));
@@ -89,35 +102,31 @@ export function registerInventoryItemRoutes(api: Hono): void {
         }
 
         const body = parseBodyObject(await c.req.json());
-        const updates: string[] = [];
-        const values: SQLQueryBindings[] = [];
+        const updates: Partial<typeof inventoryItems.$inferInsert> = {};
 
         if (Object.prototype.hasOwnProperty.call(body, "name")) {
             const parsed = asString(body.name);
             if (parsed != null) {
-                updates.push("name = ?");
-                values.push(parsed);
+                updates.name = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "character")) {
             const parsed = asInt(body.character);
             if (parsed != null) {
-                updates.push("character = ?");
-                values.push(parsed);
+                updates.character = parsed;
             }
         }
 
         if (Object.prototype.hasOwnProperty.call(body, "quantity")) {
             const parsed = asInt(body.quantity);
             if (parsed != null) {
-                updates.push("quantity = ?");
-                values.push(Math.max(0, parsed));
+                updates.quantity = Math.max(0, parsed);
             }
         }
 
-        if (updates.length > 0) {
-            runStatement(`UPDATE InventoryItem SET ${updates.join(", ")} WHERE id = ?`, ...values, id);
+        if (Object.keys(updates).length > 0) {
+            db.update(inventoryItems).set(updates).where(eq(inventoryItems.id, id)).run();
             emitEntityChange("Updated", "InventoryItem", id);
         }
 
@@ -131,7 +140,7 @@ export function registerInventoryItemRoutes(api: Hono): void {
         }
 
         const campaignId = campaignIdForEntity("InventoryItem", id);
-        const deleted = runStatement("DELETE FROM InventoryItem WHERE id = ?", id);
+        const deleted = db.delete(inventoryItems).where(eq(inventoryItems.id, id)).run();
 
         if (getChanges(deleted) === 0) {
             return c.text("Entity not found", 404);
