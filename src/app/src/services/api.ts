@@ -1,4 +1,4 @@
-import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant, DisplayEntry, InventoryItem } from "types/models.ts";
+import { Campaign, CampaignDetails, Character, CharacterCondition, Combat, Combatant, DisplayEntry, InventoryItem } from "../types/models.ts";
 import axios from 'axios';
 
 export interface ModifyRequest {
@@ -9,14 +9,14 @@ export interface ModifyRequest {
 function createModifyRepositoryRequest<T>(api: string, type: string): (id: number, request: ModifyRequest) => Promise<T> {
 	return async (id, request) => {
 		const res = await axios.patch(`${api}${id}/modify/${type}`, request);
-		
+
 		return (await res.data) as T;
 	}
 }
 
 export async function updateCampaign(id: number, campaign: Partial<Campaign>) {
 	const res = await axios.patch(`/api/campaigns/${id}`, campaign);
-	
+
 	return (await res.data) as CampaignDetails;
 }
 
@@ -47,7 +47,7 @@ export async function createCharacter(character: Partial<Character>) {
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to create character');
 	}
@@ -61,11 +61,11 @@ export async function saveCharacter(id: number, character: Partial<Character>) {
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to save character');
 	}
-	
+
 	return (await res.json()) as Character;
 }
 
@@ -73,7 +73,7 @@ export async function deleteCharacter(id: number): Promise<void> {
 	const res = await fetch(`/api/characters/${id}`, {
 		method: 'DELETE',
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to delete character');
 	}
@@ -84,7 +84,7 @@ export async function createInventoryItem(character: number, item: Pick<Inventor
 		character,
 		...item
 	}
-	
+
 	const res = await fetch(`/api/inventoryItem`, {
 		method: 'POST',
 		body: JSON.stringify(toSend),
@@ -92,11 +92,11 @@ export async function createInventoryItem(character: number, item: Pick<Inventor
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to create inventory item');
 	}
-	
+
 	return (await res.json()) as InventoryItem;
 }
 
@@ -106,7 +106,7 @@ export async function deleteInventoryItem(id: number): Promise<void> {
 	const res = await fetch(`/api/inventoryItem/${id}`, {
 		method: 'DELETE',
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to delete inventory item');
 	}
@@ -124,11 +124,11 @@ export async function modifyCharacterHp(id: number, update: ModifyCharacterHpUpd
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to modify character hp');
 	}
-	
+
 	return (await res.json()) as Character;
 }
 
@@ -144,11 +144,11 @@ export async function modifyCharacterRecovery(id: number, update: ModifyCharacte
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to modify character recoveries');
 	}
-	
+
 	return (await res.json()) as Character;
 }
 
@@ -166,11 +166,11 @@ export async function addCharacterCondition(update: CharacterConditionUpdate): P
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to add character condition');
 	}
-	
+
 	return (await res.json()) as CharacterCondition;
 }
 
@@ -178,7 +178,7 @@ export async function deleteCharacterCondition(id: number): Promise<void> {
 	const res = await fetch(`/api/characterConditions/${id}`, {
 		method: 'DELETE'
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to delete character condition');
 	}
@@ -206,11 +206,11 @@ export async function createCombat(update: CreateCombatUpdate): Promise<Combat> 
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to create combat');
 	}
-	
+
 	return (await res.json()) as Combat;
 }
 
@@ -218,7 +218,7 @@ export async function deleteCombat(id: number): Promise<void> {
 	const res = await fetch(`/api/combats/${id}`, {
 		method: 'DELETE'
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to delete combat');
 	}
@@ -237,11 +237,11 @@ export async function updateCombatRound(id: number, update: CombatRoundUpdate): 
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to update combat round');
 	}
-	
+
 	return (await res.json()) as Combat;
 }
 
@@ -255,7 +255,7 @@ export type CombatantQuickAddUpdate = {
 }
 export async function quickAddCombatant(id: number, update: CombatantQuickAddUpdate): Promise<Combat> {
 	const res = await axios.patch(`/api/combats/${id}/quickAdd`, update);
-	
+
 	return (await res.data) as Combat;
 }
 
@@ -270,11 +270,11 @@ export async function updateCombatCombatant(id: number, type: 'add' | 'remove', 
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to update combatant');
 	}
-	
+
 	return (await res.json()) as Combat;
 }
 
@@ -290,11 +290,11 @@ export async function updateCombatModification(id: number, update: CombatModific
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to update combat modification');
 	}
-	
+
 	return (await res.json()) as Combat;
 }
 
@@ -306,15 +306,15 @@ export async function updateCombatantActive(id: number, available: boolean): Pro
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to update combatant active');
 	}
-	
+
 	return (await res.json()) as Combatant;
 }
 
-export async function updateCombatantValue(id: number, {key, value, type}: {key: 'resources' | 'surges', value: number, type: 'increase' | 'decrease'}) {
+export async function updateCombatantValue(id: number, { key, value, type }: { key: 'resources' | 'surges', value: number, type: 'increase' | 'decrease' }) {
 	const res = await fetch(`/api/combatants/${id}/${key}`, {
 		method: 'PATCH',
 		body: JSON.stringify({ type: type.toUpperCase(), value }),
@@ -322,11 +322,11 @@ export async function updateCombatantValue(id: number, {key, value, type}: {key:
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error(`Failed to update combatant ${key}`);
 	}
-	
+
 	return (await res.json()) as Combatant;
 }
 
@@ -340,7 +340,7 @@ export async function uploadFile(file: File) {
 	formData.append('file', file);
 
 	const res = await axios.postForm('/files', formData);
-	
+
 	return res.data as { fileName: string };
 }
 
@@ -352,11 +352,11 @@ export async function createDisplayEntry(entry: Omit<DisplayEntry, 'id'>) {
 			'Content-Type': 'application/json'
 		}
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to create display entry');
 	}
-	
+
 	return (await res.json()) as DisplayEntry;
 }
 
@@ -364,7 +364,7 @@ export async function deleteDisplayEntry(id: number) {
 	const res = await fetch(`/api/displayEntry/${id}`, {
 		method: 'DELETE'
 	});
-	
+
 	if (!res.ok) {
 		throw new Error('Failed to delete display entry');
 	}

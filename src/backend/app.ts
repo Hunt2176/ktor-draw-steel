@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { createBunWebSocket } from "hono/bun";
+import { createNodeWebSocket } from "@hono/node-ws";
 import type { AppConfig } from "./types";
 import { createApiRouter } from "./routes/api";
 import { registerFileRoutes } from "./routes/files";
@@ -9,7 +9,7 @@ import { registerStaticRoutes } from "./routes/static";
 
 export function createApp(config: AppConfig) {
     const app = new Hono();
-    const { upgradeWebSocket, websocket } = createBunWebSocket();
+    const { upgradeWebSocket, injectWebSocket } = createNodeWebSocket({ app });
 
     app.use("*", async (c, next) => {
         await next();
@@ -48,5 +48,5 @@ export function createApp(config: AppConfig) {
         });
     });
 
-    return { app, websocket };
+    return { app, injectWebSocket };
 }

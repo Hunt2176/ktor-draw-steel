@@ -1,13 +1,15 @@
 import { loadConfig } from "./config";
 import { createApp } from "./app";
+import { serve } from "@hono/node-server";
 
 const config = loadConfig();
-const { app, websocket } = createApp(config);
+const { app, injectWebSocket } = createApp(config);
 
 console.log(`Starting Hono backend on port ${config.port}`);
 
-Bun.serve({
+const server = serve({
     fetch: app.fetch,
     port: config.port,
-    websocket,
 });
+
+injectWebSocket(server);

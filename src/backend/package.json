@@ -1,0 +1,28 @@
+{
+    "name": "@ktor-draw-steel/backend",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch index.ts",
+        "start": "tsx index.ts",
+        "typecheck": "tsc -p tsconfig.json",
+        "db:generate": "drizzle-kit generate --config ../../drizzle.config.ts",
+        "db:migrate": "drizzle-kit migrate --config ../../drizzle.config.ts"
+    },
+    "dependencies": {
+        "@hono/node-server": "^1.19.14",
+        "@hono/node-ws": "^1.3.1",
+        "better-sqlite3": "^11.10.0",
+        "drizzle-orm": "^0.44.0",
+        "hono": "^4.10.1",
+        "yaml": "^2.8.1"
+    },
+    "devDependencies": {
+        "@types/better-sqlite3": "^7.6.12",
+        "@types/node": "^22.13.4",
+        "drizzle-kit": "^0.31.4",
+        "tsx": "^4.20.6",
+        "typescript": "~5.9.2"
+    }
+}

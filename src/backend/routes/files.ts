@@ -34,7 +34,8 @@ export function registerFileRoutes(app: Hono): void {
         const generatedName = extension.length > 0 ? `${crypto.randomUUID()}.${extension}` : crypto.randomUUID();
 
         const destination = path.join(FILES_DIR, generatedName);
-        await Bun.write(destination, uploadedFile);
+        const buffer = Buffer.from(await uploadedFile.arrayBuffer());
+        await fs.promises.writeFile(destination, buffer);
 
         return c.json({ fileName: generatedName });
     });

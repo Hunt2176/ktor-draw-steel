@@ -7,7 +7,8 @@
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true,
-    "types": ["bun-types"],
+    "types": ["node"],
+    "allowSyntheticDefaultImports": true,
     "noEmit": true
   },
   "include": ["./**/*.ts"]

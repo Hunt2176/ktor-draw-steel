@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { createBunWebSocket } from "hono/bun";
+import type { createNodeWebSocket } from "@hono/node-ws";
 import { getCampaignDtoById } from "../data/readers";
 import { trackSocket, untrackSocket, type CampaignSocket } from "../socket-hub";
 
-type UpgradeWebSocket = ReturnType<typeof createBunWebSocket>["upgradeWebSocket"];
+type UpgradeWebSocket = ReturnType<typeof createNodeWebSocket>["upgradeWebSocket"];
 
 function registerWatchRoute(app: Hono, route: "/watch/:id" | "/watch/campaign/:id", upgradeWebSocket: UpgradeWebSocket) {
     app.get(

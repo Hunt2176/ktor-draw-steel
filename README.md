@@ -1,66 +1,38 @@
 # ktor-draw-steel
 
-This project was created using the
-[Ktor Project Generator](https://start.ktor.io).
+Node + TypeScript monorepo using pnpm workspaces:
 
-Here are some useful links to get you started:
+- Angular frontend: `src/app`
+- Hono backend: `src/backend`
+- Database/ORM: Drizzle
 
-- [Ktor Documentation](https://ktor.io/docs/home.html)
-- [Ktor GitHub page](https://github.com/ktorio/ktor)
-- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9).
-  You'll need to
-  [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to
-  join.
+## Setup
 
-## Features
-
-Here's a list of features included in this project:
-
-| Name                                                                   | Description                                                                        |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [AutoHeadResponse](https://start.ktor.io/p/auto-head-response)         | Provides automatic responses for HEAD requests                                     |
-| [Routing](https://start.ktor.io/p/routing)                             | Provides a structured routing DSL                                                  |
-| [Resources](https://start.ktor.io/p/resources)                         | Provides type-safe routing                                                         |
-| [Static Content](https://start.ktor.io/p/static-content)               | Serves static files from defined locations                                         |
-| [Status Pages](https://start.ktor.io/p/status-pages)                   | Provides exception handling for routes                                             |
-| [Compression](https://start.ktor.io/p/compression)                     | Compresses responses using encoding algorithms like GZIP                           |
-| [Default Headers](https://start.ktor.io/p/default-headers)             | Adds a default set of headers to HTTP responses                                    |
-| [Partial Content](https://start.ktor.io/p/partial-content)             | Handles requests with the Range header                                             |
-| [Content Negotiation](https://start.ktor.io/p/content-negotiation)     | Provides automatic content conversion according to Content-Type and Accept headers |
-| [kotlinx.serialization](https://start.ktor.io/p/kotlinx-serialization) | Handles JSON serialization using kotlinx.serialization library                     |
-| [Exposed](https://start.ktor.io/p/exposed)                             | Adds Exposed database to your application                                          |
-| [WebSockets](https://start.ktor.io/p/ktor-websockets)                  | Adds WebSocket protocol support for bidirectional client connections               |
-| [Task Scheduling](https://start.ktor.io/p/ktor-server-task-scheduling) | Manages scheduled tasks across instances of your distributed Ktor server           |
-| [Call Logging](https://start.ktor.io/p/call-logging)                   | Logs client requests                                                               |
-
-## Building & Running
-
-The backend has been migrated to a Hono TypeScript server in `src/backend`.
-
-To build or run the project, use one of the following tasks:
-
-| Task                        | Description                        |
-| --------------------------- | ---------------------------------- |
-| `bun run backend:dev`       | Run the Hono backend in watch mode |
-| `bun run backend:start`     | Run the Hono backend once          |
-| `bun run backend:typecheck` | Type-check the Hono backend source |
-| `bun run db:generate`       | Generate new Drizzle migration SQL |
-| `bun run db:migrate`        | Apply Drizzle migrations           |
-| `bun run dev`               | Run the Vite frontend dev server   |
-
-| Task                          | Description                                                          |
-| ----------------------------- | -------------------------------------------------------------------- |
-| `./gradlew test`              | Run the tests                                                        |
-| `./gradlew build`             | Build everything                                                     |
-| `buildFatJar`                 | Build an executable JAR of the server with all dependencies included |
-| `buildImage`                  | Build the docker image to use with the fat JAR                       |
-| `publishImageToLocalRegistry` | Publish the docker image locally                                     |
-| `run`                         | Run the server                                                       |
-| `runDocker`                   | Run using the local docker image                                     |
-
-If the server starts successfully, you'll see the following output:
-
+```bash
+npx pnpm install
 ```
-2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
-2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
+
+If native modules are blocked on first install, approve build scripts once:
+
+```bash
+npx pnpm approve-builds
 ```
+
+## Common Commands
+
+| Task                     | Description                     |
+| ------------------------ | ------------------------------- |
+| `pnpm dev`               | Run Angular dev server          |
+| `pnpm backend:dev`       | Run backend in watch mode       |
+| `pnpm backend:start`     | Run backend once                |
+| `pnpm backend:typecheck` | Type-check backend              |
+| `pnpm build`             | Build Angular app to `dist/app` |
+| `pnpm db:generate`       | Generate Drizzle migration SQL  |
+| `pnpm db:migrate`        | Apply Drizzle migrations        |
+| `pnpm lint`              | Run workspace lint scripts      |
+
+## Notes
+
+- Backend config defaults are in `src/backend/application-base.yaml`.
+- Local overrides can be placed in root `application.yaml`.
+- The backend serves frontend static files from `dist/app` when available.

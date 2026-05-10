@@ -1,12 +1,12 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 import { DB_PATH } from "./constants";
 import * as schema from "./schema";
 
-export const sqlite = new Database(DB_PATH, { create: true });
+export const sqlite = new Database(DB_PATH);
 export const db = drizzle(sqlite, { schema });
 
-sqlite.exec("PRAGMA foreign_keys = ON;");
+sqlite.pragma("foreign_keys = ON");
 
 export function toInsertId(result: unknown): number {
     if (typeof result !== "object" || result == null) {

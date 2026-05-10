@@ -1,0 +1,10 @@
+packages:
+  - src/app
+  - src/backend
+ignoredBuiltDependencies:
+  - msgpackr-extract
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - better-sqlite3
+  - esbuild
+  - lmdb

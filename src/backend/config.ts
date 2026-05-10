@@ -48,20 +48,19 @@ function readYamlConfig(filePath: string): JsonRecord {
 }
 
 export function loadConfig(): AppConfig {
-    const baseConfigPath = path.join(PROJECT_ROOT, "src", "main", "resources", "application-base.yaml");
+    const baseConfigPath = path.join(PROJECT_ROOT, "src", "backend", "application-base.yaml");
     const appConfigPath = path.join(PROJECT_ROOT, "application.yaml");
 
     const baseConfig = readYamlConfig(baseConfigPath);
     const appConfig = readYamlConfig(appConfigPath);
     const merged = deepMerge(baseConfig, appConfig);
 
-    const ktor = asObject(merged.ktor);
-    const deployment = asObject(ktor.deployment);
+    const server = asObject(merged.server);
     const kanka = asObject(merged.kanka);
 
     const port =
         Number.parseInt(process.env.PORT ?? "", 10) ||
-        (typeof deployment.port === "number" ? deployment.port : 8080);
+        (typeof server.port === "number" ? server.port : 8080);
 
     const cacheDelay =
         Number.parseInt(process.env.KANKA_CACHE_DELAY ?? "", 10) ||

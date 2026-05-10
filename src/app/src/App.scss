@@ -1,18 +1,27 @@
-@use 'mantine' as mantine;
-
 .clickable {
   cursor: pointer;
 }
 
-.glass {
-  @include mantine.light {
-    background: rgba(255, 255, 255, 0.5);
-  }
-  @include mantine.dark {
-    background: rgba(28, 28, 30, 0.7);
-  }
+html,
+body {
+  height: 100%;
+}
 
-  backdrop-filter: blur(10px);
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background: linear-gradient(140deg, #f4f6fb 0%, #eceff8 52%, #f8f9fc 100%);
+  color: #1f2533;
+}
+
+.page-container {
+  display: grid;
+  gap: 1rem;
+  max-width: 980px;
+}
+
+.page-card {
+  border-radius: 16px;
 }
 
 $anchor-radius: 8px;
