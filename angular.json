@@ -4,10 +4,18 @@
 	"newProjectRoot": "projects",
 	"projects": {
 		"app": {
+			"cli": {
+				"packageManager": "pnpm"
+			},
 			"projectType": "application",
 			"root": "src/app",
 			"sourceRoot": "src/app/src",
 			"prefix": "app",
+			"schematics": {
+				"@schematics/angular:component": {
+					"style": "scss"
+				}
+			},
 			"architect": {
 				"build": {
 					"builder": "@angular/build:application",
