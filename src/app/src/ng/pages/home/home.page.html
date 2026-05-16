@@ -1,0 +1,48 @@
+<section class="page-container">
+  <mat-card class="page-card" appearance="outlined" *ngIf="isLoading">
+    <mat-card-content>
+      <p>Loading dashboard...</p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined" *ngIf="!isLoading && errorMessage">
+    <mat-card-header>
+      <mat-card-title>Dashboard Unavailable</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="error-text">{{ errorMessage }}</p>
+      <button mat-flat-button color="primary" (click)="refresh()">Retry</button>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined" *ngIf="!isLoading && !errorMessage">
+    <mat-card-header>
+      <mat-card-title>Home</mat-card-title>
+      <mat-card-subtitle>Campaign dashboard</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-chip-set>
+        <mat-chip>Campaigns: {{ campaigns.length }}</mat-chip>
+        <mat-chip>Characters: {{ totalCharacters }}</mat-chip>
+        <mat-chip>Display Entries: {{ totalDisplayEntries }}</mat-chip>
+      </mat-chip-set>
+
+      <div class="action-row">
+        <a mat-flat-button color="primary" routerLink="/campaigns">Open Campaigns</a>
+        <button mat-stroked-button (click)="refresh()">Refresh</button>
+      </div>
+
+      <p *ngIf="campaigns.length === 0">No campaigns found yet.</p>
+
+      <mat-nav-list *ngIf="campaigns.length > 0">
+        <a mat-list-item *ngFor="let details of campaigns.slice(0, 8); trackBy: trackCampaignId" [routerLink]="['/campaigns', details.campaign.id]">
+          <div matListItemTitle>{{ details.campaign.name }}</div>
+          <div matListItemLine>
+            {{ details.characters.length }} characters • {{ details.entries.length }} display entries
+          </div>
+        </a>
+      </mat-nav-list>
+    </mat-card-content>
+  </mat-card>
+</section>

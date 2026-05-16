@@ -1,0 +1,12 @@
+<div class="app-shell">
+  <mat-toolbar class="top-nav" color="primary">
+    <span class="title">Draw Steel</span>
+    <span class="spacer"></span>
+    <a mat-button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+    <a mat-button routerLink="/campaigns" routerLinkActive="active">Campaigns</a>
+  </mat-toolbar>
+
+  <main class="page-body">
+    <router-outlet></router-outlet>
+  </main>
+</div>

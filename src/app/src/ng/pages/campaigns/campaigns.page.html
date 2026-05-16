@@ -1,0 +1,45 @@
+<section class="page-container">
+  <mat-card class="page-card" appearance="outlined" *ngIf="isLoading">
+    <mat-card-content>
+      <p>Loading campaigns...</p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined" *ngIf="!isLoading && errorMessage">
+    <mat-card-header>
+      <mat-card-title>Unable To Load Campaigns</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="error-text">{{ errorMessage }}</p>
+      <button mat-flat-button color="primary" (click)="refresh()">Retry</button>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined" *ngIf="!isLoading && !errorMessage">
+    <mat-card-header>
+      <mat-card-title>Campaigns</mat-card-title>
+      <mat-card-subtitle>Live data from /api/campaigns</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="action-row">
+        <button mat-stroked-button (click)="refresh()">Refresh</button>
+      </div>
+
+      <p *ngIf="campaigns.length === 0">No campaigns found.</p>
+
+      <mat-nav-list *ngIf="campaigns.length > 0">
+        <a mat-list-item *ngFor="let details of campaigns; trackBy: trackCampaignId" [routerLink]="['/campaigns', details.campaign.id]">
+          <div matListItemTitle>{{ details.campaign.name }}</div>
+          <div matListItemLine>
+            <mat-chip-set>
+              <mat-chip>Characters: {{ details.characters.length }}</mat-chip>
+              <mat-chip>Display Entries: {{ details.entries.length }}</mat-chip>
+              <mat-chip>Hero Tokens: {{ details.campaign.heroTokens }}</mat-chip>
+            </mat-chip-set>
+          </div>
+        </a>
+      </mat-nav-list>
+    </mat-card-content>
+  </mat-card>
+</section>

@@ -1,0 +1,42 @@
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.title {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+a.active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.page-body {
+  padding: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .top-nav {
+    gap: 0.4rem;
+  }
+
+  .title {
+    font-size: 0.95rem;
+  }
+
+  .page-body {
+    padding: 0.85rem;
+  }
+}

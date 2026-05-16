@@ -1,0 +1,243 @@
+<section class="page-container">
+  <mat-card class="page-card" appearance="outlined" *ngIf="isLoading">
+    <mat-card-content>
+      <p>Loading characters...</p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined" *ngIf="!isLoading && errorMessage">
+    <mat-card-header>
+      <mat-card-title>Unable To Load Character Data</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="error-text">{{ errorMessage }}</p>
+      <button mat-flat-button color="primary" (click)="refresh()">Retry</button>
+    </mat-card-content>
+  </mat-card>
+
+  <ng-container *ngIf="!isLoading && !errorMessage && mode === 'campaign' && campaignDetails as details">
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ details.campaign.name }} Characters</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="action-row">
+          <a mat-stroked-button [routerLink]="['/campaigns', details.campaign.id]">Back To Campaign</a>
+          <button mat-stroked-button (click)="refresh()">Refresh</button>
+        </div>
+
+        <p *ngIf="details.characters.length === 0">No characters in this campaign yet.</p>
+
+        <mat-nav-list *ngIf="details.characters.length > 0">
+          <a mat-list-item *ngFor="let character of details.characters; trackBy: trackCharacterId" [routerLink]="['/characters', character.id]">
+            <div matListItemTitle>{{ character.name }}</div>
+            <div matListItemLine>
+              <mat-chip-set>
+                <mat-chip>HP: {{ characterHpText(character) }}</mat-chip>
+                <mat-chip *ngIf="character.offstage">Offstage</mat-chip>
+                <mat-chip *ngIf="character.minions > 0">Minions: {{ character.minions }}</mat-chip>
+              </mat-chip-set>
+            </div>
+          </a>
+        </mat-nav-list>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+
+  <ng-container *ngIf="!isLoading && !errorMessage && mode === 'character' && character as activeCharacter">
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ activeCharacter.name }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="action-row">
+          <a mat-stroked-button [routerLink]="['/campaigns', activeCharacter.campaign]">Campaign</a>
+          <a mat-stroked-button [routerLink]="['/campaigns', activeCharacter.campaign, 'characters']">Character List</a>
+          <button mat-stroked-button (click)="refresh()">Refresh</button>
+        </div>
+
+        <mat-chip-set>
+          <mat-chip>HP: {{ characterHpText(activeCharacter) }}</mat-chip>
+          <mat-chip>Recoveries: {{ characterRecoveryText(activeCharacter) }}</mat-chip>
+          <mat-chip>Victories: {{ activeCharacter.victories }}</mat-chip>
+        </mat-chip-set>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Edit Character</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput [(ngModel)]="editName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Max HP</mat-label>
+            <input matInput type="number" min="1" [(ngModel)]="editMaxHp" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Max Recoveries</mat-label>
+            <input matInput type="number" min="0" [(ngModel)]="editMaxRecoveries" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Minions</mat-label>
+            <input matInput type="number" min="0" [(ngModel)]="editMinions" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Resource Name</mat-label>
+            <input matInput [(ngModel)]="editResourceName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Picture URL</mat-label>
+            <input matInput [(ngModel)]="editPictureUrl" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Victories</mat-label>
+            <input matInput type="number" min="0" [(ngModel)]="editVictories" />
+          </mat-form-field>
+        </div>
+
+        <mat-checkbox [(ngModel)]="editOffstage">Offstage</mat-checkbox>
+
+        <div class="action-row">
+          <button mat-flat-button color="primary" [disabled]="isSaving" (click)="saveEdits()">
+            {{ isSaving ? 'Saving...' : 'Save Changes' }}
+          </button>
+          <button mat-button color="warn" [disabled]="isDeleting" (click)="removeCharacter()">
+            {{ isDeleting ? 'Deleting...' : 'Delete Character' }}
+          </button>
+        </div>
+
+        <p class="error-text" *ngIf="editErrorMessage">{{ editErrorMessage }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Quick HP And Recovery</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="quick-actions-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>HP Amount</mat-label>
+            <input matInput type="number" min="1" [(ngModel)]="hpAdjustAmount" />
+          </mat-form-field>
+          <div class="action-row compact">
+            <button mat-stroked-button [disabled]="isHpUpdating" (click)="adjustHp('DAMAGE')">Damage</button>
+            <button mat-stroked-button [disabled]="isHpUpdating" (click)="adjustHp('HEAL')">Heal</button>
+          </div>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Recovery Amount</mat-label>
+            <input matInput type="number" min="1" [(ngModel)]="recoveryAdjustAmount" />
+          </mat-form-field>
+          <div class="action-row compact">
+            <button mat-stroked-button [disabled]="isRecoveryUpdating" (click)="adjustRecovery('DECREASE')">Spend</button>
+            <button mat-stroked-button [disabled]="isRecoveryUpdating" (click)="adjustRecovery('INCREASE')">Restore</button>
+          </div>
+        </div>
+
+        <p class="error-text" *ngIf="adjustErrorMessage">{{ adjustErrorMessage }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Conditions</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-grid two-column">
+          <mat-form-field appearance="outline">
+            <mat-label>Condition Name</mat-label>
+            <input matInput [(ngModel)]="newConditionName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Ends</mat-label>
+            <mat-select [(ngModel)]="newConditionEndType">
+              <mat-option [value]="'endOfTurn'">End Of Turn</mat-option>
+              <mat-option [value]="'save'">Save</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="action-row">
+          <button mat-flat-button color="primary" [disabled]="isConditionUpdating" (click)="createCondition()">
+            {{ isConditionUpdating ? 'Adding...' : 'Add Condition' }}
+          </button>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <p *ngIf="activeCharacter.conditions.length === 0">No active conditions.</p>
+
+        <mat-list *ngIf="activeCharacter.conditions.length > 0">
+          <mat-list-item *ngFor="let condition of activeCharacter.conditions; trackBy: trackConditionId">
+            <div matListItemTitle>{{ condition.name }}</div>
+            <div matListItemLine>Ends: {{ condition.endType }}</div>
+            <button mat-button color="warn" [disabled]="isConditionUpdating" (click)="removeCondition(condition.id)">Remove</button>
+          </mat-list-item>
+        </mat-list>
+
+        <p class="error-text" *ngIf="conditionErrorMessage">{{ conditionErrorMessage }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Inventory</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-grid two-column">
+          <mat-form-field appearance="outline">
+            <mat-label>Item Name</mat-label>
+            <input matInput [(ngModel)]="newInventoryName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Quantity</mat-label>
+            <input matInput type="number" min="1" [(ngModel)]="newInventoryQuantity" />
+          </mat-form-field>
+        </div>
+
+        <div class="action-row">
+          <button mat-flat-button color="primary" [disabled]="isInventoryUpdating" (click)="addInventory()">
+            {{ isInventoryUpdating ? 'Adding...' : 'Add Item' }}
+          </button>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <p *ngIf="activeCharacter.inventory.length === 0">No inventory items.</p>
+
+        <mat-list *ngIf="activeCharacter.inventory.length > 0">
+          <mat-list-item *ngFor="let item of activeCharacter.inventory; trackBy: trackInventoryId">
+            <div matListItemTitle>{{ item.name }}</div>
+            <div matListItemLine>Quantity: {{ item.quantity }}</div>
+            <button mat-button color="warn" [disabled]="isInventoryUpdating" (click)="removeInventory(item.id)">Remove</button>
+          </mat-list-item>
+        </mat-list>
+
+        <p class="error-text" *ngIf="inventoryErrorMessage">{{ inventoryErrorMessage }}</p>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+
+  <mat-card class="page-card" appearance="outlined" *ngIf="!isLoading && !errorMessage && mode == null">
+    <mat-card-header>
+      <mat-card-title>Characters</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p>Unknown character route.</p>
+    </mat-card-content>
+  </mat-card>
+</section>

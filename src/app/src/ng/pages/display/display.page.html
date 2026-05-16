@@ -1,0 +1,144 @@
+<section class="page-container">
+  <mat-card class="page-card" appearance="outlined" *ngIf="isLoading">
+    <mat-card-content>
+      <p>Loading display board...</p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined" *ngIf="!isLoading && errorMessage">
+    <mat-card-header>
+      <mat-card-title>Unable To Load Display</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="error-text">{{ errorMessage }}</p>
+      <button mat-flat-button color="primary" (click)="refresh()">Retry</button>
+    </mat-card-content>
+  </mat-card>
+
+  <ng-container *ngIf="!isLoading && !errorMessage && campaignDetails as details">
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ details.campaign.name }} Display</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="action-row">
+          <a mat-stroked-button [routerLink]="['/campaigns', details.campaign.id]">Back To Campaign</a>
+          <button mat-stroked-button (click)="refresh()">Refresh</button>
+        </div>
+
+        <mat-chip-set>
+          <mat-chip>Total Entries: {{ allEntries.length }}</mat-chip>
+          <mat-chip>Kanka Entries: {{ kankaEntries.length }}</mat-chip>
+          <mat-chip>Campaign Entries: {{ details.entries.length }}</mat-chip>
+        </mat-chip-set>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Create Display Entry</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Title</mat-label>
+            <input matInput [(ngModel)]="newEntryTitle" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Type</mat-label>
+            <mat-select [(ngModel)]="newEntryType">
+              <mat-option [value]="'Portrait'">Portrait</mat-option>
+              <mat-option [value]="'Background'">Background</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description</mat-label>
+            <textarea matInput rows="4" [(ngModel)]="newEntryDescription"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Picture URL (optional)</mat-label>
+            <input matInput [(ngModel)]="newEntryPictureUrl" />
+          </mat-form-field>
+        </div>
+
+        <div class="action-row">
+          <button mat-stroked-button type="button" (click)="fileInput.click()">Select File</button>
+          <span class="file-name" *ngIf="newEntryFile">{{ newEntryFile.name }}</span>
+          <input #fileInput type="file" accept=".png,.jpg,.jpeg,.webp" style="display: none" (change)="onFilePicked($event)" />
+        </div>
+
+        <div class="action-row">
+          <button mat-flat-button color="primary" [disabled]="isSavingEntry" (click)="createEntry()">
+            {{ isSavingEntry ? 'Saving...' : 'Save Entry' }}
+          </button>
+        </div>
+
+        <p class="error-text" *ngIf="entryErrorMessage">{{ entryErrorMessage }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="display-layout">
+      <mat-card class="page-card" appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Entries</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p *ngIf="allEntries.length === 0">No display entries yet.</p>
+          <mat-nav-list *ngIf="allEntries.length > 0">
+            <a
+              mat-list-item
+              *ngFor="let entry of allEntries; let idx = index; trackBy: trackEntryId"
+              href="#"
+              (click)="selectEntry(idx, $event)"
+              [class.active-entry]="idx === activeEntryIndex"
+            >
+              <div matListItemTitle>{{ entry.title }}</div>
+              <div matListItemLine>{{ entry.type }} <span *ngIf="entry.isKanka">• Kanka</span></div>
+            </a>
+          </mat-nav-list>
+
+          <div class="action-row" *ngIf="activeEntry && !activeEntry.isKanka">
+            <button mat-button color="warn" [disabled]="isDeletingEntryId === activeEntry.id" (click)="removeEntry(activeEntry.id)">
+              {{ isDeletingEntryId === activeEntry.id ? 'Deleting...' : 'Delete Selected Entry' }}
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="page-card" appearance="outlined">
+        <mat-card-header>
+          <mat-card-title *ngIf="activeEntry">{{ activeEntry.title }}</mat-card-title>
+          <mat-card-title *ngIf="!activeEntry">Display Preview</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="action-row" *ngIf="activeEntry">
+            <button mat-stroked-button [disabled]="activeEntryIndex <= 0" (click)="previousEntry()">Previous</button>
+            <button mat-stroked-button [disabled]="activeEntryIndex >= allEntries.length - 1" (click)="nextEntry()">Next</button>
+            <a mat-button *ngIf="activeEntry.backLink" [href]="activeEntry.backLink" target="_blank" rel="noopener noreferrer">Open Source</a>
+          </div>
+
+          <ng-container *ngIf="activeEntry; else emptyStateTpl">
+            <div class="entry-background" *ngIf="activeEntry.type === 'Background' && activeEntry.pictureUrl" [style.background-image]="'url(' + activeEntry.pictureUrl + ')'">
+              <div class="entry-overlay">
+                <h3>{{ activeEntry.title }}</h3>
+                <p *ngIf="activeEntry.description">{{ activeEntry.description }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="activeEntry.type !== 'Background' || !activeEntry.pictureUrl" class="portrait-layout">
+              <img *ngIf="activeEntry.pictureUrl" [src]="activeEntry.pictureUrl" [alt]="activeEntry.title" class="entry-image" />
+              <p *ngIf="activeEntry.description" class="entry-description">{{ activeEntry.description }}</p>
+            </div>
+          </ng-container>
+
+          <ng-template #emptyStateTpl>
+            <p>Select or create an entry to preview it.</p>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </ng-container>
+</section>

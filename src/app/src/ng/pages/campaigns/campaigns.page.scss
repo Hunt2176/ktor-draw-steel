@@ -1,0 +1,14 @@
+.action-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+mat-nav-list a[mat-list-item] {
+  height: auto;
+  padding-block: 0.5rem;
+}
+
+.error-text {
+  color: #a01616;
+}

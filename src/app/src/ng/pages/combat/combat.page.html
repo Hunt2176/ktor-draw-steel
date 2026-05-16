@@ -1,0 +1,157 @@
+<section class="page-container">
+  <mat-card class="page-card" appearance="outlined" *ngIf="isLoading">
+    <mat-card-content>
+      <p>Loading combat...</p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined" *ngIf="!isLoading && errorMessage">
+    <mat-card-header>
+      <mat-card-title>Unable To Load Combat</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="error-text">{{ errorMessage }}</p>
+      <button mat-flat-button color="primary" (click)="refresh()">Retry</button>
+    </mat-card-content>
+  </mat-card>
+
+  <ng-container *ngIf="!isLoading && !errorMessage && combat as activeCombat">
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Combat #{{ activeCombat.id }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="action-row">
+          <a mat-stroked-button *ngIf="campaign" [routerLink]="['/campaigns', campaign.campaign.id]">Campaign</a>
+          <button mat-stroked-button (click)="refresh()">Refresh</button>
+          <button mat-flat-button color="primary" [disabled]="isUpdatingRound" (click)="advanceRound()">
+            {{ isUpdatingRound ? 'Advancing...' : 'Next Round' }}
+          </button>
+        </div>
+
+        <mat-chip-set>
+          <mat-chip>Round: {{ activeCombat.round }}</mat-chip>
+          <mat-chip *ngIf="campaign">Campaign: {{ campaign.campaign.name }}</mat-chip>
+          <mat-chip *ngIf="campaign">Hero Tokens: {{ campaign.campaign.heroTokens }}</mat-chip>
+        </mat-chip-set>
+
+        <div class="round-row">
+          <mat-checkbox [(ngModel)]="clearRoundOnlyConditions">Clear end-of-turn conditions</mat-checkbox>
+        </div>
+
+        <div class="token-row" *ngIf="campaign">
+          <mat-form-field appearance="outline">
+            <mat-label>Hero Token Amount</mat-label>
+            <input matInput type="number" min="1" [(ngModel)]="heroTokenAdjustAmount" />
+          </mat-form-field>
+          <button mat-stroked-button [disabled]="isUpdatingHeroTokens" (click)="adjustHeroTokens('INCREASE')">Add</button>
+          <button mat-stroked-button [disabled]="isUpdatingHeroTokens" (click)="adjustHeroTokens('DECREASE')">Spend</button>
+        </div>
+
+        <p class="error-text" *ngIf="updateErrorMessage">{{ updateErrorMessage }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Quick Add Combatant</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput [(ngModel)]="quickAddName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Max HP</mat-label>
+            <input matInput type="number" min="1" [(ngModel)]="quickAddMaxHp" />
+          </mat-form-field>
+        </div>
+
+        <mat-checkbox [(ngModel)]="quickAddOffstage">Offstage</mat-checkbox>
+
+        <div class="action-row">
+          <button mat-flat-button color="primary" [disabled]="isQuickAdding" (click)="quickAddToCombat()">
+            {{ isQuickAdding ? 'Adding...' : 'Add Combatant' }}
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined" *ngIf="campaign">
+      <mat-card-header>
+        <mat-card-title>Modify Roster</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="selector-grid">
+          <label class="selector-item" *ngFor="let character of sortedCampaignCharacters; trackBy: trackCharacterId">
+            <input type="checkbox" [checked]="rosterSelection[character.id] ?? false" (change)="onRosterSelectionChange(character.id, $event)" />
+            <span>{{ character.name }}</span>
+            <small *ngIf="character.offstage">offstage</small>
+          </label>
+        </div>
+
+        <div class="action-row">
+          <button mat-stroked-button color="primary" [disabled]="isSavingRoster" (click)="saveRosterChanges()">
+            {{ isSavingRoster ? 'Saving...' : 'Apply Roster Changes' }}
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Available Combatants</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p *ngIf="availableCombatants.length === 0">No available combatants.</p>
+        <mat-list *ngIf="availableCombatants.length > 0">
+          <mat-list-item class="combatant-item" *ngFor="let combatant of availableCombatants; trackBy: trackCombatantId">
+            <div matListItemTitle>{{ combatant.character.name }}</div>
+            <div matListItemLine>
+              HP: {{ combatantHpText(combatant) }}
+              • {{ combatant.character.resourceName ?? 'Resources' }}: {{ combatant.resources }}
+              • Surges: {{ combatant.surges }}
+            </div>
+            <div class="list-actions">
+              <a mat-button color="primary" [routerLink]="['/characters', combatant.character.id]">View</a>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="toggleCombatant(combatant)">Set Unavailable</button>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="adjustCombatant(combatant, 'resources', 'increase')">Res +</button>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="adjustCombatant(combatant, 'resources', 'decrease')">Res -</button>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="adjustCombatant(combatant, 'surges', 'increase')">Surge +</button>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="adjustCombatant(combatant, 'surges', 'decrease')">Surge -</button>
+            </div>
+          </mat-list-item>
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Unavailable Combatants</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p *ngIf="unavailableCombatants.length === 0">No unavailable combatants.</p>
+        <mat-list *ngIf="unavailableCombatants.length > 0">
+          <mat-list-item class="combatant-item" *ngFor="let combatant of unavailableCombatants; trackBy: trackCombatantId">
+            <div matListItemTitle>{{ combatant.character.name }}</div>
+            <div matListItemLine>
+              HP: {{ combatantHpText(combatant) }}
+              • {{ combatant.character.resourceName ?? 'Resources' }}: {{ combatant.resources }}
+              • Surges: {{ combatant.surges }}
+            </div>
+            <div class="list-actions">
+              <a mat-button color="primary" [routerLink]="['/characters', combatant.character.id]">View</a>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="toggleCombatant(combatant)">Set Available</button>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="adjustCombatant(combatant, 'resources', 'increase')">Res +</button>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="adjustCombatant(combatant, 'resources', 'decrease')">Res -</button>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="adjustCombatant(combatant, 'surges', 'increase')">Surge +</button>
+              <button mat-button [disabled]="isUpdatingCombatantId === combatant.id" (click)="adjustCombatant(combatant, 'surges', 'decrease')">Surge -</button>
+            </div>
+          </mat-list-item>
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+</section>

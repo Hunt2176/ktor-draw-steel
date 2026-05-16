@@ -1,0 +1,169 @@
+<section class="page-container">
+  <mat-card class="page-card" appearance="outlined" *ngIf="isLoading">
+    <mat-card-content>
+      <p>Loading campaign details...</p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card" appearance="outlined" *ngIf="!isLoading && errorMessage">
+    <mat-card-header>
+      <mat-card-title>Unable To Load Campaign</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="error-text">{{ errorMessage }}</p>
+      <button mat-flat-button color="primary" (click)="refresh()">Retry</button>
+    </mat-card-content>
+  </mat-card>
+
+  <ng-container *ngIf="!isLoading && !errorMessage && campaignDetails as details">
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ details.campaign.name }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="action-row">
+          <a mat-stroked-button routerLink="/campaigns">Campaigns</a>
+          <a mat-stroked-button [routerLink]="['/campaigns', details.campaign.id, 'display']">Display Board</a>
+          <button mat-stroked-button color="primary" [disabled]="isUpdatingBackground" (click)="backgroundFileInput.click()">
+            {{ isUpdatingBackground ? 'Uploading...' : 'Upload Background' }}
+          </button>
+          <button mat-button (click)="refresh()">Refresh</button>
+          <input
+            #backgroundFileInput
+            type="file"
+            accept=".png,.jpg,.jpeg,.webp"
+            style="display: none"
+            (change)="onBackgroundFileChange($event)"
+          />
+        </div>
+
+        <p class="error-text" *ngIf="backgroundErrorMessage">{{ backgroundErrorMessage }}</p>
+        <mat-chip-set>
+          <mat-chip>Campaign id: {{ details.campaign.id }}</mat-chip>
+          <mat-chip>Hero Tokens: {{ details.campaign.heroTokens }}</mat-chip>
+          <mat-chip *ngIf="details.campaign.background">Background set</mat-chip>
+        </mat-chip-set>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Combats</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="selector-grid">
+          <label class="selector-item" *ngFor="let character of details.characters; trackBy: trackCharacterId">
+            <input
+              type="checkbox"
+              [checked]="selectedCombatCharacters[character.id] ?? false"
+              (change)="onCharacterSelectionChange(character.id, $event)"
+            />
+            <span>{{ character.name }}</span>
+            <small *ngIf="character.offstage">offstage</small>
+          </label>
+        </div>
+
+        <div class="action-row">
+          <button
+            mat-flat-button
+            color="primary"
+            [disabled]="isCreatingCombat || selectedCharacterIds.length === 0"
+            (click)="createCombatFromSelection()"
+          >
+            {{ isCreatingCombat ? 'Creating Combat...' : 'Create Combat From Selection' }}
+          </button>
+        </div>
+
+        <p class="error-text" *ngIf="combatErrorMessage">{{ combatErrorMessage }}</p>
+
+        <mat-divider></mat-divider>
+
+        <p *ngIf="combats.length === 0">No combats have been created yet.</p>
+
+        <mat-list *ngIf="combats.length > 0">
+          <mat-list-item *ngFor="let combat of combats; trackBy: trackCombatId">
+            <div matListItemTitle>Combat #{{ combat.id }} • Round {{ combat.round }}</div>
+            <div class="list-actions">
+              <button mat-button color="primary" [routerLink]="['/combats', combat.id]">View</button>
+              <button
+                mat-button
+                color="warn"
+                [disabled]="isDeletingCombatId === combat.id"
+                (click)="removeCombat(combat.id)"
+              >
+                {{ isDeletingCombatId === combat.id ? 'Deleting...' : 'Delete' }}
+              </button>
+            </div>
+          </mat-list-item>
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Add Character</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput [(ngModel)]="newCharacterName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Max HP</mat-label>
+            <input matInput type="number" min="1" [(ngModel)]="newCharacterMaxHp" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Minions</mat-label>
+            <input matInput type="number" min="0" [(ngModel)]="newCharacterMinions" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Picture URL (optional)</mat-label>
+            <input matInput [(ngModel)]="newCharacterPictureUrl" />
+          </mat-form-field>
+        </div>
+
+        <mat-checkbox [(ngModel)]="newCharacterOffstage">Offstage</mat-checkbox>
+
+        <div class="action-row">
+          <button mat-flat-button color="primary" [disabled]="isCreatingCharacter" (click)="createCharacterFromDraft()">
+            {{ isCreatingCharacter ? 'Creating...' : 'Create Character' }}
+          </button>
+        </div>
+
+        <p class="error-text" *ngIf="characterErrorMessage">{{ characterErrorMessage }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="page-card" appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Characters</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="character-grid" *ngIf="details.characters.length > 0; else noCharactersTpl">
+          <mat-card appearance="outlined" *ngFor="let character of details.characters; trackBy: trackCharacterId">
+            <mat-card-header>
+              <mat-card-title>{{ character.name }}</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <mat-chip-set>
+                <mat-chip>HP: {{ characterHpText(character) }}</mat-chip>
+                <mat-chip *ngIf="character.offstage">Offstage</mat-chip>
+                <mat-chip *ngIf="character.minions > 0">Minions: {{ character.minions }}</mat-chip>
+              </mat-chip-set>
+            </mat-card-content>
+            <mat-card-actions>
+              <a mat-button color="primary" [routerLink]="['/characters', character.id]">View</a>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+        <ng-template #noCharactersTpl>
+          <p>No characters in this campaign yet.</p>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+</section>

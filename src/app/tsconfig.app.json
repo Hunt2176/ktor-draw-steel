@@ -1,4 +1,15 @@
 {
   "extends": "../../tsconfig.app.json",
-  "include": ["src/**/*.ts", "src/**/*.d.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+
+	"compilerOptions": {
+		"paths": {
+			"@app/*": ["./src/*"],
+			"@services/*": ["./src/services/*"],
+		}
+	},
+
+	"angularCompilerOptions": {
+		"strictTemplates": false
+	}
 }
