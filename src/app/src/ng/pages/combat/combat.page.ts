@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,6 +16,7 @@ import { map } from 'rxjs';
 import { CampaignService } from '@services/campaign.service';
 import { CombatService } from '@services/combat.service';
 import { CombatantService } from '@services/combatant.service';
+import { WebSocketService } from '@services/websocket.service';
 import { CampaignDetails, Character, Combat, Combatant } from '@app/types/models';
 
 @Component({
@@ -43,6 +44,9 @@ export class CombatPageComponent {
 	private readonly campaignService = inject(CampaignService);
 	private readonly combatService = inject(CombatService);
 	private readonly combatantService = inject(CombatantService);
+	private readonly webSocketService = inject(WebSocketService);
+	private readonly destroyRef = inject(DestroyRef);
+	private watchedCampaignId: number | null = null;
 
 	combatId: number | null = null;
 	combat: Combat | null = null;
@@ -81,11 +85,18 @@ export class CombatPageComponent {
 				if (id == null) {
 					this.errorMessage = 'Invalid combat id.';
 					this.isLoading = false;
+					this.webSocketService.disconnect();
 					return;
 				}
 
 				void this.loadCombat(id);
 			});
+
+		// Disconnect WebSocket on component destroy
+		this.destroyRef.onDestroy(() => {
+			this.watchedCampaignId = null;
+			this.webSocketService.disconnect();
+		});
 	}
 
 	get sortedCampaignCharacters(): Character[] {
@@ -112,6 +123,11 @@ export class CombatPageComponent {
 	combatantHpText(combatant: Combatant): string {
 		const hp = Character.getHp(combatant.character);
 		return `${hp.current}/${hp.max}`;
+	}
+
+	combatantRecoveriesText(combatant: Combatant): string {
+		const rec = Character.getRecoveries(combatant.character);
+		return `${rec.current}/${rec.max}`;
 	}
 
 	async refresh(): Promise<void> {
@@ -305,6 +321,9 @@ export class CombatPageComponent {
 				},
 				{} as Record<number, boolean>,
 			);
+
+			// Setup WebSocket listener for this campaign
+			this.setupWebSocketListener(campaign.campaign.id);
 		} catch (error: unknown) {
 			this.combat = null;
 			this.campaign = null;
@@ -313,6 +332,27 @@ export class CombatPageComponent {
 			this.isLoading = false;
 			this.changeDetector.detectChanges();
 		}
+	}
+
+	private setupWebSocketListener(campaignId: number): void {
+		if (this.watchedCampaignId === campaignId) {
+			return;
+		}
+
+		this.watchedCampaignId = campaignId;
+
+		// Connect to WebSocket
+		this.webSocketService.connectToCampaign(campaignId);
+
+		// Listen to campaign updates
+		this.webSocketService
+			.getCampaignUpdates(campaignId)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((update) => {
+				console.log('Received socket update:', update);
+				// Refresh combat data when any update is received
+				void this.refresh();
+			});
 	}
 
 	private asErrorMessage(error: unknown, fallback: string): string {

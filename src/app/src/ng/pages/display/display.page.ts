@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,6 +16,7 @@ import { map } from 'rxjs';
 import { CampaignService } from '@services/campaign.service';
 import { DisplayEntryService } from '@services/display-entry.service';
 import { FileService } from '@services/file.service';
+import { WebSocketService } from '@services/websocket.service';
 import { CampaignDetails, DisplayEntry, DisplayEntryType } from '@app/types/models';
 
 type DisplayEntryView = DisplayEntry & {
@@ -48,6 +49,9 @@ export class DisplayPageComponent {
 	private readonly campaignService = inject(CampaignService);
 	private readonly displayEntryService = inject(DisplayEntryService);
 	private readonly fileService = inject(FileService);
+	private readonly webSocketService = inject(WebSocketService);
+	private readonly destroyRef = inject(DestroyRef);
+	private watchedCampaignId: number | null = null;
 
 	campaignId: number | null = null;
 	campaignDetails: CampaignDetails | null = null;
@@ -82,11 +86,18 @@ export class DisplayPageComponent {
 				if (id == null) {
 					this.errorMessage = 'Invalid campaign id.';
 					this.isLoading = false;
+					this.webSocketService.disconnect();
 					return;
 				}
 
 				void this.loadCampaign(id);
 			});
+
+		// Disconnect WebSocket on component destroy
+		this.destroyRef.onDestroy(() => {
+			this.watchedCampaignId = null;
+			this.webSocketService.disconnect();
+		});
 	}
 
 	get allEntries(): DisplayEntryView[] {
@@ -204,6 +215,8 @@ export class DisplayPageComponent {
 			this.campaignDetails = campaign;
 			await this.loadKankaEntries(campaign.campaign.kankaApiId, id);
 			this.clampActiveEntryIndex();
+			// Setup WebSocket listener for this campaign
+			this.setupWebSocketListener(id);
 		} catch (error: unknown) {
 			this.campaignDetails = null;
 			this.kankaEntries = [];
@@ -212,6 +225,27 @@ export class DisplayPageComponent {
 			this.isLoading = false;
 			this.changeDetector.detectChanges();
 		}
+	}
+
+	private setupWebSocketListener(campaignId: number): void {
+		if (this.watchedCampaignId === campaignId) {
+			return;
+		}
+
+		this.watchedCampaignId = campaignId;
+
+		// Connect to WebSocket
+		this.webSocketService.connectToCampaign(campaignId);
+
+		// Listen to campaign updates
+		this.webSocketService
+			.getCampaignUpdates(campaignId)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((update) => {
+				console.log('Received socket update:', update);
+				// Refresh campaign data when any update is received
+				void this.refresh();
+			});
 	}
 
 	private async loadKankaEntries(kankaApiId: string | undefined, campaignId: number): Promise<void> {

@@ -21,7 +21,7 @@
         <mat-card-title>{{ details.campaign.name }} Characters</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="action-row">
+        <div class="flex flex-wrap gap-3 mb-3">
           <a mat-stroked-button [routerLink]="['/campaigns', details.campaign.id]">Back To Campaign</a>
           <button mat-stroked-button (click)="refresh()">Refresh</button>
         </div>
@@ -50,7 +50,7 @@
         <mat-card-title>{{ activeCharacter.name }}</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="action-row">
+        <div class="flex flex-wrap gap-3 mb-3">
           <a mat-stroked-button [routerLink]="['/campaigns', activeCharacter.campaign]">Campaign</a>
           <a mat-stroked-button [routerLink]="['/campaigns', activeCharacter.campaign, 'characters']">Character List</a>
           <button mat-stroked-button (click)="refresh()">Refresh</button>
@@ -108,7 +108,7 @@
 
         <mat-checkbox [(ngModel)]="editOffstage">Offstage</mat-checkbox>
 
-        <div class="action-row">
+        <div class="flex flex-wrap gap-3 mb-3">
           <button mat-flat-button color="primary" [disabled]="isSaving" (click)="saveEdits()">
             {{ isSaving ? 'Saving...' : 'Save Changes' }}
           </button>
@@ -131,7 +131,7 @@
             <mat-label>HP Amount</mat-label>
             <input matInput type="number" min="1" [(ngModel)]="hpAdjustAmount" />
           </mat-form-field>
-          <div class="action-row compact">
+          <div class="flex flex-wrap gap-3">
             <button mat-stroked-button [disabled]="isHpUpdating" (click)="adjustHp('DAMAGE')">Damage</button>
             <button mat-stroked-button [disabled]="isHpUpdating" (click)="adjustHp('HEAL')">Heal</button>
           </div>
@@ -140,7 +140,7 @@
             <mat-label>Recovery Amount</mat-label>
             <input matInput type="number" min="1" [(ngModel)]="recoveryAdjustAmount" />
           </mat-form-field>
-          <div class="action-row compact">
+          <div class="flex flex-wrap gap-3">
             <button mat-stroked-button [disabled]="isRecoveryUpdating" (click)="adjustRecovery('DECREASE')">Spend</button>
             <button mat-stroked-button [disabled]="isRecoveryUpdating" (click)="adjustRecovery('INCREASE')">Restore</button>
           </div>
@@ -170,7 +170,7 @@
           </mat-form-field>
         </div>
 
-        <div class="action-row">
+        <div class="flex flex-wrap gap-3 mb-3">
           <button mat-flat-button color="primary" [disabled]="isConditionUpdating" (click)="createCondition()">
             {{ isConditionUpdating ? 'Adding...' : 'Add Condition' }}
           </button>
@@ -209,7 +209,7 @@
           </mat-form-field>
         </div>
 
-        <div class="action-row">
+        <div class="flex flex-wrap gap-3 mb-3">
           <button mat-flat-button color="primary" [disabled]="isInventoryUpdating" (click)="addInventory()">
             {{ isInventoryUpdating ? 'Adding...' : 'Add Item' }}
           </button>

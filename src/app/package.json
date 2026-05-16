@@ -39,6 +39,7 @@
         "@angular/cli": "^21.0.0",
         "@angular/compiler-cli": "^21.0.0",
         "@eslint/js": "^9.39.2",
+        "@tailwindcss/postcss": "^4.3.0",
         "@types/axios": "^0.14.4",
         "@types/node": "^22.13.4",
         "eslint": "^9.39.2",

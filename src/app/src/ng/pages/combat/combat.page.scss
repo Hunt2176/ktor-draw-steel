@@ -1,68 +1,177 @@
-.action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+:host {
+  color: #c1c2c5;
 }
 
-.round-row {
-  margin-top: 0.5rem;
-}
+.page-card {
+  color: #c1c2c5;
+  background: rgba(26, 27, 30, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
-.token-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
+  mat-card-title {
+    color: #ffffff;
+  }
 }
 
 .form-grid {
-  display: grid;
+  @apply grid gap-3;
   grid-template-columns: repeat(2, minmax(220px, 1fr));
-  gap: 0.75rem;
 }
 
 .selector-grid {
-  display: grid;
+  @apply grid gap-2;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.5rem;
 }
 
 .selector-item {
-  border: 1px solid #e1e5f3;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   padding: 0.45rem 0.6rem;
+  @apply flex items-center gap-[0.45rem];
+  color: #c1c2c5;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+}
+
+// Combatant grid & cards
+.combatant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.combatant-card {
+  display: flex;
+  background: rgba(26, 27, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
+  }
+
+  .char-portrait-wrap {
+    flex-shrink: 0;
+    width: 100px;
+    height: auto;
+    background: #0a0b0d;
+  }
+
+  .char-portrait {
+    width: 100px;
+    height: 100%;
+    min-height: 100px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .char-portrait-placeholder {
+    width: 100px;
+    min-height: 100px;
+    height: 100%;
+    background: linear-gradient(135deg, #2c2e33 0%, #1a1b1e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #5c5f66;
+    text-transform: uppercase;
+  }
+
+  .combatant-body {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .char-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .char-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #ffffff;
+  }
+
+  .char-tag {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    color: #b3b6ba;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .combatant-stats {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .combatant-resource-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.8rem;
+    color: #b3b6ba;
+  }
+
+  .combatant-actions {
+    margin-top: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+}
+
+.stat-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(37, 38, 43, 0.8);
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-}
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
 
-.list-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, max-content));
-  gap: 0.4rem;
-  width: 100%;
-  margin-top: 0.45rem;
-}
+  &.stat-hp {
+    border: 3px solid #40c057;
+  }
 
-.combatant-item {
-  height: auto;
-  align-items: flex-start;
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
-}
-
-.combatant-item ::ng-deep .mdc-list-item__content,
-.combatant-item ::ng-deep .mdc-list-item__primary-text {
-  width: 100%;
-}
-
-.error-text {
-  color: #a01616;
+  &.stat-rec {
+    border: 3px solid #228be6;
+  }
 }
 
 @media (max-width: 760px) {
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .combatant-grid {
     grid-template-columns: 1fr;
   }
 }

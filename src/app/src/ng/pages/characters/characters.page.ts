@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -18,6 +18,7 @@ import { CampaignService } from '@services/campaign.service';
 import { CharacterService } from '@services/character.service';
 import { CharacterConditionService } from '@services/character-condition.service';
 import { InventoryItemService } from '@services/inventory-item.service';
+import { WebSocketService } from '@services/websocket.service';
 import { CampaignDetails, Character, CharacterConditionEndType, InventoryItem } from '@app/types/models';
 
 @Component({
@@ -48,6 +49,9 @@ export class CharactersPageComponent {
 	private readonly characterService = inject(CharacterService);
 	private readonly characterConditionService = inject(CharacterConditionService);
 	private readonly inventoryItemService = inject(InventoryItemService);
+	private readonly webSocketService = inject(WebSocketService);
+	private readonly destroyRef = inject(DestroyRef);
+	private watchedCampaignId: number | null = null;
 
 	mode: 'campaign' | 'character' | null = null;
 
@@ -122,7 +126,14 @@ export class CharactersPageComponent {
 				this.mode = null;
 				this.errorMessage = '';
 				this.isLoading = false;
+				this.webSocketService.disconnect();
 			});
+
+		// Disconnect WebSocket on component destroy
+		this.destroyRef.onDestroy(() => {
+			this.watchedCampaignId = null;
+			this.webSocketService.disconnect();
+		});
 	}
 
 	trackCharacterId = (_idx: number, character: Character): number => character.id;
@@ -349,6 +360,8 @@ export class CharactersPageComponent {
 
 		try {
 			this.campaignDetails = await firstValueFrom(this.campaignService.fetchCampaign(campaignId));
+			// Setup WebSocket listener for this campaign
+			this.setupWebSocketListener(campaignId);
 		} catch (error: unknown) {
 			this.errorMessage = this.asErrorMessage(error, 'Failed to load campaign characters.');
 		} finally {
@@ -366,6 +379,8 @@ export class CharactersPageComponent {
 			const character = await firstValueFrom(this.characterService.fetchCharacter(characterId));
 			this.character = character;
 			this.applyDraftFromCharacter(character);
+			// Setup WebSocket listener for the character's campaign
+			this.setupWebSocketListener(character.campaign);
 		} catch (error: unknown) {
 			this.errorMessage = this.asErrorMessage(error, 'Failed to load character.');
 			this.character = null;
@@ -373,6 +388,27 @@ export class CharactersPageComponent {
 			this.isLoading = false;
 			this.changeDetector.detectChanges();
 		}
+	}
+
+	private setupWebSocketListener(campaignId: number): void {
+		if (this.watchedCampaignId === campaignId) {
+			return;
+		}
+
+		this.watchedCampaignId = campaignId;
+
+		// Connect to WebSocket
+		this.webSocketService.connectToCampaign(campaignId);
+
+		// Listen to campaign updates
+		this.webSocketService
+			.getCampaignUpdates(campaignId)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((update) => {
+				console.log('Received socket update:', update);
+				// Refresh data when any update is received
+				void this.refresh();
+			});
 	}
 
 	private async reloadCharacter(): Promise<void> {

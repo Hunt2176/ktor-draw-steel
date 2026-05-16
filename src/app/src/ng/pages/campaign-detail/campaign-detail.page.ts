@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -11,12 +11,14 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { map } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { CampaignService } from '@services/campaign.service';
 import { CharacterService } from '@services/character.service';
 import { CombatService } from '@services/combat.service';
 import { FileService } from '@services/file.service';
+import { WebSocketService } from '@services/websocket.service';
 import { CampaignDetails, Character, Combat } from '@app/types/models';
 
 @Component({
@@ -34,6 +36,7 @@ import { CampaignDetails, Character, Combat } from '@app/types/models';
 		MatFormFieldModule,
 		MatInputModule,
 		MatListModule,
+		MatTooltipModule,
 	],
 	templateUrl: './campaign-detail.page.html',
 	styleUrl: './campaign-detail.page.scss',
@@ -46,6 +49,9 @@ export class CampaignDetailPageComponent {
 	private readonly characterService = inject(CharacterService);
 	private readonly combatService = inject(CombatService);
 	private readonly fileService = inject(FileService);
+	private readonly webSocketService = inject(WebSocketService);
+	private readonly destroyRef = inject(DestroyRef);
+	private watchedCampaignId: number | null = null;
 
 	campaignId: number | null = null;
 	campaignDetails: CampaignDetails | null = null;
@@ -84,10 +90,39 @@ export class CampaignDetailPageComponent {
 				if (id == null) {
 					this.errorMessage = 'Invalid campaign id.';
 					this.isLoading = false;
+					this.webSocketService.disconnect();
 					return;
 				}
 
 				void this.loadCampaign(id);
+				this.setupWebSocketListener(id);
+			});
+
+		// Disconnect WebSocket on component destroy
+		this.destroyRef.onDestroy(() => {
+			this.watchedCampaignId = null;
+			this.webSocketService.disconnect();
+		});
+	}
+
+	private setupWebSocketListener(campaignId: number): void {
+		if (this.watchedCampaignId === campaignId) {
+			return;
+		}
+
+		this.watchedCampaignId = campaignId;
+
+		// Connect to WebSocket
+		this.webSocketService.connectToCampaign(campaignId);
+
+		// Listen to campaign updates
+		this.webSocketService
+			.getCampaignUpdates(campaignId)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((update) => {
+				console.log('Received socket update:', update);
+				// Refresh campaign data when any update is received
+				void this.refresh();
 			});
 	}
 
@@ -104,6 +139,11 @@ export class CampaignDetailPageComponent {
 	characterHpText(character: Character): string {
 		const current = character.maxHp + character.temporaryHp - character.removedHp;
 		return `${current}/${character.maxHp}`;
+	}
+
+	characterRecoveriesText(character: Character): string {
+		const rec = Character.getRecoveries(character);
+		return `${rec.current}/${rec.max}`;
 	}
 
 	async refresh(): Promise<void> {

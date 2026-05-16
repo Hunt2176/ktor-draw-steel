@@ -15,23 +15,30 @@ body {
 }
 
 .page-container {
-  display: grid;
-  gap: 1rem;
-  max-width: 980px;
+  @apply grid gap-4 max-w-[980px];
 }
 
 .page-card {
-  border-radius: 16px;
+  @apply rounded-2xl;
 }
 
-$anchor-radius: 8px;
+.error-text {
+  color: #e03131;
+}
+
+// Dark card theme for campaign-detail and combat pages
+app-campaign-detail-page,
+app-combat-page {
+  .page-card {
+    --mat-card-outlined-container-color: #25262b;
+    --mat-card-outlined-outline-color: #373a40;
+  }
+}
 
 .left-anchored {
-  border-top-right-radius: $anchor-radius;
-  border-bottom-right-radius: $anchor-radius;
+  @apply rounded-tr-lg rounded-br-lg;
 }
 
 .right-anchored {
-  border-top-left-radius: $anchor-radius;
-  border-bottom-left-radius: $anchor-radius;
+  @apply rounded-tl-lg rounded-bl-lg;
 }
