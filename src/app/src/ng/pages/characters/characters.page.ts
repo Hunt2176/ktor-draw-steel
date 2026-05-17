@@ -18,8 +18,8 @@ import { CampaignService } from '@services/campaign.service';
 import { CharacterService } from '@services/character.service';
 import { CharacterConditionService } from '@services/character-condition.service';
 import { InventoryItemService } from '@services/inventory-item.service';
-import { WebSocketService } from '@services/websocket.service';
-import { CampaignDetails, Character, CharacterConditionEndType, InventoryItem } from '@app/types/models';
+import { StateContext } from '@services/state-context';
+import { Character, CharacterConditionEndType, InventoryItem } from '@app/types/models';
 
 @Component({
 	selector: 'app-characters-page',
@@ -49,9 +49,8 @@ export class CharactersPageComponent {
 	private readonly characterService = inject(CharacterService);
 	private readonly characterConditionService = inject(CharacterConditionService);
 	private readonly inventoryItemService = inject(InventoryItemService);
-	private readonly webSocketService = inject(WebSocketService);
+	private readonly stateContext = inject(StateContext);
 	private readonly destroyRef = inject(DestroyRef);
-	private watchedCampaignId: number | null = null;
 
 	mode: 'campaign' | 'character' | null = null;
 
@@ -69,7 +68,7 @@ export class CharactersPageComponent {
 	conditionErrorMessage = '';
 	inventoryErrorMessage = '';
 
-	campaignDetails: CampaignDetails | null = null;
+	campaignDetails = this.stateContext.details;
 	character: Character | null = null;
 
 	editName = '';
@@ -126,14 +125,17 @@ export class CharactersPageComponent {
 				this.mode = null;
 				this.errorMessage = '';
 				this.isLoading = false;
-				this.webSocketService.disconnect();
+				this.stateContext.details.set(null);
 			});
 
-		// Disconnect WebSocket on component destroy
-		this.destroyRef.onDestroy(() => {
-			this.watchedCampaignId = null;
-			this.webSocketService.disconnect();
-		});
+		// Listen to campaign updates and refresh when needed
+		this.stateContext.getCampaignUpdates()
+			?.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((update) => {
+				console.log('Received socket update:', update);
+				// Refresh data when any update is received
+				void this.refresh();
+			});
 	}
 
 	trackCharacterId = (_idx: number, character: Character): number => character.id;
@@ -154,7 +156,7 @@ export class CharactersPageComponent {
 
 	async refresh(): Promise<void> {
 		if (this.mode === 'campaign') {
-			const id = this.campaignDetails?.campaign.id;
+			const id = this.campaignDetails()?.campaign.id;
 			if (id != null) {
 				await this.loadCampaignCharacters(id);
 			}
@@ -355,15 +357,14 @@ export class CharactersPageComponent {
 	private async loadCampaignCharacters(campaignId: number): Promise<void> {
 		this.isLoading = true;
 		this.errorMessage = '';
-		this.campaignDetails = null;
 		this.character = null;
 
 		try {
-			this.campaignDetails = await firstValueFrom(this.campaignService.fetchCampaign(campaignId));
-			// Setup WebSocket listener for this campaign
-			this.setupWebSocketListener(campaignId);
+			const campaignDetails = await firstValueFrom(this.campaignService.fetchCampaign(campaignId));
+			this.stateContext.details.set(campaignDetails);
 		} catch (error: unknown) {
 			this.errorMessage = this.asErrorMessage(error, 'Failed to load campaign characters.');
+			this.stateContext.details.set(null);
 		} finally {
 			this.isLoading = false;
 			this.changeDetector.detectChanges();
@@ -373,43 +374,24 @@ export class CharactersPageComponent {
 	private async loadCharacter(characterId: number): Promise<void> {
 		this.isLoading = true;
 		this.errorMessage = '';
-		this.campaignDetails = null;
 
 		try {
 			const character = await firstValueFrom(this.characterService.fetchCharacter(characterId));
 			this.character = character;
 			this.applyDraftFromCharacter(character);
-			// Setup WebSocket listener for the character's campaign
-			this.setupWebSocketListener(character.campaign);
+			// Load and set the campaign details for this character
+			const campaignDetails = await firstValueFrom(this.campaignService.fetchCampaign(character.campaign));
+			this.stateContext.details.set(campaignDetails);
 		} catch (error: unknown) {
 			this.errorMessage = this.asErrorMessage(error, 'Failed to load character.');
 			this.character = null;
+			this.stateContext.details.set(null);
 		} finally {
 			this.isLoading = false;
 			this.changeDetector.detectChanges();
 		}
 	}
 
-	private setupWebSocketListener(campaignId: number): void {
-		if (this.watchedCampaignId === campaignId) {
-			return;
-		}
-
-		this.watchedCampaignId = campaignId;
-
-		// Connect to WebSocket
-		this.webSocketService.connectToCampaign(campaignId);
-
-		// Listen to campaign updates
-		this.webSocketService
-			.getCampaignUpdates(campaignId)
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((update) => {
-				console.log('Received socket update:', update);
-				// Refresh data when any update is received
-				void this.refresh();
-			});
-	}
 
 	private async reloadCharacter(): Promise<void> {
 		if (this.character == null) {

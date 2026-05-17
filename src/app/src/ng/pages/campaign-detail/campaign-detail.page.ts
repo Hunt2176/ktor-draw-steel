@@ -18,8 +18,8 @@ import { CampaignService } from '@services/campaign.service';
 import { CharacterService } from '@services/character.service';
 import { CombatService } from '@services/combat.service';
 import { FileService } from '@services/file.service';
-import { WebSocketService } from '@services/websocket.service';
-import { CampaignDetails, Character, Combat } from '@app/types/models';
+import { StateContext } from '@services/state-context';
+import { Character, Combat } from '@app/types/models';
 import { CharacterCard } from '@app/ng/shared/character-card/character-card';
 
 @Component({
@@ -50,12 +50,11 @@ export class CampaignDetailPageComponent {
 	private readonly characterService = inject(CharacterService);
 	private readonly combatService = inject(CombatService);
 	private readonly fileService = inject(FileService);
-	private readonly webSocketService = inject(WebSocketService);
+	private readonly stateContext = inject(StateContext);
 	private readonly destroyRef = inject(DestroyRef);
-	private readonly watchedCampaignId = signal<number | null>(null);
 
 	campaignId = signal<number | null>(null);
-	campaignDetails = signal<CampaignDetails | null>(null);
+	campaignDetails = this.stateContext.details;
 	combats: Combat[] = [];
 
 	isLoading = signal(true);
@@ -91,35 +90,16 @@ export class CampaignDetailPageComponent {
 				if (id == null) {
 					this.errorMessage.set('Invalid campaign id.');
 					this.isLoading.set(false);
-					this.webSocketService.disconnect();
+					this.stateContext.details.set(null);
 					return;
 				}
 
 				void this.loadCampaign(id);
-				this.setupWebSocketListener(id);
 			});
 
-		// Disconnect WebSocket on component destroy
-		this.destroyRef.onDestroy(() => {
-			this.watchedCampaignId.set(null);
-			this.webSocketService.disconnect();
-		});
-	}
-
-	private setupWebSocketListener(campaignId: number): void {
-		if (this.watchedCampaignId() === campaignId) {
-			return;
-		}
-
-		this.watchedCampaignId.set(campaignId);
-
-		// Connect to WebSocket
-		this.webSocketService.connectToCampaign(campaignId);
-
-		// Listen to campaign updates
-		this.webSocketService
-			.getCampaignUpdates(campaignId)
-			.pipe(takeUntilDestroyed(this.destroyRef))
+		// Listen to campaign updates and refresh when needed
+		this.stateContext.getCampaignUpdates()
+			?.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe((update) => {
 				console.log('Received socket update:', update);
 				// Refresh campaign data when any update is received
@@ -161,7 +141,7 @@ export class CampaignDetailPageComponent {
 	}
 
 	async createCombatFromSelection(): Promise<void> {
-		if (this.campaignDetails == null) {
+		if (this.campaignDetails() == null) {
 			return;
 		}
 
@@ -210,7 +190,7 @@ export class CampaignDetailPageComponent {
 	}
 
 	async createCharacterFromDraft(): Promise<void> {
-		if (this.campaignDetails == null) {
+		if (this.campaignDetails() == null) {
 			return;
 		}
 

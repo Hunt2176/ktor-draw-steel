@@ -15,7 +15,7 @@
     </mat-card-content>
   </mat-card>
 
-  <ng-container *ngIf="!isLoading && !errorMessage && campaignDetails as details">
+  <ng-container *ngIf="!isLoading && !errorMessage && campaignDetails() as details">
     <mat-card class="page-card" appearance="outlined">
       <mat-card-header>
         <mat-card-title>{{ details.campaign.name }} Display</mat-card-title>

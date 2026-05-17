@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { StateContext } from "@services/state-context.ts";
+import { StateContext } from "@services/state-context";
 
 @Component({
 	selector: 'app-root',
@@ -11,10 +11,11 @@ import { StateContext } from "@services/state-context.ts";
 	imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, MatToolbarModule, MatButtonModule],
 	templateUrl: './app.component.html',
 	styleUrl: './app.component.scss',
-	providers: [
-		StateContext
-	]
 })
 export class AppComponent {
-
+	readonly state = inject(StateContext);
+	
+	readonly backgroundUrl = computed(() => {
+		return this.state.details()?.campaign?.background;
+	})
 }

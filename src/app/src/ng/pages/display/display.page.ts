@@ -16,8 +16,8 @@ import { map } from 'rxjs';
 import { CampaignService } from '@services/campaign.service';
 import { DisplayEntryService } from '@services/display-entry.service';
 import { FileService } from '@services/file.service';
-import { WebSocketService } from '@services/websocket.service';
-import { CampaignDetails, DisplayEntry, DisplayEntryType } from '@app/types/models';
+import { StateContext } from '@services/state-context';
+import { DisplayEntry, DisplayEntryType } from '@app/types/models';
 
 type DisplayEntryView = DisplayEntry & {
 	isKanka: boolean;
@@ -49,12 +49,11 @@ export class DisplayPageComponent {
 	private readonly campaignService = inject(CampaignService);
 	private readonly displayEntryService = inject(DisplayEntryService);
 	private readonly fileService = inject(FileService);
-	private readonly webSocketService = inject(WebSocketService);
+	private readonly stateContext = inject(StateContext);
 	private readonly destroyRef = inject(DestroyRef);
-	private watchedCampaignId: number | null = null;
 
 	campaignId: number | null = null;
-	campaignDetails: CampaignDetails | null = null;
+	campaignDetails = this.stateContext.details;
 	kankaEntries: DisplayEntryView[] = [];
 
 	isLoading = true;
@@ -86,22 +85,25 @@ export class DisplayPageComponent {
 				if (id == null) {
 					this.errorMessage = 'Invalid campaign id.';
 					this.isLoading = false;
-					this.webSocketService.disconnect();
+					this.stateContext.details.set(null);
 					return;
 				}
 
 				void this.loadCampaign(id);
 			});
 
-		// Disconnect WebSocket on component destroy
-		this.destroyRef.onDestroy(() => {
-			this.watchedCampaignId = null;
-			this.webSocketService.disconnect();
-		});
+		// Listen to campaign updates and refresh when needed
+		this.stateContext.getCampaignUpdates()
+			?.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((update) => {
+				console.log('Received socket update:', update);
+				// Refresh display data when any update is received
+				void this.refresh();
+			});
 	}
 
 	get allEntries(): DisplayEntryView[] {
-		const campaignEntries = (this.campaignDetails?.entries ?? []).map((entry) => ({
+		const campaignEntries = (this.campaignDetails()?.entries ?? []).map((entry) => ({
 			...entry,
 			isKanka: false,
 		}));
@@ -212,13 +214,11 @@ export class DisplayPageComponent {
 
 		try {
 			const campaign = await firstValueFrom(this.campaignService.fetchCampaign(id));
-			this.campaignDetails = campaign;
+			this.stateContext.details.set(campaign);
 			await this.loadKankaEntries(campaign.campaign.kankaApiId, id);
 			this.clampActiveEntryIndex();
-			// Setup WebSocket listener for this campaign
-			this.setupWebSocketListener(id);
 		} catch (error: unknown) {
-			this.campaignDetails = null;
+			this.stateContext.details.set(null);
 			this.kankaEntries = [];
 			this.errorMessage = this.asErrorMessage(error, 'Failed to load display entries.');
 		} finally {
@@ -227,26 +227,6 @@ export class DisplayPageComponent {
 		}
 	}
 
-	private setupWebSocketListener(campaignId: number): void {
-		if (this.watchedCampaignId === campaignId) {
-			return;
-		}
-
-		this.watchedCampaignId = campaignId;
-
-		// Connect to WebSocket
-		this.webSocketService.connectToCampaign(campaignId);
-
-		// Listen to campaign updates
-		this.webSocketService
-			.getCampaignUpdates(campaignId)
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((update) => {
-				console.log('Received socket update:', update);
-				// Refresh campaign data when any update is received
-				void this.refresh();
-			});
-	}
 
 	private async loadKankaEntries(kankaApiId: string | undefined, campaignId: number): Promise<void> {
 		const parsedCampaignId = kankaApiId == null ? NaN : Number(kankaApiId);

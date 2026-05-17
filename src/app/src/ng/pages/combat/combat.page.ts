@@ -16,8 +16,8 @@ import { map } from 'rxjs';
 import { CampaignService } from '@services/campaign.service';
 import { CombatService } from '@services/combat.service';
 import { CombatantService } from '@services/combatant.service';
-import { WebSocketService } from '@services/websocket.service';
-import { CampaignDetails, Character, Combat, Combatant } from '@app/types/models';
+import { StateContext } from '@services/state-context';
+import { Character, Combat, Combatant } from '@app/types/models';
 
 @Component({
 	selector: 'app-combat-page',
@@ -44,13 +44,12 @@ export class CombatPageComponent {
 	private readonly campaignService = inject(CampaignService);
 	private readonly combatService = inject(CombatService);
 	private readonly combatantService = inject(CombatantService);
-	private readonly webSocketService = inject(WebSocketService);
+	private readonly stateContext = inject(StateContext);
 	private readonly destroyRef = inject(DestroyRef);
-	private watchedCampaignId: number | null = null;
 
 	combatId: number | null = null;
 	combat: Combat | null = null;
-	campaign: CampaignDetails | null = null;
+	activeCampaign = this.stateContext.details;
 
 	isLoading = true;
 	isUpdatingRound = false;
@@ -85,22 +84,25 @@ export class CombatPageComponent {
 				if (id == null) {
 					this.errorMessage = 'Invalid combat id.';
 					this.isLoading = false;
-					this.webSocketService.disconnect();
+					this.stateContext.details.set(null);
 					return;
 				}
 
 				void this.loadCombat(id);
 			});
 
-		// Disconnect WebSocket on component destroy
-		this.destroyRef.onDestroy(() => {
-			this.watchedCampaignId = null;
-			this.webSocketService.disconnect();
-		});
+		// Listen to campaign updates and refresh when needed
+		this.stateContext.getCampaignUpdates()
+			?.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((update) => {
+				console.log('Received socket update:', update);
+				// Refresh combat data when any update is received
+				void this.refresh();
+			});
 	}
 
 	get sortedCampaignCharacters(): Character[] {
-		return (this.campaign?.characters ?? []).toSorted((a, b) => {
+		return (this.activeCampaign()?.characters ?? []).toSorted((a, b) => {
 			if (a.offstage !== b.offstage) {
 				return a.offstage ? 1 : -1;
 			}
@@ -164,7 +166,7 @@ export class CombatPageComponent {
 	}
 
 	async adjustHeroTokens(type: 'INCREASE' | 'DECREASE'): Promise<void> {
-		if (this.campaign == null) {
+		if (this.activeCampaign() == null) {
 			return;
 		}
 
@@ -173,7 +175,7 @@ export class CombatPageComponent {
 		this.isUpdatingHeroTokens = true;
 		this.updateErrorMessage = '';
 		try {
-			await firstValueFrom(this.campaignService.modifyHeroTokens(this.campaign.campaign.id, { modifyBy, type }));
+			await firstValueFrom(this.campaignService.modifyHeroTokens(this.activeCampaign()!.campaign.id, { modifyBy, type }));
 			await this.refresh();
 		} catch (error: unknown) {
 			this.updateErrorMessage = this.asErrorMessage(error, 'Failed to update hero tokens.');
@@ -223,7 +225,7 @@ export class CombatPageComponent {
 	}
 
 	async saveRosterChanges(): Promise<void> {
-		if (this.combat == null || this.campaign == null) {
+		if (this.combat == null || this.activeCampaign == null) {
 			return;
 		}
 
@@ -311,7 +313,7 @@ export class CombatPageComponent {
 			const campaign = await firstValueFrom(this.campaignService.fetchCampaign(combat.campaign));
 
 			this.combat = combat;
-			this.campaign = campaign;
+			this.stateContext.details.set(campaign);
 
 			const activeCharacterIds = new Set(combat.combatants.map((combatant) => combatant.character.id));
 			this.rosterSelection = campaign.characters.reduce(
@@ -320,13 +322,11 @@ export class CombatPageComponent {
 					return acc;
 				},
 				{} as Record<number, boolean>,
-			);
+		);
 
-			// Setup WebSocket listener for this campaign
-			this.setupWebSocketListener(campaign.campaign.id);
 		} catch (error: unknown) {
 			this.combat = null;
-			this.campaign = null;
+			this.stateContext.details.set(null);
 			this.errorMessage = this.asErrorMessage(error, 'Failed to load combat.');
 		} finally {
 			this.isLoading = false;
@@ -334,26 +334,6 @@ export class CombatPageComponent {
 		}
 	}
 
-	private setupWebSocketListener(campaignId: number): void {
-		if (this.watchedCampaignId === campaignId) {
-			return;
-		}
-
-		this.watchedCampaignId = campaignId;
-
-		// Connect to WebSocket
-		this.webSocketService.connectToCampaign(campaignId);
-
-		// Listen to campaign updates
-		this.webSocketService
-			.getCampaignUpdates(campaignId)
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((update) => {
-				console.log('Received socket update:', update);
-				// Refresh combat data when any update is received
-				void this.refresh();
-			});
-	}
 
 	private asErrorMessage(error: unknown, fallback: string): string {
 		if (error instanceof Error && error.message.trim().length > 0) {

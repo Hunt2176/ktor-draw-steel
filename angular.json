@@ -31,7 +31,7 @@
 						"polyfills": [
 							"zone.js"
 						],
-						"tsConfig": "src/app/tsconfig.app.json",
+						"tsConfig": "tsconfig.app.json",
 						"assets": [
 							{
 								"glob": "**/*",
@@ -50,7 +50,8 @@
 					},
 					"configurations": {
 						"production": {
-							"tsConfig": "src/app/tsconfig.app.json",
+              "sourceMap": true,
+              "tsConfig": "tsconfig.app.json",
 							"outputHashing": "all",
 							"budgets": [
 								{
@@ -61,7 +62,7 @@
 							]
 						},
 						"development": {
-							"tsConfig": "src/app/tsconfig.app.json",
+							"tsConfig": "tsconfig.app.json",
 							"aot": true,
 							"optimization": false,
 							"extractLicenses": false,
