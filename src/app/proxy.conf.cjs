@@ -1,4 +1,4 @@
-const target = 'http://localhost:8082';
+const target = 'http://localhost:8080';
 
 module.exports = {
 	'/watch': {

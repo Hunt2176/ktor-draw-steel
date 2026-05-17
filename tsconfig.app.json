@@ -27,5 +27,8 @@
     "noUncheckedSideEffectImports": true,
   },
 
-  "include": ["src/app/src/**/*.ts", "src/app/src/**/*.d.ts"]
+  "include": ["src/app/src/**/*.ts", "src/app/src/**/*.d.ts"],
+	"angularCompilerOptions": {
+		"strictTemplates": true
+	}
 }

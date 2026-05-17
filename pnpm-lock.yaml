@@ -29,7 +29,7 @@ importers:
         specifier: ^21.0.0
         version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@angular/material':
-        specifier: ^21.0.0
+        specifier: ^21.2.1
         version: 21.2.10(2c6a45065190f67e9e1a58bd9062709a)
       '@angular/platform-browser':
         specifier: ^21.0.0

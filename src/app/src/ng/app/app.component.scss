@@ -1,38 +1,11 @@
 .app-shell {
-  @apply min-h-screen grid;
-  grid-template-rows: auto 1fr;
-}
+  @apply grid content-start;
+  height: 100vh;
+  width: 100vw;
 
-.top-nav {
-  @apply sticky top-0 z-10;
-}
-
-.title {
-  @apply font-semibold tracking-tight;
-}
-
-.spacer {
-  @apply flex-1;
-}
-
-a.active {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.page-body {
-  @apply p-5;
-}
-
-@media (max-width: 640px) {
-  .top-nav {
-    gap: 0.4rem;
-  }
-
-  .title {
-    font-size: 0.95rem;
-  }
-
-  .page-body {
-    padding: 0.85rem;
+  > .page-body {
+    overflow: auto;
+    height: 100%;
+    width: 100%;
   }
 }

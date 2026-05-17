@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -20,6 +20,7 @@ import { CombatService } from '@services/combat.service';
 import { FileService } from '@services/file.service';
 import { WebSocketService } from '@services/websocket.service';
 import { CampaignDetails, Character, Combat } from '@app/types/models';
+import { CharacterCard } from '@app/ng/shared/character-card/character-card';
 
 @Component({
 	selector: 'app-campaign-detail-page',
@@ -37,6 +38,7 @@ import { CampaignDetails, Character, Combat } from '@app/types/models';
 		MatInputModule,
 		MatListModule,
 		MatTooltipModule,
+		CharacterCard,
 	],
 	templateUrl: './campaign-detail.page.html',
 	styleUrl: './campaign-detail.page.scss',
@@ -44,37 +46,36 @@ import { CampaignDetails, Character, Combat } from '@app/types/models';
 export class CampaignDetailPageComponent {
 	private readonly route = inject(ActivatedRoute);
 	private readonly router = inject(Router);
-	private readonly changeDetector = inject(ChangeDetectorRef);
 	private readonly campaignService = inject(CampaignService);
 	private readonly characterService = inject(CharacterService);
 	private readonly combatService = inject(CombatService);
 	private readonly fileService = inject(FileService);
 	private readonly webSocketService = inject(WebSocketService);
 	private readonly destroyRef = inject(DestroyRef);
-	private watchedCampaignId: number | null = null;
+	private readonly watchedCampaignId = signal<number | null>(null);
 
-	campaignId: number | null = null;
-	campaignDetails: CampaignDetails | null = null;
+	campaignId = signal<number | null>(null);
+	campaignDetails = signal<CampaignDetails | null>(null);
 	combats: Combat[] = [];
 
-	isLoading = true;
-	isCreatingCombat = false;
-	isCreatingCharacter = false;
-	isUpdatingBackground = false;
-	isDeletingCombatId: number | null = null;
+	isLoading = signal(true);
+	isCreatingCombat = signal(false);
+	isCreatingCharacter = signal(false);
+	isUpdatingBackground = signal(false);
+	isDeletingCombatId = signal<number | null>(null);
 
-	errorMessage = '';
-	backgroundErrorMessage = '';
-	combatErrorMessage = '';
-	characterErrorMessage = '';
+	errorMessage = signal('');
+	backgroundErrorMessage = signal('');
+	combatErrorMessage = signal('');
+	characterErrorMessage = signal('');
 
 	selectedCombatCharacters: Record<number, boolean> = {};
 
-	newCharacterName = '';
-	newCharacterMaxHp = 40;
-	newCharacterMinions = 0;
-	newCharacterOffstage = false;
-	newCharacterPictureUrl = '';
+	newCharacterName = signal('');
+	newCharacterMaxHp = signal(40);
+	newCharacterMinions = signal(0);
+	newCharacterOffstage = signal(false);
+	newCharacterPictureUrl = signal('');
 
 	constructor() {
 		this.route.paramMap
@@ -86,10 +87,10 @@ export class CampaignDetailPageComponent {
 				takeUntilDestroyed(),
 			)
 			.subscribe((id) => {
-				this.campaignId = id;
+				this.campaignId.set(id);
 				if (id == null) {
-					this.errorMessage = 'Invalid campaign id.';
-					this.isLoading = false;
+					this.errorMessage.set('Invalid campaign id.');
+					this.isLoading.set(false);
 					this.webSocketService.disconnect();
 					return;
 				}
@@ -100,17 +101,17 @@ export class CampaignDetailPageComponent {
 
 		// Disconnect WebSocket on component destroy
 		this.destroyRef.onDestroy(() => {
-			this.watchedCampaignId = null;
+			this.watchedCampaignId.set(null);
 			this.webSocketService.disconnect();
 		});
 	}
 
 	private setupWebSocketListener(campaignId: number): void {
-		if (this.watchedCampaignId === campaignId) {
+		if (this.watchedCampaignId() === campaignId) {
 			return;
 		}
 
-		this.watchedCampaignId = campaignId;
+		this.watchedCampaignId.set(campaignId);
 
 		// Connect to WebSocket
 		this.webSocketService.connectToCampaign(campaignId);
@@ -147,10 +148,11 @@ export class CampaignDetailPageComponent {
 	}
 
 	async refresh(): Promise<void> {
-		if (this.campaignId == null) {
+		const campaignId = this.campaignId();
+		if (campaignId == null) {
 			return;
 		}
-		await this.loadCampaign(this.campaignId);
+		await this.loadCampaign(campaignId);
 	}
 
 	onCharacterSelectionChange(id: number, event: Event): void {
@@ -165,24 +167,24 @@ export class CampaignDetailPageComponent {
 
 		const characterIds = this.selectedCharacterIds;
 		if (characterIds.length === 0) {
-			this.combatErrorMessage = 'Select at least one character to create a combat.';
+			this.combatErrorMessage.set('Select at least one character to create a combat.');
 			return;
 		}
 
-		this.isCreatingCombat = true;
-		this.combatErrorMessage = '';
+		this.isCreatingCombat.set(true);
+		this.combatErrorMessage.set('');
 		try {
 			const combat = await firstValueFrom(this.combatService.createCombat({
-				campaign: this.campaignDetails.campaign.id,
+				campaign: this.campaignDetails()!.campaign.id,
 				characters: characterIds,
 			}));
 
-			await this.loadCampaign(this.campaignDetails.campaign.id);
+			await this.loadCampaign(this.campaignDetails()!.campaign.id);
 			await this.router.navigate(['/combats', combat.id]);
 		} catch (error: unknown) {
-			this.combatErrorMessage = this.asErrorMessage(error, 'Failed to create combat.');
+			this.combatErrorMessage.set(this.asErrorMessage(error, 'Failed to create combat.'));
 		} finally {
-			this.isCreatingCombat = false;
+			this.isCreatingCombat.set(false);
 		}
 	}
 
@@ -190,19 +192,20 @@ export class CampaignDetailPageComponent {
 		if (!globalThis.confirm('Delete this combat?')) {
 			return;
 		}
-		if (this.campaignId == null) {
+		const campaignId = this.campaignId();
+		if (campaignId == null) {
 			return;
 		}
 
-		this.isDeletingCombatId = combatId;
-		this.combatErrorMessage = '';
+		this.isDeletingCombatId.set(combatId);
+		this.combatErrorMessage.set('');
 		try {
 			await firstValueFrom(this.combatService.deleteCombat(combatId));
-			await this.loadCampaign(this.campaignId);
+			await this.loadCampaign(campaignId);
 		} catch (error: unknown) {
-			this.combatErrorMessage = this.asErrorMessage(error, 'Failed to delete combat.');
+			this.combatErrorMessage.set(this.asErrorMessage(error, 'Failed to delete combat.'));
 		} finally {
-			this.isDeletingCombatId = null;
+			this.isDeletingCombatId.set(null);
 		}
 	}
 
@@ -211,65 +214,67 @@ export class CampaignDetailPageComponent {
 			return;
 		}
 
-		const name = this.newCharacterName.trim();
+		const name = this.newCharacterName().trim();
 		if (!name) {
-			this.characterErrorMessage = 'Character name is required.';
+			this.characterErrorMessage.set('Character name is required.');
 			return;
 		}
 
-		if (!Number.isFinite(this.newCharacterMaxHp) || this.newCharacterMaxHp <= 0) {
-			this.characterErrorMessage = 'Max HP must be greater than zero.';
+		if (!Number.isFinite(this.newCharacterMaxHp()) || this.newCharacterMaxHp() <= 0) {
+			this.characterErrorMessage.set('Max HP must be greater than zero.');
 			return;
 		}
 
-		this.isCreatingCharacter = true;
-		this.characterErrorMessage = '';
+		this.isCreatingCharacter.set(true);
+		this.characterErrorMessage.set('');
+		const campaignDetails = this.campaignDetails();
 
 		try {
 			await firstValueFrom(this.characterService.createCharacter({
 				name,
-				campaign: this.campaignDetails.campaign.id,
+				campaign: campaignDetails!.campaign.id,
 				user: 1,
-				maxHp: Math.floor(this.newCharacterMaxHp),
+				maxHp: Math.floor(this.newCharacterMaxHp()),
 				maxRecoveries: 0,
-				offstage: this.newCharacterOffstage,
-				minions: Math.max(0, Math.floor(this.newCharacterMinions || 0)),
-				pictureUrl: this.trimToNull(this.newCharacterPictureUrl),
+				offstage: this.newCharacterOffstage(),
+				minions: Math.max(0, Math.floor(this.newCharacterMinions() || 0)),
+				pictureUrl: this.trimToNull(this.newCharacterPictureUrl()),
 			}));
 
-			this.newCharacterName = '';
-			this.newCharacterMaxHp = 40;
-			this.newCharacterMinions = 0;
-			this.newCharacterOffstage = false;
-			this.newCharacterPictureUrl = '';
+			this.newCharacterName.set('');
+			this.newCharacterMaxHp.set(40);
+			this.newCharacterMinions.set(0);
+			this.newCharacterOffstage.set(false);
+			this.newCharacterPictureUrl.set('');
 
-			await this.loadCampaign(this.campaignDetails.campaign.id);
+			await this.loadCampaign(campaignDetails!.campaign.id);
 		} catch (error: unknown) {
-			this.characterErrorMessage = this.asErrorMessage(error, 'Failed to create character.');
+			this.characterErrorMessage.set(this.asErrorMessage(error, 'Failed to create character.'));
 		} finally {
-			this.isCreatingCharacter = false;
+			this.isCreatingCharacter.set(false);
 		}
 	}
 
 	async onBackgroundFileChange(event: Event): Promise<void> {
 		const input = event.target as HTMLInputElement | null;
 		const file = input?.files?.[0];
-		if (this.campaignId == null || file == null) {
+		const campaignId = this.campaignId();
+		if (campaignId == null || file == null) {
 			return;
 		}
 
-		this.isUpdatingBackground = true;
-		this.backgroundErrorMessage = '';
+		this.isUpdatingBackground.set(true);
+		this.backgroundErrorMessage.set('');
 		try {
 			const uploadResult = await firstValueFrom(this.fileService.uploadFile(file));
-			await firstValueFrom(this.campaignService.updateCampaign(this.campaignId, {
+			await firstValueFrom(this.campaignService.updateCampaign(campaignId, {
 				background: `/files/${uploadResult.fileName}`,
 			}));
-			await this.loadCampaign(this.campaignId);
+			await this.loadCampaign(campaignId);
 		} catch (error: unknown) {
-			this.backgroundErrorMessage = this.asErrorMessage(error, 'Failed to upload background.');
+			this.backgroundErrorMessage.set(this.asErrorMessage(error, 'Failed to upload background.'));
 		} finally {
-			this.isUpdatingBackground = false;
+			this.isUpdatingBackground.set(false);
 			if (input != null) {
 				input.value = '';
 			}
@@ -277,18 +282,18 @@ export class CampaignDetailPageComponent {
 	}
 
 	private async loadCampaign(id: number): Promise<void> {
-		this.isLoading = true;
-		this.errorMessage = '';
-		this.combatErrorMessage = '';
-		this.characterErrorMessage = '';
-		this.backgroundErrorMessage = '';
+		this.isLoading.set(true);
+		this.errorMessage.set('');
+		this.combatErrorMessage.set('');
+		this.characterErrorMessage.set('');
+		this.backgroundErrorMessage.set('');
 
 		try {
 			const [campaignDetails, combats] = await Promise.all([
 				firstValueFrom(this.campaignService.fetchCampaign(id)),
 				firstValueFrom(this.combatService.fetchCombatsFor(id)),
 			]);
-			this.campaignDetails = campaignDetails;
+			this.campaignDetails.set(campaignDetails);
 			this.combats = combats;
 			this.selectedCombatCharacters = campaignDetails.characters.reduce(
 				(acc, character) => {
@@ -298,10 +303,9 @@ export class CampaignDetailPageComponent {
 				{} as Record<number, boolean>,
 			);
 		} catch (error: unknown) {
-			this.errorMessage = this.asErrorMessage(error, 'Failed to load campaign details.');
+			this.errorMessage.set(this.asErrorMessage(error, 'Failed to load campaign details.'));
 		} finally {
-			this.isLoading = false;
-			this.changeDetector.detectChanges();
+			this.isLoading.set(false);
 		}
 	}
 

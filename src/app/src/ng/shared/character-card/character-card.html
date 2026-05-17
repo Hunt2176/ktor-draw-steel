@@ -1,0 +1,22 @@
+<mat-card appearance="outlined">
+	<mat-card-header>
+		{{ character().name }}
+	</mat-card-header>
+	<mat-card-content>
+		<div class="grid grid-cols-12">
+			<div class="row-span-2 col-span-4">
+				<img mat-card-image-sm [src]="character().pictureUrl">
+			</div>
+			<div class="col-span-auto">
+				<div class="grid">
+					<app-gauge [pool]="hpPool()"></app-gauge>
+					<span>HP</span>
+				</div>
+				<div class="grid">
+					<app-gauge [pool]="recoveriesPool()"></app-gauge>
+					<span>Recoveries</span>
+				</div>
+			</div>
+		</div>
+	</mat-card-content>
+</mat-card>
