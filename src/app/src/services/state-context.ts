@@ -1,5 +1,5 @@
 import {Injectable, inject, signal, effect, computed} from '@angular/core';
-import { CampaignDetails } from "@app/types/models";
+import { CampaignDetails } from "@app-types/models";
 import { WebSocketService } from './websocket.service';
 
 @Injectable({

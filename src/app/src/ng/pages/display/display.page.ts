@@ -17,7 +17,7 @@ import { CampaignService } from '@services/campaign.service';
 import { DisplayEntryService } from '@services/display-entry.service';
 import { FileService } from '@services/file.service';
 import { StateContext } from '@services/state-context';
-import { DisplayEntry, DisplayEntryType } from '@app/types/models';
+import { DisplayEntry, DisplayEntryType } from '@app-types/models';
 
 type DisplayEntryView = DisplayEntry & {
 	isKanka: boolean;
@@ -228,8 +228,8 @@ export class DisplayPageComponent {
 	}
 
 
-	private async loadKankaEntries(kankaApiId: string | undefined, campaignId: number): Promise<void> {
-		const parsedCampaignId = kankaApiId == null ? NaN : Number(kankaApiId);
+	private async loadKankaEntries(kankaApiId: number | null, campaignId: number): Promise<void> {
+		const parsedCampaignId = kankaApiId ?? NaN;
 		if (!Number.isFinite(parsedCampaignId)) {
 			this.kankaEntries = [];
 			return;

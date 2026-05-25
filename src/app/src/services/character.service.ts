@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Character } from '@app/types/models';
+import { Character } from '@app-types/models';
 
 export type ModifyCharacterHpUpdate = {
 	mod: number;

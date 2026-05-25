@@ -7,7 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatListModule } from '@angular/material/list';
 import { firstValueFrom } from 'rxjs';
 import { CampaignService } from '@services/campaign.service';
-import { CampaignDetails } from '@app/types/models';
+import { CampaignDetails } from '@app-types/models';
 
 @Component({
 	selector: 'app-home-page',

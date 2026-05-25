@@ -14,14 +14,14 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "baseUrl": "./",
     "paths": {
-      "@app/*": ["./src/app/src/*"],
-      "@services/*": ["./src/app/src/services/*"]
+      "@app/*": ["src/app/src/ng/*"],
+      "@app-types/*": ["src/app/src/types/*"],
+      "@services/*": ["src/app/src/services/*"],
+      "@utils/*": ["src/app/src/utils/*"]
     }
   },
   "files": ["src/app/src/main.ts"],
-  "include": ["src/app/src/**/*.ts", "src/app/src/**/*.d.ts"],
-  "angularCompilerOptions": {
-    "strictTemplates": true
-  }
+  "include": ["src/app/src/**/*.ts", "src/app/src/**/*.d.ts"]
 }

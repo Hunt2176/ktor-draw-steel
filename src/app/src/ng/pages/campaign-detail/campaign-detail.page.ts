@@ -19,8 +19,8 @@ import { CharacterService } from '@services/character.service';
 import { CombatService } from '@services/combat.service';
 import { FileService } from '@services/file.service';
 import { StateContext } from '@services/state-context';
-import { Character, Combat } from '@app/types/models';
-import { CharacterCard } from '@app/ng/shared/character-card/character-card';
+import { Character, Combat } from '@app-types/models';
+import { CharacterCard } from '@app/shared/character-card/character-card';
 
 @Component({
 	selector: 'app-campaign-detail-page',

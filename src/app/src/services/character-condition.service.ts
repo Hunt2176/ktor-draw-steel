@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { CharacterCondition } from '@app/types/models';
+import { CharacterCondition } from '@app-types/models';
 
 export type CharacterConditionUpdate = {
 	name: string;

@@ -7,15 +7,15 @@
   "scripts": {
     "dev": "pnpm --filter @ktor-draw-steel/app dev",
     "start": "pnpm --filter @ktor-draw-steel/app start",
+    "build": "pnpm --filter @ktor-draw-steel/app build",
+    "watch": "pnpm --filter @ktor-draw-steel/app watch",
+    "preview": "pnpm --filter @ktor-draw-steel/app preview",
     "backend:dev": "pnpm --dir src/backend dev",
     "backend:start": "pnpm --dir src/backend start",
     "backend:typecheck": "pnpm --filter @ktor-draw-steel/backend typecheck",
     "db:generate": "pnpm --filter @ktor-draw-steel/backend db:generate",
     "db:migrate": "pnpm --filter @ktor-draw-steel/backend db:migrate",
-    "build": "pnpm --filter @ktor-draw-steel/app build",
-    "watch": "pnpm --filter @ktor-draw-steel/app watch",
-    "lint": "pnpm --recursive run lint --if-present",
-    "preview": "pnpm --filter @ktor-draw-steel/app preview"
+    "lint": "pnpm --recursive run lint --if-present"
   },
   "sass": {
     "quietDeps": true

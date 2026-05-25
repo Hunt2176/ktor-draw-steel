@@ -17,7 +17,7 @@ import { CampaignService } from '@services/campaign.service';
 import { CombatService } from '@services/combat.service';
 import { CombatantService } from '@services/combatant.service';
 import { StateContext } from '@services/state-context';
-import { Character, Combat, Combatant } from '@app/types/models';
+import { Character, Combat, Combatant } from '@app-types/models';
 
 @Component({
 	selector: 'app-combat-page',

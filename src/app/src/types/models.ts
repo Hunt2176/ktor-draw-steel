@@ -1,83 +1,169 @@
-export type HasId = { id: number };
-export type HasName = { name: string };
+import { z } from "zod";
 
-export type User = HasId;
+// Partial of type T but with Key still originally required
+export type PartialOmit<T, Key extends keyof T> = Partial<Omit<T, Key>> & Pick<T, Key>;
 
-export interface Campaign extends HasId, HasName {
-	background?: string;
-	heroTokens: number;
-	kankaApiId?: string;
-}
+export type Comparer<T> = (a: T, b: T) => boolean;
 
-export const DisplayEntryType = Object.freeze({
-	BACKGROUND: 'Background',
-	PORTRAIT: 'Portrait',
-} as const);
+const relativeUrlSchema = z.string().regex(/^(?![a-zA-Z][a-zA-Z0-9+\-.]*:).+$/);
 
-export type DisplayEntryType = typeof DisplayEntryType[keyof typeof DisplayEntryType];
-
-export interface DisplayEntry extends HasId {
-	title: string,
-	description: string | null,
-	pictureUrl: string | null,
-	type: DisplayEntryType,
-	campaign: number,
-}
-
-export interface CampaignDetails {
-	campaign: Campaign,
-	characters: Character[],
-	entries: DisplayEntry[],
-}
-
-export const CharacterConditionEndType = Object.freeze({
-	END_OF_TURN: 'endOfTurn',
-	SAVE: 'save'
+export const hasIdSchema = z.object({
+	id: z.number(),
 });
 
-export type CharacterConditionEndType = typeof CharacterConditionEndType[keyof typeof CharacterConditionEndType];
+export const hasNameSchema = z.object({
+	name: z.string(),
+});
 
-export interface CharacterCondition extends HasId, HasName {
-	character: number;
-	endType: CharacterConditionEndType;
-}
+export const userSchema = hasIdSchema.merge(hasNameSchema);
 
-export interface InventoryItem extends HasId, HasName {
-	characterId: number;
-	quantity: number;
-}
+const baseEntitySchema = hasIdSchema.merge(hasNameSchema);
 
-export interface Character extends HasId, HasName {
-	might: number;
-	agility: number;
-	reason: number;
-	intuition: number;
-	presence: number;
-	removedHp: number;
-	maxHp: number;
-	temporaryHp: number;
-	removedRecoveries: number;
-	maxRecoveries: number;
-	temporaryRecoveries: number;
-	resourceName: string | null;
-	victories: number;
-	user: number;
-	pictureUrl: string | null;
-	border: string | null;
-	offstage: boolean;
-	minions: number;
-	inventory: InventoryItem[];
-	
-	campaign: number;
-	conditions: CharacterCondition[];
-}
+export const characterConditionEndTypeSchema = z.enum(["endOfTurn", "save"]);
 
-export interface CharacterPool {
+export const characterConditionSchema = baseEntitySchema.extend({
+	character: z.number(),
+	endType: characterConditionEndTypeSchema,
+});
+
+export const inventoryItemSchema = baseEntitySchema.extend({
+	characterId: z.number(),
+	quantity: z.number(),
+});
+
+export const characterSchema = baseEntitySchema.extend({
+	might: z.number(),
+	agility: z.number(),
+	reason: z.number(),
+	intuition: z.number(),
+	presence: z.number(),
+	removedHp: z.number(),
+	maxHp: z.number(),
+	temporaryHp: z.number(),
+	removedRecoveries: z.number(),
+	maxRecoveries: z.number(),
+	temporaryRecoveries: z.number(),
+	resourceName: z.string().nullable(),
+	victories: z.number(),
+	user: z.number(),
+	pictureUrl: z.string().nullable(),
+	border: z.string().nullable(),
+	offstage: z.boolean(),
+	minions: z.number(),
+	inventory: z.array(inventoryItemSchema),
+	campaign: z.number(),
+	conditions: z.array(characterConditionSchema),
+});
+
+export const campaignSchema = baseEntitySchema.extend({
+	background: z.union([z.string().url(), relativeUrlSchema]).nullable(),
+	heroTokens: z.number(),
+	kankaApiId: z.number().nullable(),
+});
+
+const displayEntryTypeSchema = z.enum(["Background", "Portrait"]);
+export const displayEntrySchema = hasIdSchema.extend({
+	title: z.string(),
+	description: z.string().nullable(),
+	pictureUrl: z.union([z.string().url(), relativeUrlSchema]).nullable(),
+	type: displayEntryTypeSchema,
+	campaign: z.number(),
+});
+
+export const campaignDetailsSchema = z.object({
+	campaign: campaignSchema,
+	characters: z.array(characterSchema),
+	entries: z.array(displayEntrySchema),
+});
+
+export const combatantSchema = hasIdSchema.extend({
+	available: z.boolean(),
+	resources: z.number(),
+	surges: z.number(),
+	character: characterSchema,
+	combat: z.number(),
+});
+
+export const combatSchema = hasIdSchema.extend({
+	round: z.number(),
+	campaign: z.number(),
+	combatants: z.array(combatantSchema),
+});
+
+const ktorEntityTypeSchema = z.enum([
+	"ExposedInventoryItem",
+	"ExposedDisplayEntry",
+	"ExposedCampaign",
+	"ExposedCharacter",
+	"ExposedCombat",
+	"ExposedCombatant",
+	"ExposedCharacterCondition",
+]);
+
+const changeTypeSchema = z.enum(["Updated", "Created", "Removed"]);
+
+export const socketEventSchema = z.object({
+	campaignId: z.number(),
+	changeType: changeTypeSchema,
+	entityType: ktorEntityTypeSchema.nullable(),
+	dataId: z.number().nullable(),
+	data: z
+		.union([
+			inventoryItemSchema,
+			campaignSchema,
+			characterSchema,
+			combatSchema,
+			combatantSchema,
+			characterConditionSchema,
+			displayEntrySchema,
+		])
+		.nullable(),
+});
+
+export const DisplayEntryType = Object.freeze({
+	BACKGROUND: "Background",
+	PORTRAIT: "Portrait",
+} as const);
+
+export const CharacterConditionEndType = Object.freeze({
+	END_OF_TURN: "endOfTurn",
+	SAVE: "save",
+} as const);
+
+export const KtorEntityType = Object.freeze({
+	DISPLAY_ENTRY: "ExposedDisplayEntry",
+	CAMPAIGN: "ExposedCampaign",
+	CHARACTER: "ExposedCharacter",
+	COMBAT: "ExposedCombat",
+	COMBATANT: "ExposedCombatant",
+	CHARACTER_CONDITION: "ExposedCharacterCondition",
+	INVENTORY_ITEM: "ExposedInventoryItem",
+} as const);
+
+export const ChangeType = Object.freeze({
+	UPDATED: "Updated",
+	CREATED: "Created",
+	REMOVED: "Removed",
+} as const);
+
+export type HasId = z.infer<typeof hasIdSchema>;
+export type HasName = z.infer<typeof hasNameSchema>;
+export type User = z.infer<typeof userSchema>;
+export type Campaign = z.infer<typeof campaignSchema>;
+export type DisplayEntryType = z.infer<typeof displayEntryTypeSchema>;
+export type DisplayEntry = z.infer<typeof displayEntrySchema>;
+export type CampaignDetails = z.infer<typeof campaignDetailsSchema>;
+export type CharacterConditionEndType = z.infer<typeof characterConditionEndTypeSchema>;
+export type CharacterCondition = z.infer<typeof characterConditionSchema>;
+export type InventoryItem = z.infer<typeof inventoryItemSchema>;
+export type Character = z.infer<typeof characterSchema>;
+
+export type CharacterPool = {
 	current: number;
 	max: number;
 	percent: number;
-	temporary: number
-}
+	temporary: number;
+};
 
 export namespace Character {
 	export function getHp(char: Character): CharacterPool {
@@ -92,10 +178,10 @@ export namespace Character {
 		return { current, max: char.maxRecoveries, percent, temporary: char.temporaryRecoveries };
 	}
 	
-	export function empty() {
+	export function empty(): Character {
 		return {
 			id: -1,
-			name: '',
+			name: "",
 			might: 0,
 			agility: 0,
 			reason: 0,
@@ -116,48 +202,13 @@ export namespace Character {
 			offstage: false,
 			minions: 0,
 			conditions: [],
-			inventory: []
-		} as Character;
+			inventory: [],
+		};
 	}
 }
 
-export type Combatant = HasId & {
-	available: boolean;
-	resources: number;
-	surges: number;
-	character: Character;
-}
-
-export type Combat = HasId & {
-	round: number;
-	campaign: number;
-	combatants: Combatant[];
-}
-
-export const KtorEntityType = Object.freeze({
-	DISPLAY_ENTRY: 'ExposedDisplayEntry',
-	CAMPAIGN: 'ExposedCampaign',
-	CHARACTER: 'ExposedCharacter',
-	COMBAT: 'ExposedCombat',
-	COMBATANT: 'ExposedCombatant',
-	CONDITION: 'ExposedCondition',
-	CHARACTER_CONDITION: 'ExposedCharacterCondition',
-} as const);
-
-export type KtorEntityType = typeof KtorEntityType[keyof typeof KtorEntityType];
-
-export const ChangeType = Object.freeze({
-	UPDATED: 'Updated',
-	CREATED: 'Created',
-	REMOVED: 'Removed',
-} as const);
-
-export type ChangeType = typeof ChangeType[keyof typeof ChangeType];
-
-export interface SocketEvent {
-	campaignId: number;
-	changeType: ChangeType;
-	entityType: KtorEntityType | null;
-	dataId: number | null;
-	data: Campaign | Character | Combat | Combatant | CharacterCondition | DisplayEntry | null;
-}
+export type Combatant = z.infer<typeof combatantSchema>;
+export type Combat = z.infer<typeof combatSchema>;
+export type KtorEntityType = z.infer<typeof ktorEntityTypeSchema>;
+export type ChangeType = z.infer<typeof changeTypeSchema>;
+export type SocketEvent = z.infer<typeof socketEventSchema>;

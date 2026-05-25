@@ -1,22 +1,43 @@
 <mat-card appearance="outlined">
 	<mat-card-header>
-		{{ character().name }}
+		<div class="w-full flex justify-between gap-x-2">
+			<span class="font-bold text-lg">
+				{{ character().name }}
+			</span>
+		</div>
+
+		@if (menuItems().length > 0) {
+			<button mat-icon-button [matMenuTriggerFor]="overflowMenu">
+				<fa-icon [icon]="faEllipsisVertical"></fa-icon>
+			</button>
+
+			<mat-menu #overflowMenu>
+				@for (item of menuItems(); track item) {
+					<button (click)="item.command()"
+					        [class]="item.className"
+					        mat-menu-item>
+						@if (item.iconDefinition) {
+							<fa-icon [icon]="item.iconDefinition" class="mr-2"></fa-icon>
+						}
+						{{ item.label }}
+					</button>
+				}
+			</mat-menu>
+		}
 	</mat-card-header>
 	<mat-card-content>
-		<div class="grid grid-cols-12">
-			<div class="row-span-2 col-span-4">
-				<img mat-card-image-sm [src]="character().pictureUrl">
-			</div>
-			<div class="col-span-auto">
-				<div class="grid">
-					<app-gauge [pool]="hpPool()"></app-gauge>
-					<span>HP</span>
+		<div class="grid grid-cols-2 gap-2">
+			@if (imageUrlToUse() && imageLoadError() == null) {
+				<div class="col-span-2 portrait-container">
+						<img (error)="imageLoadError.set($event)"
+						     [src]="imageUrlToUse()"
+						     alt="Character Portrait"
+						     class="character-portrait"
+						     matCardImage>
 				</div>
-				<div class="grid">
-					<app-gauge [pool]="recoveriesPool()"></app-gauge>
-					<span>Recoveries</span>
-				</div>
-			</div>
+			}
+			<app-gauge label="HP" [pool]="hpPool()"></app-gauge>
+			<app-gauge label="Recoveries" [pool]="recoveriesPool()"></app-gauge>
 		</div>
 	</mat-card-content>
 </mat-card>

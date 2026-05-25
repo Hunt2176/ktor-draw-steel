@@ -19,7 +19,7 @@ import { CharacterService } from '@services/character.service';
 import { CharacterConditionService } from '@services/character-condition.service';
 import { InventoryItemService } from '@services/inventory-item.service';
 import { StateContext } from '@services/state-context';
-import { Character, CharacterConditionEndType, InventoryItem } from '@app/types/models';
+import { Character, CharacterConditionEndType, InventoryItem } from '@app-types/models';
 
 @Component({
 	selector: 'app-characters-page',

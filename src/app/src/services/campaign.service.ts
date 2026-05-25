@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Campaign, CampaignDetails } from '@app/types/models';
+import { Campaign, CampaignDetails } from '@app-types/models';
 
 export interface ModifyRequest {
 	modifyBy: number;

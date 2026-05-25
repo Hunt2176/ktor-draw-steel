@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Combat } from '@app/types/models';
+import { Combat } from '@app-types/models';
 
 export type CreateCombatUpdate = {
 	campaign: number;
