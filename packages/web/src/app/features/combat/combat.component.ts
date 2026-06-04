@@ -13,6 +13,7 @@ import type { Character, Combatant } from '../../core/models';
 import { getHp } from '../../core/models';
 import { ApiService } from '../../core/api.service';
 import { CampaignStore } from '../../core/campaign-store.service';
+import { ToastService } from '../../core/toast.service';
 import { WatchService } from '../../core/watch.service';
 import { multiSort, parseIntOrUndefined } from '../../core/utils';
 import { ActionIconComponent } from '../../ui/action-icon.component';
@@ -142,7 +143,7 @@ interface CombatEntry {
             <hr class="ds-divider" />
             <div class="flex justify-end gap-2">
               <app-button color="gray" (clicked)="quickAddOpen.set(false)">Cancel</app-button>
-              <app-button [disabled]="!qaName() || qaMaxHp() === ''" (clicked)="quickAdd()">
+              <app-button [disabled]="!qaName() || qaMaxHp() === ''" [loading]="quickAddLoading()" (clicked)="quickAdd()">
                 <app-icon [name]="plus" /> Add Combatant
               </app-button>
             </div>
@@ -168,7 +169,7 @@ interface CombatEntry {
           <hr class="ds-divider" />
           <div class="flex justify-end gap-2">
             <app-button color="gray" (clicked)="nextRoundOpen.set(false)">Cancel</app-button>
-            <app-button color="orange" (clicked)="nextRound()">
+            <app-button color="orange" [loading]="nextRoundLoading()" (clicked)="nextRound()">
               Advance Round <app-icon [name]="arrowRight" />
             </app-button>
           </div>
@@ -180,7 +181,7 @@ interface CombatEntry {
           <hr class="ds-divider" />
           <div class="flex justify-end gap-2">
             <app-button color="gray" (clicked)="modifyOpen.set(false)">Cancel</app-button>
-            <app-button (clicked)="submitModify()">Submit</app-button>
+            <app-button [loading]="modifyLoading()" (clicked)="submitModify()">Submit</app-button>
           </div>
         </app-modal>
 
@@ -282,14 +283,14 @@ interface CombatEntry {
           [color]="available ? 'orange' : 'gray'"
           [variant]="available ? 'filled' : 'outline'"
           [title]="available ? 'End Turn' : 'Restore'"
-          [attr.aria-label]="available ? 'End Turn' : 'Restore'"
+          [attr.aria-label]="(available ? 'End turn for ' : 'Restore ') + entry.character.name"
           (clicked)="toggleActive(entry.combatant)"
         >
           <app-icon [name]="available ? arrowRight : arrowLeft" />
         </app-action-icon>
-        <app-action-icon variant="outline" color="gray" title="Edit" aria-label="Edit" (clicked)="card.openEditor()"><app-icon [name]="pencil" /></app-action-icon>
+        <app-action-icon variant="outline" color="gray" [title]="'Edit ' + entry.character.name" [attr.aria-label]="'Edit ' + entry.character.name" (clicked)="card.openEditor()"><app-icon [name]="pencil" /></app-action-icon>
         <app-character-conditions [character]="entry.character" mode="button" />
-        <app-action-icon variant="outline" color="gray" title="Inventory" aria-label="Inventory" (clicked)="inventoryForId.set(entry.character.id)"><app-icon [name]="briefcase" /></app-action-icon>
+        <app-action-icon variant="outline" color="gray" [title]="'Inventory for ' + entry.character.name" [attr.aria-label]="'Inventory for ' + entry.character.name" (clicked)="inventoryForId.set(entry.character.id)"><app-icon [name]="briefcase" /></app-action-icon>
       </div>
     </ng-template>
   `,
@@ -299,6 +300,7 @@ export class CombatComponent {
   private readonly router = inject(Router);
   private readonly api = inject(ApiService);
   private readonly store = inject(CampaignStore);
+  private readonly toasts = inject(ToastService);
   private readonly watcher = inject(WatchService);
 
   protected readonly arrowLeft = faArrowLeft;
@@ -356,6 +358,11 @@ export class CombatComponent {
   readonly quickAddOpen = signal(false);
   readonly nextRoundOpen = signal(false);
   readonly modifyOpen = signal(false);
+
+  /** In-flight flags for the primary async actions, driving button spinners. */
+  readonly nextRoundLoading = signal(false);
+  readonly quickAddLoading = signal(false);
+  readonly modifyLoading = signal(false);
   readonly inventoryForId = signal<number | null>(null);
   readonly clearRoundOnly = signal(false);
   readonly modifySelection = signal<CharacterSelection>({});
@@ -424,33 +431,45 @@ export class CombatComponent {
   async nextRound(): Promise<void> {
     const cb = this.combat();
     if (!cb) return;
-    const update = await this.api.updateCombatRound(cb.id, {
-      fromRound: cb.round,
-      reset: true,
-      updateConditions: this.clearRoundOnly(),
-    });
-    this.store.setCombat(cb.id, update);
-    const campaignId = this.campaign()?.campaign.id;
-    if (campaignId != null) this.store.refetchCampaign(campaignId);
-    this.nextRoundOpen.set(false);
-    this.clearRoundOnly.set(false);
+    this.nextRoundLoading.set(true);
+    try {
+      const update = await this.api.updateCombatRound(cb.id, {
+        fromRound: cb.round,
+        reset: true,
+        updateConditions: this.clearRoundOnly(),
+      });
+      this.store.setCombat(cb.id, update);
+      const campaignId = this.campaign()?.campaign.id;
+      if (campaignId != null) this.store.refetchCampaign(campaignId);
+      this.nextRoundOpen.set(false);
+      this.clearRoundOnly.set(false);
+      this.toasts.success(`Advanced to round ${cb.round + 1}`);
+    } finally {
+      this.nextRoundLoading.set(false);
+    }
   }
 
   async quickAdd(): Promise<void> {
     const maxHp = parseIntOrUndefined(this.qaMaxHp());
     if (!this.qaName() || maxHp == null) return;
-    await this.api.quickAddCombatant(this.id(), {
-      character: { name: this.qaName(), maxHp, offstage: this.qaOffstage(), user: 1 },
-    });
-    const campaignId = this.campaign()?.campaign.id;
-    if (campaignId != null) this.store.refetchCampaign(campaignId);
-    this.store.refetchCombat(this.id());
-    this.quickAddOpen.set(false);
-    this.qaName.set('');
-    this.qaMaxHp.set('');
-    this.qaMinions.set(0);
-    this.qaOffstage.set(true);
-    this.qaPictureUrl.set('');
+    this.quickAddLoading.set(true);
+    try {
+      await this.api.quickAddCombatant(this.id(), {
+        character: { name: this.qaName(), maxHp, offstage: this.qaOffstage(), user: 1 },
+      });
+      const campaignId = this.campaign()?.campaign.id;
+      if (campaignId != null) this.store.refetchCampaign(campaignId);
+      this.store.refetchCombat(this.id());
+      this.quickAddOpen.set(false);
+      this.qaName.set('');
+      this.qaMaxHp.set('');
+      this.qaMinions.set(0);
+      this.qaOffstage.set(true);
+      this.qaPictureUrl.set('');
+      this.toasts.success('Combatant added');
+    } finally {
+      this.quickAddLoading.set(false);
+    }
   }
 
   async submitModify(): Promise<void> {
@@ -465,8 +484,14 @@ export class CombatComponent {
     const update: { add?: number[]; remove?: number[] } = {};
     if (add.length) update.add = add;
     if (remove.length) update.remove = remove;
-    const result = await this.api.updateCombatModification(this.id(), update);
-    this.store.setCombat(this.id(), result);
-    this.modifyOpen.set(false);
+    this.modifyLoading.set(true);
+    try {
+      const result = await this.api.updateCombatModification(this.id(), update);
+      this.store.setCombat(this.id(), result);
+      this.modifyOpen.set(false);
+      this.toasts.success('Roster updated');
+    } finally {
+      this.modifyLoading.set(false);
+    }
   }
 }

@@ -13,6 +13,7 @@ import { getHp, getRecoveries } from '../../core/models';
 import { ApiService } from '../../core/api.service';
 import { CampaignStore } from '../../core/campaign-store.service';
 import { ErrorService } from '../../core/error.service';
+import { ToastService } from '../../core/toast.service';
 import { parseIntOrUndefined } from '../../core/utils';
 import { PALETTE, type AccentColor } from '../../ui/palette';
 import { ButtonComponent } from '../../ui/button.component';
@@ -80,13 +81,13 @@ const MINION_COLORS: AccentColor[] = ['red', 'orange', 'green', 'grape', 'teal']
             <label class="ds-label">Modify HP</label>
             <input class="ds-input" type="number" min="0" [value]="modHp()" (input)="modHp.set($any($event.target).value)" />
             <div class="flex">
-              <app-button class="flex-1" color="red" fullWidth (clicked)="damage('DAMAGE')">Damage</app-button>
-              <app-button class="flex-1" color="green" fullWidth (clicked)="damage('HEAL')">Heal</app-button>
+              <app-button class="flex-1" color="red" fullWidth [loading]="hpPending()" (clicked)="damage('DAMAGE')">Damage</app-button>
+              <app-button class="flex-1" color="green" fullWidth [loading]="hpPending()" (clicked)="damage('HEAL')">Heal</app-button>
             </div>
             <hr class="ds-divider" />
             <label class="ds-label">Temporary HP</label>
             <input class="ds-input" type="number" min="0" [value]="tempHp()" (input)="tempHp.set($any($event.target).value)" />
-            <app-button fullWidth (clicked)="saveTempHp()">Submit</app-button>
+            <app-button fullWidth [loading]="hpPending()" (clicked)="saveTempHp()">Submit</app-button>
           </div>
         </div>
       </app-popover>
@@ -106,13 +107,13 @@ const MINION_COLORS: AccentColor[] = ['red', 'orange', 'green', 'grape', 'teal']
             <label class="ds-label">Modify Recoveries</label>
             <input class="ds-input" type="number" min="0" [value]="modRec()" (input)="modRec.set($any($event.target).value)" />
             <div class="flex">
-              <app-button class="flex-1" color="green" fullWidth (clicked)="modifyRec('INCREASE')">Increase</app-button>
-              <app-button class="flex-1" color="red" fullWidth (clicked)="modifyRec('DECREASE')">Decrease</app-button>
+              <app-button class="flex-1" color="green" fullWidth [loading]="recPending()" (clicked)="modifyRec('INCREASE')">Increase</app-button>
+              <app-button class="flex-1" color="red" fullWidth [loading]="recPending()" (clicked)="modifyRec('DECREASE')">Decrease</app-button>
             </div>
             <hr class="ds-divider" />
             <label class="ds-label">Temporary Recoveries</label>
             <input class="ds-input" type="number" min="0" [value]="tempRec()" (input)="tempRec.set($any($event.target).value)" />
-            <app-button fullWidth (clicked)="saveTempRec()">Submit</app-button>
+            <app-button fullWidth [loading]="recPending()" (clicked)="saveTempRec()">Submit</app-button>
           </div>
         </div>
       </app-popover>
@@ -124,7 +125,18 @@ const MINION_COLORS: AccentColor[] = ['red', 'orange', 'green', 'grape', 'teal']
       @if (type() === 'full') {
         <div class="relative -m-4 mb-0 border-b border-m-dark-4">
           @if (character().pictureUrl) {
-            <img class="w-full object-cover" style="object-position: top center" [src]="character().pictureUrl" (click)="portraitClick.emit()" alt="" />
+            <img
+              class="w-full cursor-pointer object-cover"
+              style="object-position: top center"
+              [src]="character().pictureUrl"
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'View ' + character().name"
+              alt=""
+              (click)="portraitClick.emit()"
+              (keydown.enter)="portraitClick.emit()"
+              (keydown.space)="portraitClick.emit()"
+            />
             <div class="absolute bottom-0 flex w-full justify-around bg-black/30 px-1 text-sm font-semibold">
               <span>M {{ character().might }}</span>
               <span>A {{ character().agility }}</span>
@@ -151,7 +163,18 @@ const MINION_COLORS: AccentColor[] = ['red', 'orange', 'green', 'grape', 'teal']
         <div class="flex items-stretch gap-0">
           <ng-content select="[cardLeft]" />
           @if (character().pictureUrl) {
-            <img class="h-auto w-[100px] flex-none object-cover" style="object-position: top center" [src]="character().pictureUrl" (click)="portraitClick.emit()" alt="" />
+            <img
+              class="h-auto w-[100px] flex-none cursor-pointer object-cover"
+              style="object-position: top center"
+              [src]="character().pictureUrl"
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'View ' + character().name"
+              alt=""
+              (click)="portraitClick.emit()"
+              (keydown.enter)="portraitClick.emit()"
+              (keydown.space)="portraitClick.emit()"
+            />
           }
           <div class="flex flex-[5] flex-col">
             <span class="pl-2 text-xl font-bold">{{ character().name }}</span>
@@ -178,6 +201,7 @@ export class CharacterCardComponent {
   private readonly api = inject(ApiService);
   private readonly store = inject(CampaignStore);
   private readonly errors = inject(ErrorService);
+  private readonly toasts = inject(ToastService);
 
   readonly character = input.required<Character>();
   readonly type = input<'full' | 'tile'>('full');
@@ -189,6 +213,11 @@ export class CharacterCardComponent {
   readonly tempHp = signal('');
   readonly modRec = signal('');
   readonly tempRec = signal('');
+
+  /** In-flight flags for the HP and recovery popover actions, driving button
+   * spinners so rapid double-taps can't fire overlapping requests. */
+  readonly hpPending = signal(false);
+  readonly recPending = signal(false);
 
   readonly hpData = computed(() => getHp(this.character()));
   readonly recoveries = computed(() => getRecoveries(this.character()));
@@ -268,6 +297,7 @@ export class CharacterCardComponent {
       const updated = await this.api.saveCharacter(this.character().id, result);
       this.apply(updated);
       this.editorOpen.set(false);
+      this.toasts.success(`${updated.name} saved`);
     } catch (err) {
       this.errors.set(err);
     }
@@ -276,32 +306,52 @@ export class CharacterCardComponent {
   async damage(type: 'HEAL' | 'DAMAGE'): Promise<void> {
     const mod = parseIntOrUndefined(this.modHp());
     if (mod == null) return;
-    const updated = await this.api.modifyCharacterHp(this.character().id, { mod, type });
-    this.apply(updated);
-    this.modHp.set('');
+    this.hpPending.set(true);
+    try {
+      const updated = await this.api.modifyCharacterHp(this.character().id, { mod, type });
+      this.apply(updated);
+      this.modHp.set('');
+    } finally {
+      this.hpPending.set(false);
+    }
   }
 
   async saveTempHp(): Promise<void> {
     const value = parseIntOrUndefined(this.tempHp());
     if (value == null || value < 0) return;
-    const updated = await this.api.saveCharacter(this.character().id, { temporaryHp: value });
-    this.apply(updated);
+    this.hpPending.set(true);
+    try {
+      const updated = await this.api.saveCharacter(this.character().id, { temporaryHp: value });
+      this.apply(updated);
+    } finally {
+      this.hpPending.set(false);
+    }
   }
 
   async modifyRec(type: 'INCREASE' | 'DECREASE'): Promise<void> {
     const mod = parseIntOrUndefined(this.modRec());
     if (mod == null) return;
-    const updated = await this.api.modifyCharacterRecovery(this.character().id, { mod, type });
-    this.apply(updated);
-    this.modRec.set('');
+    this.recPending.set(true);
+    try {
+      const updated = await this.api.modifyCharacterRecovery(this.character().id, { mod, type });
+      this.apply(updated);
+      this.modRec.set('');
+    } finally {
+      this.recPending.set(false);
+    }
   }
 
   async saveTempRec(): Promise<void> {
     const value = parseIntOrUndefined(this.tempRec());
     if (value == null || value < 0) return;
-    const updated = await this.api.saveCharacter(this.character().id, {
-      temporaryRecoveries: value,
-    });
-    this.apply(updated);
+    this.recPending.set(true);
+    try {
+      const updated = await this.api.saveCharacter(this.character().id, {
+        temporaryRecoveries: value,
+      });
+      this.apply(updated);
+    } finally {
+      this.recPending.set(false);
+    }
   }
 }
