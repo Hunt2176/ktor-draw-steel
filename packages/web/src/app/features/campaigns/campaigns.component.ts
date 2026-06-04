@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { faDragon } from '@fortawesome/free-solid-svg-icons';
 import type { CampaignDetails } from '../../core/models';
 import { CampaignStore } from '../../core/campaign-store.service';
 import { CardComponent } from '../../ui/card.component';
 import { EmptyStateComponent } from '../../ui/empty-state.component';
+import { IconComponent } from '../../ui/icon.component';
 import { SkeletonComponent } from '../../ui/skeleton.component';
 
 /** Campaign picker — a responsive grid of clickable campaign cards. */
@@ -12,7 +13,7 @@ import { SkeletonComponent } from '../../ui/skeleton.component';
   selector: 'app-campaigns',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardComponent, EmptyStateComponent, SkeletonComponent],
+  imports: [CardComponent, EmptyStateComponent, IconComponent, SkeletonComponent],
   template: `
     <div class="ds-page">
       <header class="mb-6">
@@ -43,12 +44,20 @@ import { SkeletonComponent } from '../../ui/skeleton.component';
                 (keydown.enter)="select(details)"
                 (keydown.space)="select(details); $event.preventDefault()"
               >
-                @if (details.campaign.background) {
+                @if (thumbnail(details); as src) {
                   <img
-                    [src]="details.campaign.background"
+                    [src]="src"
                     alt=""
                     class="mb-3 h-28 w-full rounded-md object-cover"
+                    (error)="onImageError(details.campaign.id)"
                   />
+                } @else {
+                  <div
+                    class="mb-3 flex h-28 w-full items-center justify-center rounded-md bg-gradient-to-br from-m-dark-5 to-m-dark-7 text-m-dark-3"
+                    aria-hidden="true"
+                  >
+                    <app-icon [name]="dragon" class="text-2xl opacity-60" />
+                  </div>
                 }
                 <h2 class="font-display text-lg font-bold text-m-dark-0">{{ details.campaign.name }}</h2>
                 <p class="mt-1 text-sm text-m-dark-2">
@@ -79,6 +88,31 @@ export class CampaignsComponent {
   protected readonly dragon = faDragon;
   /** Fixed-count placeholder list driving the loading skeleton grid. */
   protected readonly skeletons = Array.from({ length: 6 }, (_, i) => i);
+  /** Campaign ids whose background image failed to load (fall back to placeholder). */
+  private readonly brokenImages = signal<ReadonlySet<number>>(new Set());
+
+  /**
+   * Returns a usable thumbnail URL for a campaign, or null to render the branded
+   * placeholder instead. `background` is semantically an image URL (e.g.
+   * `/files/foo.png`), but legacy/seed data sometimes stores prose there — so we
+   * only treat values that actually look like an image source as a thumbnail, and
+   * additionally drop any source that has failed to load at runtime.
+   */
+  protected thumbnail(details: CampaignDetails): string | null {
+    const background = details.campaign.background;
+    if (!background || this.brokenImages().has(details.campaign.id)) return null;
+    return this.isImageSrc(background) ? background : null;
+  }
+
+  /** Heuristic: an absolute URL, root-relative path, data URI, or image-extension path. */
+  private isImageSrc(value: string): boolean {
+    return /^(https?:\/\/|\/|data:image\/)/.test(value) || /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(value);
+  }
+
+  /** Marks a campaign's background as broken so the placeholder renders instead. */
+  protected onImageError(id: number): void {
+    this.brokenImages.update((set) => new Set(set).add(id));
+  }
 
   select(details: CampaignDetails): void {
     void this.router.navigate(['/campaigns', details.campaign.id]);

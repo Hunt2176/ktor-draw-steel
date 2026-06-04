@@ -11,7 +11,7 @@ export class CampaignBackgroundService {
     const root = document.querySelector('app-root') as HTMLElement | null;
     const target = root ?? document.body;
     const background = campaign?.background;
-    if (background) {
+    if (background && this.isImageSrc(background)) {
       target.style.backgroundImage = `url(${background})`;
       target.style.backgroundRepeat = 'no-repeat';
       target.style.backgroundSize = 'cover';
@@ -19,5 +19,14 @@ export class CampaignBackgroundService {
     } else {
       target.style.background = '';
     }
+  }
+
+  /**
+   * Heuristic guard so prose accidentally stored in `background` (legacy/seed
+   * data) is not emitted as an invalid `url(...)`. Accepts absolute URLs,
+   * root-relative paths, data URIs, or recognised image-extension paths.
+   */
+  private isImageSrc(value: string): boolean {
+    return /^(https?:\/\/|\/|data:image\/)/.test(value) || /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(value);
   }
 }
