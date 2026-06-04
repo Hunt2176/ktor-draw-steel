@@ -8,6 +8,7 @@ import { ApiService } from '../../core/api.service';
 import { CampaignStore } from '../../core/campaign-store.service';
 import { CampaignBackgroundService } from '../../core/campaign-background.service';
 import { ErrorService } from '../../core/error.service';
+import { ToastService } from '../../core/toast.service';
 import { ActionIconComponent } from '../../ui/action-icon.component';
 import { ButtonComponent } from '../../ui/button.component';
 import { CardComponent } from '../../ui/card.component';
@@ -46,8 +47,8 @@ import { UploadModalComponent } from '../components/upload-modal.component';
         <app-section-header>
           <span class="text-xl">{{ details.campaign.name }}</span>
           <ng-container actions>
-            <app-action-icon variant="outline" (clicked)="goToDisplay()"><app-icon [name]="book" /></app-action-icon>
-            <app-action-icon variant="outline" (clicked)="backgroundUploadOpen.set(true)"><app-icon [name]="image" /></app-action-icon>
+            <app-action-icon variant="outline" aria-label="Open display view" title="Open display view" (clicked)="goToDisplay()"><app-icon [name]="book" /></app-action-icon>
+            <app-action-icon variant="outline" aria-label="Change background" title="Change background" (clicked)="backgroundUploadOpen.set(true)"><app-icon [name]="image" /></app-action-icon>
           </ng-container>
         </app-section-header>
 
@@ -55,7 +56,7 @@ import { UploadModalComponent } from '../components/upload-modal.component';
         <div class="flex flex-col gap-2">
           <app-section-header>
             <span class="text-lg">Combats</span>
-            <app-action-icon actions (clicked)="newCombatOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
+            <app-action-icon actions aria-label="New combat" title="New combat" (clicked)="newCombatOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
           </app-section-header>
           @if (combats(); as combatList) {
             @if (combatList.length === 0) {
@@ -86,17 +87,29 @@ import { UploadModalComponent } from '../components/upload-modal.component';
         <div class="flex flex-col gap-2">
           <app-section-header>
             <span class="text-lg">Characters</span>
-            <app-action-icon actions (clicked)="newCharacterOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
+            <app-action-icon actions aria-label="New character" title="New character" (clicked)="newCharacterOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
           </app-section-header>
-          <div class="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] items-start gap-2">
-            @for (character of characters(); track character.id) {
-              <app-character-card [character]="character" type="tile" (portraitClick)="viewCharacter(character)">
-                <div cardRight class="flex-shrink">
-                  <app-action-icon (clicked)="inventoryCharacterId.set(character.id)"><app-icon [name]="briefcase" /></app-action-icon>
-                </div>
-              </app-character-card>
-            }
-          </div>
+          @if (characters().length === 0) {
+            <app-empty-state
+              [icon]="briefcase"
+              title="No characters yet"
+              message="Add a character to build out your campaign roster."
+            >
+              <app-button color="green" variant="subtle" (clicked)="newCharacterOpen.set(true)">
+                <app-icon [name]="plus" /><span class="ml-2">New Character</span>
+              </app-button>
+            </app-empty-state>
+          } @else {
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] items-start gap-2">
+              @for (character of characters(); track character.id) {
+                <app-character-card [character]="character" type="tile" (portraitClick)="viewCharacter(character)">
+                  <div cardRight class="flex-shrink">
+                    <app-action-icon [attr.aria-label]="'Inventory for ' + character.name" [title]="'Inventory for ' + character.name" (clicked)="inventoryCharacterId.set(character.id)"><app-icon [name]="briefcase" /></app-action-icon>
+                  </div>
+                </app-character-card>
+              }
+            </div>
+          }
         </div>
       </div>
 
@@ -125,7 +138,7 @@ import { UploadModalComponent } from '../components/upload-modal.component';
           <hr class="ds-divider" />
           <div class="flex justify-end gap-2">
             <app-button color="gray" (clicked)="newCombatOpen.set(false)">Cancel</app-button>
-            <app-button [disabled]="creatingCombat()" (clicked)="createCombat()">Create</app-button>
+            <app-button [disabled]="creatingCombat()" [loading]="creatingCombat()" (clicked)="createCombat()">Create</app-button>
           </div>
         </div>
       </app-modal>
@@ -137,7 +150,7 @@ import { UploadModalComponent } from '../components/upload-modal.component';
           <hr class="ds-divider" />
           <div class="flex justify-end gap-2">
             <app-button color="gray" (clicked)="combatToDelete.set(null)">Cancel</app-button>
-            <app-button color="red" (clicked)="deleteCombat()">Delete</app-button>
+            <app-button color="red" [loading]="deletingCombat()" (clicked)="deleteCombat()">Delete</app-button>
           </div>
         </div>
       </app-modal>
@@ -159,6 +172,7 @@ export class CampaignDetailComponent {
   private readonly store = inject(CampaignStore);
   private readonly background = inject(CampaignBackgroundService);
   private readonly errors = inject(ErrorService);
+  private readonly toasts = inject(ToastService);
 
   protected readonly book = faBook;
   protected readonly image = faImage;
@@ -192,6 +206,9 @@ export class CampaignDetailComponent {
   readonly inventoryCharacterId = signal<number | null>(null);
   readonly combatSelection = signal<CharacterSelection>({});
   readonly creatingCombat = signal(false);
+  readonly creatingCharacter = signal(false);
+  readonly deletingCombat = signal(false);
+  readonly settingBackground = signal(false);
 
   protected readonly inventoryCharacter = computed(() => {
     const id = this.inventoryCharacterId();
@@ -215,12 +232,16 @@ export class CampaignDetailComponent {
   }
 
   async createCharacter(result: CharacterEditorResult): Promise<void> {
+    this.creatingCharacter.set(true);
     try {
       await this.api.createCharacter({ ...result, campaign: this.id(), user: 1 });
       this.store.refetchCampaign(this.id());
       this.newCharacterOpen.set(false);
+      this.toasts.success('Character created');
     } catch (err) {
       this.errors.set(err);
+    } finally {
+      this.creatingCharacter.set(false);
     }
   }
 
@@ -233,6 +254,7 @@ export class CampaignDetailComponent {
       const combat = await this.api.createCombat({ campaign: this.id(), characters });
       this.store.refetchCombats(this.id());
       this.newCombatOpen.set(false);
+      this.toasts.success('Combat created');
       void this.router.navigate(['/combats', combat.id]);
     } finally {
       this.creatingCombat.set(false);
@@ -242,14 +264,26 @@ export class CampaignDetailComponent {
   async deleteCombat(): Promise<void> {
     const combat = this.combatToDelete();
     if (!combat) return;
-    await this.api.deleteCombat(combat.id);
-    this.store.refetchCombats(this.id());
-    this.combatToDelete.set(null);
+    this.deletingCombat.set(true);
+    try {
+      await this.api.deleteCombat(combat.id);
+      this.store.refetchCombats(this.id());
+      this.combatToDelete.set(null);
+      this.toasts.success('Combat deleted');
+    } finally {
+      this.deletingCombat.set(false);
+    }
   }
 
   async setBackground(fileName: string): Promise<void> {
-    await this.api.updateCampaign(this.id(), { background: `/files/${fileName}` });
-    this.store.refetchCampaign(this.id());
-    this.backgroundUploadOpen.set(false);
+    this.settingBackground.set(true);
+    try {
+      await this.api.updateCampaign(this.id(), { background: `/files/${fileName}` });
+      this.store.refetchCampaign(this.id());
+      this.backgroundUploadOpen.set(false);
+      this.toasts.success('Background updated');
+    } finally {
+      this.settingBackground.set(false);
+    }
   }
 }

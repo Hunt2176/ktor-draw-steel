@@ -3,6 +3,7 @@ import { faClock, faPlus, faShieldHalved, faXmark } from '@fortawesome/free-soli
 import type { Character, CharacterCondition } from '../../core/models';
 import { ApiService } from '../../core/api.service';
 import { CampaignStore } from '../../core/campaign-store.service';
+import { ToastService } from '../../core/toast.service';
 import { ActionIconComponent } from '../../ui/action-icon.component';
 import { ButtonComponent } from '../../ui/button.component';
 import { IconComponent } from '../../ui/icon.component';
@@ -18,7 +19,7 @@ type Mode = 'button' | 'list' | 'all';
   imports: [ActionIconComponent, ButtonComponent, IconComponent, ModalComponent],
   template: `
     @if (mode() === 'button' || mode() === 'all') {
-      <app-action-icon (clicked)="addOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
+      <app-action-icon aria-label="Add condition" title="Add condition" (clicked)="addOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
     }
     @if (mode() === 'list' || mode() === 'all') {
       <div class="flex flex-wrap gap-1">
@@ -72,7 +73,7 @@ type Mode = 'button' | 'list' | 'all';
             End of Turn
           </label>
         </div>
-        <app-button [disabled]="!name()" (clicked)="submit($event)">Submit</app-button>
+        <app-button [disabled]="!name()" [loading]="submitting()" (clicked)="submit($event)">Submit</app-button>
       </form>
     </app-modal>
 
@@ -89,6 +90,7 @@ type Mode = 'button' | 'list' | 'all';
 export class CharacterConditionsComponent {
   private readonly api = inject(ApiService);
   private readonly store = inject(CampaignStore);
+  private readonly toasts = inject(ToastService);
   readonly character = input.required<Character>();
   readonly mode = input<Mode>('all');
 
@@ -112,19 +114,26 @@ export class CharacterConditionsComponent {
   readonly name = signal('');
   readonly endType = signal<'save' | 'endOfTurn'>('save');
   readonly toRemove = signal<CharacterCondition | null>(null);
+  readonly submitting = signal(false);
 
   async submit(event: Event): Promise<void> {
     event.preventDefault();
     if (!this.name()) return;
-    await this.api.addCharacterCondition({
-      name: this.name(),
-      character: this.character().id,
-      endType: this.endType(),
-    });
-    this.store.refetchCharacter(this.character().id);
-    this.addOpen.set(false);
-    this.name.set('');
-    this.endType.set('save');
+    this.submitting.set(true);
+    try {
+      await this.api.addCharacterCondition({
+        name: this.name(),
+        character: this.character().id,
+        endType: this.endType(),
+      });
+      this.store.refetchCharacter(this.character().id);
+      this.addOpen.set(false);
+      this.name.set('');
+      this.endType.set('save');
+      this.toasts.success('Condition added');
+    } finally {
+      this.submitting.set(false);
+    }
   }
 
   endTypeLabel(endType: CharacterCondition['endType']): string {
@@ -141,5 +150,6 @@ export class CharacterConditionsComponent {
     await this.api.deleteCharacterCondition(condition.id);
     this.store.refetchCharacter(this.character().id);
     this.toRemove.set(null);
+    this.toasts.success('Condition removed');
   }
 }

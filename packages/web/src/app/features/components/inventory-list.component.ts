@@ -3,6 +3,7 @@ import { faBoxOpen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import type { InventoryItem } from '../../core/models';
 import { ApiService } from '../../core/api.service';
 import { CampaignStore } from '../../core/campaign-store.service';
+import { ToastService } from '../../core/toast.service';
 import { parseIntOrUndefined } from '../../core/utils';
 import { ActionIconComponent } from '../../ui/action-icon.component';
 import { ButtonComponent } from '../../ui/button.component';
@@ -48,7 +49,7 @@ import { ConfirmationPopoverComponent } from './confirmation-popover.component';
               <input class="ds-input" type="number" min="1" [value]="newQuantity()" (input)="newQuantity.set($any($event.target).value)" />
             </div>
             <div>
-              <app-button [disabled]="newName().trim().length <= 0" (clicked)="add()">Save</app-button>
+              <app-button [disabled]="newName().trim().length <= 0" [loading]="adding()" (clicked)="add()">Save</app-button>
             </div>
           </div>
         </app-modal>
@@ -83,7 +84,7 @@ import { ConfirmationPopoverComponent } from './confirmation-popover.component';
                 message="Are you sure?"
                 (accepted)="remove(item.id)"
               >
-                <app-action-icon color="red"><app-icon [name]="trash" /></app-action-icon>
+                <app-action-icon color="red" [attr.aria-label]="'Remove ' + item.name" [title]="'Remove ' + item.name"><app-icon [name]="trash" /></app-action-icon>
               </app-confirmation-popover>
             </li>
           }
@@ -136,6 +137,7 @@ import { ConfirmationPopoverComponent } from './confirmation-popover.component';
 export class InventoryListComponent {
   private readonly api = inject(ApiService);
   private readonly store = inject(CampaignStore);
+  private readonly toasts = inject(ToastService);
   readonly items = input<InventoryItem[]>([]);
   readonly characterId = input<number>();
 
@@ -146,6 +148,7 @@ export class InventoryListComponent {
   readonly addOpen = signal(false);
   readonly newName = signal('');
   readonly newQuantity = signal<string | number>(1);
+  readonly adding = signal(false);
 
   openAdd(): void {
     this.newName.set('');
@@ -168,13 +171,20 @@ export class InventoryListComponent {
     if (id == null) return;
     const quantity = parseIntOrUndefined(this.newQuantity()) ?? 0;
     if (quantity <= 0) return;
-    await this.api.createInventoryItem(id, { name: this.newName(), quantity });
-    this.addOpen.set(false);
-    this.refresh();
+    this.adding.set(true);
+    try {
+      await this.api.createInventoryItem(id, { name: this.newName(), quantity });
+      this.addOpen.set(false);
+      this.refresh();
+      this.toasts.success('Item added');
+    } finally {
+      this.adding.set(false);
+    }
   }
 
   async remove(itemId: number): Promise<void> {
     await this.api.deleteInventoryItem(itemId);
     this.refresh();
+    this.toasts.success('Item removed');
   }
 }
