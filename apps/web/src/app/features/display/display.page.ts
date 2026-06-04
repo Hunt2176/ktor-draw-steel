@@ -60,7 +60,7 @@ const KankaLoose = z.looseObject(KankaBaseModel.shape).array();
     @if (campaign.value(); as details) {
       <!-- burger -->
       <div class="absolute z-[100] m-2">
-        <ds-icon-btn variant="subtle" color="gray" (click)="drawerOpen.set(true)">
+        <ds-icon-btn variant="subtle" color="gray" ariaLabel="Open menu" (click)="drawerOpen.set(true)">
           <ds-icon name="bars" />
         </ds-icon-btn>
       </div>
@@ -97,7 +97,11 @@ const KankaLoose = z.looseObject(KankaBaseModel.shape).array();
                         message="Are you sure you want to delete this entry?"
                         (accept)="deleteEntry(entry.id)"
                       >
-                        <ds-icon-btn cpTrigger variant="subtle" color="red"
+                        <ds-icon-btn
+                          cpTrigger
+                          variant="subtle"
+                          color="red"
+                          [ariaLabel]="'Delete ' + entry.title"
                           ><ds-icon name="trash"
                         /></ds-icon-btn>
                       </ds-confirmation-popover>

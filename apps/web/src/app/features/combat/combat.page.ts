@@ -143,6 +143,7 @@ import { getHp, type Combatant } from '@draw-steel/shared';
                           color="gray"
                           variant="subtle"
                           size="sm"
+                          [ariaLabel]="'Move ' + combatant.character.name + ' to ' + (combatant.available ? 'unavailable' : 'available')"
                           (click)="toggleActive(combatant)"
                         >
                           <ds-icon
@@ -153,6 +154,7 @@ import { getHp, type Combatant } from '@draw-steel/shared';
                           color="gray"
                           variant="subtle"
                           size="sm"
+                          [ariaLabel]="'Edit ' + combatant.character.name"
                           (click)="card.openEditor()"
                           ><ds-icon name="pencil"
                         /></ds-icon-btn>
@@ -164,6 +166,7 @@ import { getHp, type Combatant } from '@draw-steel/shared';
                           color="gray"
                           variant="subtle"
                           size="sm"
+                          [ariaLabel]="'Inventory for ' + combatant.character.name"
                           (click)="inventoryFor.set(combatant.character.id)"
                         >
                           <ds-icon name="briefcase" />

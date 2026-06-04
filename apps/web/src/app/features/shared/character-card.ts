@@ -360,6 +360,9 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
       }
       .ds-card-tile .ds-imgwrap {
         flex: 0 0 auto;
+        /* top-align so the portrait never stretches to the (taller) body
+           height and becomes a tall, thin vertical bar on narrow screens */
+        align-self: flex-start;
       }
       .ds-card-tile .ds-img {
         width: 100px;
@@ -369,10 +372,10 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
         border-radius: 0.375rem;
       }
       .ds-card-tile .ds-img-placeholder {
+        /* fixed square, never stretched to body height */
         width: 100px;
-        height: 100%;
-        /* balance with the two stacked rings: don't look stunted on mobile */
-        min-height: 100px;
+        height: 100px;
+        aspect-ratio: 1;
         border-radius: 0.375rem;
       }
       .ds-card-tile .ds-body {

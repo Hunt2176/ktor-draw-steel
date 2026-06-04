@@ -72,6 +72,17 @@ import {
         color: color-mix(in srgb, var(--color-dark-0) 55%, transparent);
         font-size: 0.95rem;
       }
+      .combat-card {
+        display: block;
+        transition: border-color 0.12s, transform 0.06s ease;
+      }
+      .combat-card:hover {
+        border-color: color-mix(in srgb, var(--color-brand-blue) 55%, transparent);
+      }
+      .combat-card__meta {
+        font-size: 0.85rem;
+        color: color-mix(in srgb, var(--color-dark-0) 60%, transparent);
+      }
     `,
   ],
   template: `
@@ -88,10 +99,10 @@ import {
             </span>
           </div>
           <div class="flex items-center gap-2 ml-auto">
-            <ds-icon-btn variant="outline" (click)="goDisplay()">
+            <ds-icon-btn variant="outline" ariaLabel="Open display" (click)="goDisplay()">
               <ds-icon name="book" />
             </ds-icon-btn>
-            <ds-icon-btn variant="outline" (click)="showBackground.set(true)">
+            <ds-icon-btn variant="outline" ariaLabel="Set background" (click)="showBackground.set(true)">
               <ds-icon name="image" />
             </ds-icon-btn>
           </div>
@@ -101,13 +112,18 @@ import {
         <section class="flex flex-col gap-3">
           <div class="flex items-center justify-between gap-2">
             <h2 class="text-xl font-bold">Combats</h2>
-            <ds-icon-btn (click)="showNewCombat()"><ds-icon name="plus" /></ds-icon-btn>
+            <ds-icon-btn ariaLabel="New combat" (click)="showNewCombat()"><ds-icon name="plus" /></ds-icon-btn>
           </div>
           <div class="section-grid">
             @for (combat of combats.value() ?? []; track combat.id) {
-              <ds-card>
+              <ds-card class="combat-card">
                 <div class="flex items-center justify-between gap-3">
-                  <div class="text-xl font-bold">Round: {{ combat.round }}</div>
+                  <div class="flex flex-col gap-1">
+                    <div class="text-xl font-bold">Round: {{ combat.round }}</div>
+                    <div class="combat-card__meta">
+                      {{ combat.combatants.length }} combatants
+                    </div>
+                  </div>
                   <div class="flex flex-col gap-2 justify-center">
                     <ds-button (click)="viewCombat(combat)">View</ds-button>
                     <ds-button color="red" (click)="combatToDelete.set(combat)"
@@ -120,7 +136,7 @@ import {
               <ds-card>
                 <div class="empty-state flex flex-col items-center gap-3">
                   <span>No combats yet</span>
-                  <ds-icon-btn (click)="showNewCombat()"><ds-icon name="plus" /></ds-icon-btn>
+                  <ds-icon-btn ariaLabel="New combat" (click)="showNewCombat()"><ds-icon name="plus" /></ds-icon-btn>
                 </div>
               </ds-card>
             }
@@ -131,7 +147,7 @@ import {
         <section class="flex flex-col gap-3">
           <div class="flex items-center justify-between gap-2">
             <h2 class="text-xl font-bold">Characters</h2>
-            <ds-icon-btn (click)="newCharacter.set(true)"><ds-icon name="plus" /></ds-icon-btn>
+            <ds-icon-btn ariaLabel="New character" (click)="newCharacter.set(true)"><ds-icon name="plus" /></ds-icon-btn>
           </div>
           <div class="section-grid items-start">
             @for (character of onstage(); track character.id) {
@@ -141,7 +157,10 @@ import {
                 (portraitClick)="goCharacter(character)"
               >
                 <div cardRight class="shrink">
-                  <ds-icon-btn (click)="inventoryCharId.set(character.id)">
+                  <ds-icon-btn
+                    [ariaLabel]="'Inventory for ' + character.name"
+                    (click)="inventoryCharId.set(character.id)"
+                  >
                     <ds-icon name="briefcase" />
                   </ds-icon-btn>
                 </div>
@@ -150,7 +169,7 @@ import {
               <ds-card>
                 <div class="empty-state flex flex-col items-center gap-3">
                   <span>No characters yet</span>
-                  <ds-icon-btn (click)="newCharacter.set(true)"><ds-icon name="plus" /></ds-icon-btn>
+                  <ds-icon-btn ariaLabel="New character" (click)="newCharacter.set(true)"><ds-icon name="plus" /></ds-icon-btn>
                 </div>
               </ds-card>
             }

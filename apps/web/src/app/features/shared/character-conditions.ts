@@ -30,7 +30,7 @@ const CONDITION_OPTIONS = [
   imports: [Modal, IconButton, Icon, Button],
   template: `
     @if (mode() === 'button' || mode() === 'all') {
-      <ds-icon-btn (click)="showAdd.set(true)"><ds-icon name="plus" /></ds-icon-btn>
+      <ds-icon-btn ariaLabel="Add condition" (click)="showAdd.set(true)"><ds-icon name="plus" /></ds-icon-btn>
     }
     @if (mode() === 'list' || mode() === 'all') {
       <div class="flex flex-wrap gap-1.5">

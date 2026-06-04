@@ -88,7 +88,7 @@ import type { InventoryItem } from '@draw-steel/shared';
                     message="Are you sure?"
                     (accept)="remove(item.id)"
                   >
-                    <ds-icon-btn cpTrigger color="red"><ds-icon name="trash" /></ds-icon-btn>
+                    <ds-icon-btn cpTrigger color="red" [ariaLabel]="'Remove ' + item.name"><ds-icon name="trash" /></ds-icon-btn>
                   </ds-confirmation-popover>
                 </td>
               </tr>

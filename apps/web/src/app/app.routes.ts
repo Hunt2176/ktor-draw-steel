@@ -40,4 +40,9 @@ export const routes: Routes = [
       import('./features/combat/combat.page').then((m) => m.CombatPage),
     data: { shell: 'wide' },
   },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./features/not-found/not-found.page').then((m) => m.NotFoundPage),
+  },
 ];
