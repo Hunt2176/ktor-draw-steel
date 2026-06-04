@@ -83,6 +83,43 @@ import {
         font-size: 0.85rem;
         color: color-mix(in srgb, var(--color-dark-0) 60%, transparent);
       }
+      .onboarding {
+        padding: 2rem;
+        text-align: center;
+        border: 1px solid
+          color-mix(in srgb, var(--color-brand-blue) 35%, transparent);
+        background: color-mix(in srgb, var(--color-brand-blue) 8%, transparent);
+      }
+      .onboarding__title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-dark-0);
+      }
+      .onboarding__lead {
+        max-width: 32rem;
+        margin: 0 auto;
+        color: color-mix(in srgb, var(--color-dark-0) 70%, transparent);
+        font-size: 0.95rem;
+      }
+      /* Subtle mount fade/translate for grid cards. */
+      .card-enter {
+        animation: card-enter 0.28s ease both;
+      }
+      @keyframes card-enter {
+        from {
+          opacity: 0;
+          transform: translateY(0.5rem);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .card-enter {
+          animation: none;
+        }
+      }
     `,
   ],
   template: `
@@ -108,6 +145,27 @@ import {
           </div>
         </header>
 
+        <!-- Empty-campaign onboarding -->
+        @if (campaignEmpty()) {
+          <ds-card class="onboarding card-enter">
+            <div class="flex flex-col items-center gap-4">
+              <div class="onboarding__title">Get started</div>
+              <p class="onboarding__lead">
+                This campaign is empty. Add a hero to your roster or jump
+                straight into the action by starting a combat.
+              </p>
+              <div class="flex flex-wrap items-center justify-center gap-3">
+                <ds-button (click)="newCharacter.set(true)"
+                  >Add your first character</ds-button
+                >
+                <ds-button color="gray" (click)="showNewCombat()"
+                  >Start a combat</ds-button
+                >
+              </div>
+            </div>
+          </ds-card>
+        }
+
         <!-- Combats -->
         <section class="flex flex-col gap-3">
           <div class="flex items-center justify-between gap-2">
@@ -116,12 +174,13 @@ import {
           </div>
           <div class="section-grid">
             @for (combat of combats.value() ?? []; track combat.id) {
-              <ds-card class="combat-card">
+              <ds-card class="combat-card card-enter">
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex flex-col gap-1">
                     <div class="text-xl font-bold">Round: {{ combat.round }}</div>
                     <div class="combat-card__meta">
-                      {{ combat.combatants.length }} combatants
+                      {{ combat.combatants.length }}
+                      {{ combat.combatants.length === 1 ? 'combatant' : 'combatants' }}
                     </div>
                   </div>
                   <div class="flex flex-col gap-2 justify-center">
@@ -133,12 +192,14 @@ import {
                 </div>
               </ds-card>
             } @empty {
-              <ds-card>
-                <div class="empty-state flex flex-col items-center gap-3">
-                  <span>No combats yet</span>
-                  <ds-icon-btn ariaLabel="New combat" (click)="showNewCombat()"><ds-icon name="plus" /></ds-icon-btn>
-                </div>
-              </ds-card>
+              @if (!campaignEmpty()) {
+                <ds-card>
+                  <div class="empty-state flex flex-col items-center gap-3">
+                    <span>No combats yet</span>
+                    <ds-icon-btn ariaLabel="New combat" (click)="showNewCombat()"><ds-icon name="plus" /></ds-icon-btn>
+                  </div>
+                </ds-card>
+              }
             }
           </div>
         </section>
@@ -152,6 +213,7 @@ import {
           <div class="section-grid items-start">
             @for (character of onstage(); track character.id) {
               <ds-character-card
+                class="card-enter"
                 type="tile"
                 [character]="character"
                 (portraitClick)="goCharacter(character)"
@@ -166,12 +228,14 @@ import {
                 </div>
               </ds-character-card>
             } @empty {
-              <ds-card>
-                <div class="empty-state flex flex-col items-center gap-3">
-                  <span>No characters yet</span>
-                  <ds-icon-btn ariaLabel="New character" (click)="newCharacter.set(true)"><ds-icon name="plus" /></ds-icon-btn>
-                </div>
-              </ds-card>
+              @if (!campaignEmpty()) {
+                <ds-card>
+                  <div class="empty-state flex flex-col items-center gap-3">
+                    <span>No characters yet</span>
+                    <ds-icon-btn ariaLabel="New character" (click)="newCharacter.set(true)"><ds-icon name="plus" /></ds-icon-btn>
+                  </div>
+                </ds-card>
+              }
             }
           </div>
         </section>
@@ -276,6 +340,12 @@ export class CampaignDetailPage {
   protected readonly onstage = computed(
     () => this.campaign.value()?.characters.filter((c) => !c.offstage) ?? [],
   );
+
+  protected readonly campaignEmpty = computed(() => {
+    const characters = this.campaign.value()?.characters ?? [];
+    const combats = this.combats.value() ?? [];
+    return characters.length === 0 && combats.length === 0;
+  });
 
   protected readonly inventoryChar = computed<Character | null>(() => {
     const id = this.inventoryCharId();
