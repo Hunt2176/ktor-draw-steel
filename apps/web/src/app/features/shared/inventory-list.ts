@@ -58,43 +58,104 @@ import type { InventoryItem } from '@draw-steel/shared';
         </ds-modal>
       }
 
-      <table class="w-full text-left">
-        <thead>
-          <tr class="border-b border-[color:var(--color-dark-5)]">
-            <th class="py-1">Item</th>
-            <th class="py-1">Quantity</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of items(); track item.id) {
-            <tr class="border-b border-[color:var(--color-dark-6)]">
-              <td class="py-1">{{ item.name }}</td>
-              <td class="py-1">
-                <ds-popover>
-                  <span dsTrigger class="clickable">{{ item.quantity }}</span>
-                  <div dsDropdown>
-                    <ds-value-modifier
-                      label="Modify Quantity"
-                      (changed)="modifyQuantity(item.id, $event)"
-                    />
-                  </div>
-                </ds-popover>
-              </td>
-              <td class="py-1 text-right">
-                <ds-confirmation-popover
-                  [title]="'Remove ' + item.name"
-                  message="Are you sure?"
-                  (accept)="remove(item.id)"
-                >
-                  <ds-icon-btn cpTrigger color="red"><ds-icon name="trash" /></ds-icon-btn>
-                </ds-confirmation-popover>
-              </td>
+      @if (items().length > 0) {
+        <table class="inventory-table w-full text-left">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="qty-col">Quantity</th>
+              <th class="actions-col"></th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr>
+                <td>{{ item.name }}</td>
+                <td class="qty-col">
+                  <ds-popover>
+                    <span dsTrigger class="clickable qty-value">{{ item.quantity }}</span>
+                    <div dsDropdown>
+                      <ds-value-modifier
+                        label="Modify Quantity"
+                        (changed)="modifyQuantity(item.id, $event)"
+                      />
+                    </div>
+                  </ds-popover>
+                </td>
+                <td class="actions-col text-right">
+                  <ds-confirmation-popover
+                    [title]="'Remove ' + item.name"
+                    message="Are you sure?"
+                    (accept)="remove(item.id)"
+                  >
+                    <ds-icon-btn cpTrigger color="red"><ds-icon name="trash" /></ds-icon-btn>
+                  </ds-confirmation-popover>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <div class="inventory-empty">No items</div>
+      }
     </div>
+  `,
+  styles: `
+    .inventory-table {
+      border-collapse: collapse;
+    }
+
+    .inventory-table thead th {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-dark-2);
+      border-bottom: 1px solid var(--color-dark-4);
+    }
+
+    .inventory-table tbody td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--color-dark-6);
+    }
+
+    .inventory-table tbody tr {
+      transition: background-color 0.12s ease;
+    }
+
+    .inventory-table tbody tr:hover {
+      background-color: var(--color-dark-6);
+    }
+
+    .inventory-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .qty-col {
+      width: 8rem;
+      text-align: right;
+    }
+
+    .qty-value {
+      display: inline-block;
+      min-width: 1.5rem;
+      text-align: right;
+    }
+
+    .actions-col {
+      width: 3rem;
+    }
+
+    .inventory-empty {
+      padding: 1.25rem 0.75rem;
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--color-dark-2);
+      border: 1px solid var(--color-dark-4);
+      border-radius: 0.375rem;
+      background-color: var(--color-dark-7);
+    }
   `,
 })
 export class InventoryList {

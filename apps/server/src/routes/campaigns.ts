@@ -56,13 +56,27 @@ function getCampaignDetails(ids: number[] | null): CampaignDetails[] {
     .where(inArray(displayEntry.campaign, campaignIds))
     .all();
 
-  const characterDtos = characterRows.map(toCharacterDTO);
-  const entryDtos = entryRows.map(toDisplayEntryDTO);
+  // Group DTOs by their owning campaign id. We key off each raw row's
+  // `campaign` FK (guaranteed present on the DB row) zipped with its mapped
+  // DTO, rather than trusting a campaign field on the DTO shape.
+  const charactersByCampaign = new Map<number, ReturnType<typeof toCharacterDTO>[]>();
+  for (const row of characterRows) {
+    const list = charactersByCampaign.get(row.campaign);
+    if (list) list.push(toCharacterDTO(row));
+    else charactersByCampaign.set(row.campaign, [toCharacterDTO(row)]);
+  }
+
+  const entriesByCampaign = new Map<number, ReturnType<typeof toDisplayEntryDTO>[]>();
+  for (const row of entryRows) {
+    const list = entriesByCampaign.get(row.campaign);
+    if (list) list.push(toDisplayEntryDTO(row));
+    else entriesByCampaign.set(row.campaign, [toDisplayEntryDTO(row)]);
+  }
 
   return campaignRows.map((c) => ({
     campaign: toCampaignDTO(c),
-    characters: characterDtos,
-    entries: entryDtos,
+    characters: charactersByCampaign.get(c.id) ?? [],
+    entries: entriesByCampaign.get(c.id) ?? [],
   }));
 }
 

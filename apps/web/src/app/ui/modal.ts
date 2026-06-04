@@ -40,9 +40,12 @@ import {
         display: flex;
         align-items: flex-start;
         justify-content: center;
-        background: rgba(0, 0, 0, 0.55);
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
         padding: 3rem 1rem;
         overflow-y: auto;
+        animation: ds-modal-backdrop-in 0.18s ease-out both;
       }
       .ds-modal {
         width: 100%;
@@ -53,6 +56,42 @@ import {
         max-height: 85vh;
         display: flex;
         flex-direction: column;
+        transform-origin: center top;
+        animation: ds-modal-panel-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      @keyframes ds-modal-backdrop-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes ds-modal-panel-in {
+        from {
+          opacity: 0;
+          transform: translateY(-0.75rem) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ds-modal-overlay {
+          animation: ds-modal-backdrop-in 0.15s ease-out both;
+        }
+        .ds-modal {
+          animation: ds-modal-fade-in 0.15s ease-out both;
+        }
+        @keyframes ds-modal-fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
       }
       .ds-modal-header {
         display: flex;

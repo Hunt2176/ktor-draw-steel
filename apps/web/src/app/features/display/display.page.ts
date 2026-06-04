@@ -67,39 +67,57 @@ const KankaLoose = z.looseObject(KankaBaseModel.shape).array();
 
       <!-- drawer -->
       @if (drawerOpen()) {
-        <div class="fixed inset-0 z-[150]" (click)="drawerOpen.set(false)">
+        <div class="fixed inset-0 z-[150] ds-scrim-overlay" (click)="drawerOpen.set(false)">
           <div
-            class="glass absolute left-0 top-0 h-full w-80 p-4 overflow-y-auto border-r border-[color:var(--color-dark-4)]"
+            class="glass ds-rail absolute left-0 top-0 h-full w-80 flex flex-col overflow-hidden border-r border-[color:var(--color-dark-4)]"
             (click)="$event.stopPropagation()"
           >
-            <ds-button variant="transparent" (click)="goCampaign()">
-              <span class="text-xl font-bold">{{ details.campaign.name }}</span>
-            </ds-button>
-            <div class="flex justify-end mb-2">
-              <ds-button color="green" variant="transparent" size="xs" (click)="editorOpen.set(true)">
-                <ds-icon name="plus" />
-                <span class="ml-1">Add Entry</span>
+            <div class="ds-rail-head p-3 border-b border-[color:var(--color-dark-5)]">
+              <ds-button variant="transparent" fullWidth (click)="goCampaign()">
+                <span class="flex items-center gap-2 w-full">
+                  <ds-icon name="arrow-left" />
+                  <span class="text-xl font-bold truncate">{{ details.campaign.name }}</span>
+                </span>
               </ds-button>
             </div>
-            <div class="flex flex-col gap-2">
-              @for (entry of items(); track entry.id; let idx = $index) {
-                <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
-                  <ds-button variant="outline" fullWidth (click)="scrollTo(idx)">{{
-                    entry.title
-                  }}</ds-button>
-                  @if (!entry.isKanka) {
-                    <ds-confirmation-popover
-                      title="Delete entry?"
-                      message="Are you sure you want to delete this entry?"
-                      (accept)="deleteEntry(entry.id)"
-                    >
-                      <ds-icon-btn cpTrigger color="red"
-                        ><ds-icon name="trash"
-                      /></ds-icon-btn>
-                    </ds-confirmation-popover>
-                  }
-                </div>
-              }
+
+            <div class="flex-1 overflow-y-auto p-3">
+              <div class="flex flex-col gap-1.5">
+                @for (entry of items(); track entry.id; let idx = $index) {
+                  <div class="ds-rail-row grid grid-cols-[1fr_auto] gap-1.5 items-center">
+                    <ds-button variant="subtle" fullWidth (click)="scrollTo(idx)">
+                      <span class="flex items-center gap-2 w-full text-left">
+                        <ds-icon [name]="entry.type === 'Background' ? 'image' : 'book'" />
+                        <span class="truncate">{{ entry.title }}</span>
+                      </span>
+                    </ds-button>
+                    @if (!entry.isKanka) {
+                      <ds-confirmation-popover
+                        title="Delete entry?"
+                        message="Are you sure you want to delete this entry?"
+                        (accept)="deleteEntry(entry.id)"
+                      >
+                        <ds-icon-btn cpTrigger variant="subtle" color="red"
+                          ><ds-icon name="trash"
+                        /></ds-icon-btn>
+                      </ds-confirmation-popover>
+                    }
+                  </div>
+                } @empty {
+                  <div class="text-center text-sm opacity-60 py-6 px-2">
+                    No display entries yet.
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="ds-rail-foot p-3 border-t border-[color:var(--color-dark-5)]">
+              <ds-button color="green" fullWidth (click)="editorOpen.set(true)">
+                <span class="flex items-center justify-center gap-2">
+                  <ds-icon name="plus" />
+                  <span>Add Entry</span>
+                </span>
+              </ds-button>
             </div>
           </div>
         </div>
@@ -124,16 +142,26 @@ const KankaLoose = z.looseObject(KankaBaseModel.shape).array();
         <div class="ds-carousel">
           @for (entry of items(); track entry.id) {
             <div #slide class="ds-slide" style="container-type: size">
-              @if (entry.type === 'Background' && entry.pictureUrl) {
-                <div
-                  class="h-full w-full bg-center bg-cover flex flex-col justify-end items-center pb-2"
-                  [style.background-image]="'url(' + entry.pictureUrl + ')'"
-                >
-                  <ng-container
-                    [ngTemplateOutlet]="caption"
-                    [ngTemplateOutletContext]="{ $implicit: entry }"
-                  />
-                </div>
+              @if (entry.type === 'Background') {
+                @if (entry.pictureUrl) {
+                  <div
+                    class="ds-scene h-full w-full bg-center bg-cover flex flex-col justify-end items-center"
+                    [style.background-image]="'url(' + entry.pictureUrl + ')'"
+                  >
+                    <div class="ds-scene-scrim"></div>
+                    <ng-container
+                      [ngTemplateOutlet]="caption"
+                      [ngTemplateOutletContext]="{ $implicit: entry }"
+                    />
+                  </div>
+                } @else {
+                  <div class="ds-scene ds-scene-empty h-full w-full flex flex-col justify-end items-center">
+                    <ng-container
+                      [ngTemplateOutlet]="caption"
+                      [ngTemplateOutletContext]="{ $implicit: entry }"
+                    />
+                  </div>
+                }
               } @else if (entry.type === 'Portrait') {
                 <div class="h-full flex flex-col">
                   <div
@@ -146,6 +174,10 @@ const KankaLoose = z.looseObject(KankaBaseModel.shape).array();
                         class="h-full w-auto object-contain rounded-3xl"
                         alt=""
                       />
+                    } @else {
+                      <div class="ds-monogram glass flex items-center justify-center rounded-3xl">
+                        <span class="ds-monogram-letter">{{ initial(entry.title) }}</span>
+                      </div>
                     }
                   </div>
                   <div style="height: 40cqh">
@@ -157,14 +189,28 @@ const KankaLoose = z.looseObject(KankaBaseModel.shape).array();
                 </div>
               }
             </div>
+          } @empty {
+            <div class="ds-empty h-full w-full flex flex-col items-center justify-center gap-4 px-6 text-center">
+              <ds-icon name="image" />
+              <div class="text-3xl font-bold">No display entries yet</div>
+              <div class="text-lg opacity-70">
+                Add a Portrait or Background to start your scene.
+              </div>
+              <ds-button color="green" (click)="editorOpen.set(true)">
+                <span class="flex items-center gap-2">
+                  <ds-icon name="plus" />
+                  <span>Add Entry</span>
+                </span>
+              </ds-button>
+            </div>
           }
         </div>
       </div>
 
       <ng-template #caption let-entry>
-        <div class="h-full flex flex-col" [class.justify-end]="entry.type === 'Background'">
+        <div class="ds-caption relative z-10 h-full flex flex-col" [class.justify-end]="entry.type === 'Background'">
           <div
-            class="text-center text-4xl font-bold"
+            class="ds-title text-center text-4xl font-bold"
             [class.clickable]="!!entry.backLink"
             (click)="entry.backLink && openLink(entry.backLink)"
           >
@@ -189,6 +235,10 @@ const KankaLoose = z.looseObject(KankaBaseModel.shape).array();
   `,
   styles: [
     `
+      :host {
+        display: block;
+        height: 100%;
+      }
       .ds-carousel {
         display: flex;
         height: 100%;
@@ -200,6 +250,87 @@ const KankaLoose = z.looseObject(KankaBaseModel.shape).array();
         height: 100%;
         scroll-snap-align: start;
         padding: 0.5rem;
+      }
+
+      /* darken the page behind the open drawer */
+      .ds-scrim-overlay {
+        background: rgba(0, 0, 0, 0.45);
+      }
+
+      /* navigation rail polish */
+      .ds-rail-row :is(button, .ds-rail-link) {
+        justify-content: flex-start;
+      }
+
+      /* background scene container */
+      .ds-scene {
+        position: relative;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        padding-bottom: 1.5rem;
+      }
+      /* subtle scrim so captions stay legible over bright images */
+      .ds-scene-scrim {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.7) 0%,
+          rgba(0, 0, 0, 0.25) 35%,
+          rgba(0, 0, 0, 0) 60%
+        );
+      }
+      /* graceful image-less Background fallback (S9) */
+      .ds-scene-empty {
+        background:
+          radial-gradient(
+            120% 90% at 50% 0%,
+            var(--color-dark-6) 0%,
+            var(--color-dark-8) 55%,
+            var(--color-dark-9) 100%
+          );
+        border: 1px solid var(--color-dark-5);
+      }
+
+      /* portrait monogram placeholder (S9) */
+      .ds-monogram {
+        height: 100%;
+        aspect-ratio: 1 / 1;
+        max-width: 100%;
+        background:
+          radial-gradient(
+            120% 120% at 30% 20%,
+            var(--color-dark-5) 0%,
+            var(--color-dark-7) 55%,
+            var(--color-dark-9) 100%
+          );
+        border: 1px solid var(--color-dark-5);
+      }
+      .ds-monogram-letter {
+        font-size: 22cqh;
+        line-height: 1;
+        font-weight: 800;
+        color: var(--color-dark-1);
+        text-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+        user-select: none;
+      }
+
+      /* always-legible titles */
+      .ds-title {
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.9);
+      }
+
+      /* empty state (ML7) */
+      .ds-empty {
+        background:
+          radial-gradient(
+            120% 90% at 50% 0%,
+            var(--color-dark-7) 0%,
+            var(--color-dark-9) 100%
+          );
+        border-radius: 1.5rem;
       }
     `,
   ],
@@ -264,6 +395,10 @@ export class DisplayPage {
 
   protected safe(html: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+
+  protected initial(title: string): string {
+    return (title.trim()[0] ?? '?').toUpperCase();
   }
 
   protected openLink(url: string): void {
