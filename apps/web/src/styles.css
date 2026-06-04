@@ -30,6 +30,11 @@
   /* Reusable surface tokens. */
   --surface-border: var(--color-dark-4);
   --surface-glass-bg: rgba(20, 21, 23, 0.66);
+
+  /* ML9 — muted/secondary text. Slightly higher contrast than the raw
+   * --color-dark-2/-3 greys so secondary copy stays legible on the dark bg
+   * without becoming as loud as primary text (--color-dark-0). */
+  --text-muted: #a9abb0;
 }
 
 :root {
@@ -86,14 +91,17 @@ h3 {
   text-wrap: balance;
 }
 h1 {
+  font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 h2 {
+  font-size: 1.375rem;
   font-weight: 600;
   letter-spacing: -0.015em;
 }
 h3 {
+  font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -174,7 +182,8 @@ select {
   border-color: var(--color-brand-blue);
 }
 .ds-input::placeholder {
-  color: var(--color-dark-2);
+  color: var(--text-muted);
+  opacity: 0.85;
 }
 
 /* Pill (Mantine Pill). */
@@ -214,4 +223,40 @@ select {
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* ML9 — tasteful brand-blue text selection tint that stays readable. */
+::selection {
+  background: color-mix(in srgb, var(--color-brand-blue) 40%, transparent);
+  color: #fff;
+}
+
+/* ML9 — gentle, unified transition baseline for interactive elements. Kept
+ * to the properties that actually animate so it never fights layout. Component
+ * styles can still override these. */
+a,
+button,
+[role='button'] {
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+/* ML9 — respect users who prefer reduced motion: neutralise non-essential
+ * animations, transitions and smooth scrolling app-wide. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

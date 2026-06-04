@@ -468,7 +468,10 @@ export class CombatPage {
 
   constructor() {
     effect(() => {
-      if (Number.isNaN(this.combatId())) void this.router.navigate(['/campaigns']);
+      const raw = this.id();
+      if (raw !== '' && raw != null && Number.isNaN(this.combatId())) {
+        void this.router.navigate(['/campaigns']);
+      }
     });
     effect(() => {
       if (this.combat.status() === 'error') void this.router.navigate(['/campaigns']);

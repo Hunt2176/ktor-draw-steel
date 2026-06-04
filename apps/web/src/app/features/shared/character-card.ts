@@ -61,23 +61,48 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
               class="ds-img clickable"
               [src]="pictureUrl()"
               (click)="portraitClick.emit()"
-              alt=""
+              (keydown.enter)="portraitClick.emit()"
+              (keydown.space)="portraitClick.emit(); $event.preventDefault()"
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'Open ' + character().name"
+              [alt]="character().name"
             />
           } @else {
             <div
               class="ds-img ds-img-placeholder clickable"
               (click)="portraitClick.emit()"
+              (keydown.enter)="portraitClick.emit()"
+              (keydown.space)="portraitClick.emit(); $event.preventDefault()"
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'Open ' + character().name"
             >
               <span class="ds-initials">{{ initials() }}</span>
             </div>
           }
           @if (full()) {
             <div class="ds-stats">
-              <span>M {{ character().might }}</span>
-              <span>A {{ character().agility }}</span>
-              <span>R {{ character().reason }}</span>
-              <span>I {{ character().intuition }}</span>
-              <span>P {{ character().presence }}</span>
+              <span class="ds-stat">
+                <span class="ds-stat-key">M</span>
+                <span class="ds-stat-val">{{ character().might }}</span>
+              </span>
+              <span class="ds-stat">
+                <span class="ds-stat-key">A</span>
+                <span class="ds-stat-val">{{ character().agility }}</span>
+              </span>
+              <span class="ds-stat">
+                <span class="ds-stat-key">R</span>
+                <span class="ds-stat-val">{{ character().reason }}</span>
+              </span>
+              <span class="ds-stat">
+                <span class="ds-stat-key">I</span>
+                <span class="ds-stat-val">{{ character().intuition }}</span>
+              </span>
+              <span class="ds-stat">
+                <span class="ds-stat-key">P</span>
+                <span class="ds-stat-val">{{ character().presence }}</span>
+              </span>
             </div>
           }
         </div>
@@ -259,10 +284,42 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
         bottom: 0;
         width: 100%;
         display: flex;
-        justify-content: space-around;
+        justify-content: space-between;
+        align-items: stretch;
+        gap: 0.2rem;
+        padding: 0.3rem 0.35rem;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.72) 0%,
+          rgba(0, 0, 0, 0.5) 100%
+        );
+      }
+      .ds-card-full .ds-stat {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.05rem;
+        padding: 0.1rem 0.15rem;
+        border-radius: 0.3rem;
+        background: color-mix(in srgb, var(--color-dark-9, #000) 35%, transparent);
+        border: 1px solid color-mix(in srgb, var(--color-dark-3, #909296) 22%, transparent);
+        line-height: 1;
+      }
+      .ds-card-full .ds-stat-key {
+        font-size: 0.6rem;
         font-weight: 600;
-        padding: 0.1rem 0.25rem;
-        background: rgba(0, 0, 0, 0.4);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--color-dark-2, #909296);
+      }
+      .ds-card-full .ds-stat-val {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--color-dark-0, #fff);
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
       }
       .ds-card-full .ds-name {
         text-align: center;
