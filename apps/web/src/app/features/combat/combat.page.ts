@@ -60,9 +60,12 @@ import { getHp, type Combatant } from '@draw-steel/shared';
     @if (combat.value(); as combat) {
       @if (campaign.value(); as campaign) {
         <div class="m-2">
-          <ds-card class="mb-2">
-            <div class="flex justify-between">
-              <div class="flex flex-col gap-2">
+          <ds-card class="mb-3">
+            <div
+              class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3"
+            >
+              <!-- Left: secondary actions -->
+              <div class="flex items-center gap-2">
                 <ds-button color="gray" variant="outline" (click)="showModify()"
                   >Modify</ds-button
                 >
@@ -70,7 +73,11 @@ import { getHp, type Combatant } from '@draw-steel/shared';
                   >Quick Add</ds-button
                 >
               </div>
-              <div class="flex flex-col justify-center gap-2 items-center">
+
+              <!-- Center: title block -->
+              <div
+                class="order-last flex w-full flex-col items-center text-center sm:order-none sm:w-auto sm:flex-1"
+              >
                 <ds-button
                   color="gray"
                   variant="subtle"
@@ -78,36 +85,51 @@ import { getHp, type Combatant } from '@draw-steel/shared';
                   (click)="goCampaign(campaign.campaign.id)"
                   >{{ campaign.campaign.name }}</ds-button
                 >
-                <div class="text-center font-bold">Round {{ combat.round }}</div>
+                <div
+                  class="text-sm font-semibold uppercase tracking-wide text-[color:color-mix(in_srgb,var(--color-dark-0)_60%,transparent)]"
+                >
+                  Round {{ combat.round }}
+                </div>
               </div>
-              <div class="flex flex-col gap-3">
-                <ds-button (click)="showNextRound.set(true)">
+
+              <!-- Right: primary action + hero tokens -->
+              <div class="flex items-center gap-3">
+                <ds-popover>
+                  <button dsTrigger type="button" class="stat-pill glass">
+                    <span
+                      class="text-[color:color-mix(in_srgb,var(--color-dark-0)_65%,transparent)]"
+                      >Hero Tokens</span
+                    >
+                    <span class="text-base font-bold">{{
+                      campaign.campaign.heroTokens
+                    }}</span>
+                  </button>
+                  <div dsDropdown>
+                    <ds-value-modifier
+                      label="Modify Hero Tokens"
+                      (changed)="modifyHeroTokens(campaign.campaign.id, $event)"
+                    />
+                  </div>
+                </ds-popover>
+                <ds-button size="md" (click)="showNextRound.set(true)">
                   <span class="mr-2">Next Round</span>
                   <ds-icon name="arrow-right" />
                 </ds-button>
-                <div class="flex flex-col items-center">
-                  <ds-popover>
-                    <ds-button dsTrigger variant="transparent"
-                      >Hero Tokens {{ campaign.campaign.heroTokens }}</ds-button
-                    >
-                    <div dsDropdown>
-                      <ds-value-modifier
-                        label="Modify Hero Tokens"
-                        (changed)="modifyHeroTokens(campaign.campaign.id, $event)"
-                      />
-                    </div>
-                  </ds-popover>
-                </div>
               </div>
             </div>
           </ds-card>
 
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
             @for (col of columns(); track col.available) {
-              <div class="flex flex-col gap-1">
-                <ds-card>
-                  <div class="text-center text-lg font-bold">{{ col.title }}</div>
-                </ds-card>
+              <div class="flex flex-col gap-2">
+                <div
+                  class="col-header"
+                  [class.col-header--available]="col.available"
+                  [class.col-header--unavailable]="!col.available"
+                >
+                  <span class="text-lg font-bold">{{ col.title }}</span>
+                  <span class="col-header__count">{{ col.list.length }}</span>
+                </div>
                 <div class="grid gap-2" style="grid-template-columns: 1fr">
                   @for (combatant of col.list; track combatant.id) {
                     <ds-character-card
@@ -116,70 +138,78 @@ import { getHp, type Combatant } from '@draw-steel/shared';
                       [character]="combatant.character"
                       (portraitClick)="goCharacter(combatant.character.id)"
                     >
-                      <div cardRight class="shrink ml-2 flex flex-col gap-2">
-                        <ds-icon-btn (click)="toggleActive(combatant)">
+                      <div cardRight class="shrink ml-2 flex flex-col gap-1.5">
+                        <ds-icon-btn
+                          color="gray"
+                          variant="subtle"
+                          size="sm"
+                          (click)="toggleActive(combatant)"
+                        >
                           <ds-icon
                             [name]="combatant.available ? 'arrow-right' : 'arrow-left'"
                           />
                         </ds-icon-btn>
-                        <ds-icon-btn (click)="card.openEditor()"
+                        <ds-icon-btn
+                          color="gray"
+                          variant="subtle"
+                          size="sm"
+                          (click)="card.openEditor()"
                           ><ds-icon name="pencil"
                         /></ds-icon-btn>
                         <ds-character-conditions
                           mode="button"
                           [character]="combatant.character"
                         />
-                        <ds-icon-btn (click)="inventoryFor.set(combatant.character.id)">
+                        <ds-icon-btn
+                          color="gray"
+                          variant="subtle"
+                          size="sm"
+                          (click)="inventoryFor.set(combatant.character.id)"
+                        >
                           <ds-icon name="briefcase" />
                         </ds-icon-btn>
                       </div>
-                      <div cardGauges class="flex w-full">
-                        <div class="flex justify-center flex-1">
-                          <ds-popover>
-                            <ds-button dsTrigger color="indigo" variant="subtle">
-                              <div class="flex flex-col">
-                                <span class="text-lg font-bold">{{
-                                  combatant.character.resourceName ?? 'Resources'
-                                }}</span>
-                                <span class="text-lg font-bold">{{
-                                  combatant.resources
-                                }}</span>
-                              </div>
-                            </ds-button>
-                            <div dsDropdown>
-                              <ds-value-modifier
-                                label="Modify Resources"
-                                (changed)="modifyValue(combatant, 'resources', $event)"
-                              />
-                            </div>
-                          </ds-popover>
-                        </div>
-                        <div class="flex justify-center flex-1">
-                          <ds-popover>
-                            <ds-button dsTrigger color="blue" variant="subtle">
-                              <div class="flex flex-col">
-                                <span class="text-lg font-bold">Surges</span>
-                                <span class="text-lg font-bold">{{
-                                  combatant.surges
-                                }}</span>
-                              </div>
-                            </ds-button>
-                            <div dsDropdown>
-                              <ds-value-modifier
-                                label="Modify Surges"
-                                (changed)="modifyValue(combatant, 'surges', $event)"
-                              />
-                            </div>
-                          </ds-popover>
-                        </div>
+                      <div cardGauges class="flex w-full gap-2">
+                        <ds-popover class="flex-1">
+                          <button dsTrigger type="button" class="stat-block">
+                            <span class="stat-block__label">{{
+                              combatant.character.resourceName ?? 'Resources'
+                            }}</span>
+                            <span class="stat-block__value">{{
+                              combatant.resources
+                            }}</span>
+                          </button>
+                          <div dsDropdown>
+                            <ds-value-modifier
+                              label="Modify Resources"
+                              (changed)="modifyValue(combatant, 'resources', $event)"
+                            />
+                          </div>
+                        </ds-popover>
+                        <ds-popover class="flex-1">
+                          <button dsTrigger type="button" class="stat-block">
+                            <span class="stat-block__label">Surges</span>
+                            <span class="stat-block__value">{{
+                              combatant.surges
+                            }}</span>
+                          </button>
+                          <div dsDropdown>
+                            <ds-value-modifier
+                              label="Modify Surges"
+                              (changed)="modifyValue(combatant, 'surges', $event)"
+                            />
+                          </div>
+                        </ds-popover>
                       </div>
-                      <div cardBottom>
+                      <div cardBottom class="mt-1">
                         <ds-character-conditions
                           mode="list"
                           [character]="combatant.character"
                         />
                       </div>
                     </ds-character-card>
+                  } @empty {
+                    <div class="empty-col">None</div>
                   }
                 </div>
               </div>
@@ -257,6 +287,107 @@ import { getHp, type Combatant } from '@draw-steel/shared';
       }
     }
   `,
+  styles: [
+    `
+      .stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+        color: var(--color-dark-0);
+        cursor: pointer;
+        border: 1px solid
+          color-mix(in srgb, var(--color-brand-blue) 40%, transparent);
+        transition: border-color 0.12s, background 0.12s;
+      }
+      .stat-pill:hover {
+        border-color: var(--color-brand-blue);
+        background: color-mix(in srgb, var(--color-brand-blue) 12%, transparent);
+      }
+
+      .col-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.6rem;
+        border: 1px solid var(--color-dark-4);
+      }
+      .col-header--available {
+        border-color: color-mix(
+          in srgb,
+          var(--color-brand-green) 45%,
+          transparent
+        );
+        background: color-mix(in srgb, var(--color-brand-green) 8%, transparent);
+      }
+      .col-header--unavailable {
+        color: color-mix(in srgb, var(--color-dark-0) 60%, transparent);
+        background: color-mix(in srgb, var(--color-dark-5) 30%, transparent);
+      }
+      .col-header__count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.5rem;
+        height: 1.5rem;
+        padding: 0 0.4rem;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background: color-mix(in srgb, var(--color-dark-0) 12%, transparent);
+      }
+
+      /* Make gauge popovers share the card width evenly. */
+      ds-popover.flex-1 {
+        display: flex;
+      }
+      .stat-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.1rem;
+        width: 100%;
+        padding: 0.4rem 0.5rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        color: var(--color-dark-0);
+        border: 1px solid var(--color-dark-4);
+        background: color-mix(in srgb, var(--color-dark-6) 35%, transparent);
+        transition: border-color 0.12s, background 0.12s;
+      }
+      .stat-block:hover {
+        border-color: var(--color-brand-blue);
+        background: color-mix(in srgb, var(--color-brand-blue) 12%, transparent);
+      }
+      .stat-block__label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: color-mix(in srgb, var(--color-dark-0) 60%, transparent);
+      }
+      .stat-block__value {
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+
+      .empty-col {
+        padding: 1.25rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: color-mix(in srgb, var(--color-dark-0) 50%, transparent);
+        border: 1px dashed var(--color-dark-4);
+        border-radius: 0.6rem;
+      }
+    `,
+  ],
 })
 export class CombatPage {
   private readonly api = inject(ApiService);

@@ -27,6 +27,7 @@ export const routes: Routes = [
     path: 'campaigns/:id/display',
     loadComponent: () =>
       import('./features/display/display.page').then((m) => m.DisplayPage),
+    data: { shell: 'bare' },
   },
   {
     path: 'characters/:id',
@@ -37,5 +38,6 @@ export const routes: Routes = [
     path: 'combats/:id',
     loadComponent: () =>
       import('./features/combat/combat.page').then((m) => m.CombatPage),
+    data: { shell: 'wide' },
   },
 ];

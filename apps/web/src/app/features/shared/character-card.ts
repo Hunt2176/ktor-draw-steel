@@ -175,22 +175,50 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
           0 8px 24px rgba(0, 0, 0, 0.45),
           0 2px 6px rgba(0, 0, 0, 0.3);
       }
-      /* placeholder portrait */
+      /* placeholder portrait — a designed avatar, not an empty box */
       .ds-img-placeholder {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--color-dark-6);
+        position: relative;
+        background:
+          radial-gradient(
+            circle at 50% 38%,
+            color-mix(in srgb, var(--color-brand-blue, #4dabf7) 14%, transparent),
+            transparent 60%
+          ),
+          linear-gradient(
+            155deg,
+            var(--color-dark-5) 0%,
+            var(--color-dark-7) 100%
+          );
         border: 1px solid var(--color-dark-4);
-        color: var(--color-dark-1, #a6a7ab);
+        color: var(--color-dark-2, #909296);
+      }
+      /* faint monogram ring behind the initials */
+      .ds-img-placeholder::before {
+        content: '';
+        position: absolute;
+        width: 4.5rem;
+        height: 4.5rem;
+        max-width: 60%;
+        max-height: 60%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 1px solid color-mix(in srgb, var(--color-dark-1, #a6a7ab) 22%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-dark-9, #000) 25%, transparent);
+        pointer-events: none;
       }
       .ds-initials {
-        font-weight: 700;
+        position: relative;
+        font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
         font-size: 1.5rem;
         line-height: 1;
         user-select: none;
+        color: color-mix(in srgb, var(--color-brand-blue, #4dabf7) 30%, var(--color-dark-1, #a6a7ab));
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
       }
       /* full variant */
       .ds-card-full {
@@ -219,6 +247,10 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
         border: none;
         border-radius: 0;
       }
+      .ds-card-full .ds-img-placeholder::before {
+        width: 6rem;
+        height: 6rem;
+      }
       .ds-card-full .ds-initials {
         font-size: 2.5rem;
       }
@@ -240,6 +272,13 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
         line-height: 1.2;
         color: var(--color-dark-0);
         padding: 0.5rem 0.5rem 0.35rem;
+        /* allow up to 2 lines, then ellipsis — keeps dense grids tidy */
+        overflow-wrap: anywhere;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
       }
       .ds-card-full .ds-rings {
         display: flex;
@@ -274,7 +313,10 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
       }
       .ds-card-tile .ds-img-placeholder {
         width: 100px;
-        height: 100px;
+        height: 100%;
+        /* balance with the two stacked rings: don't look stunted on mobile */
+        min-height: 100px;
+        border-radius: 0.375rem;
       }
       .ds-card-tile .ds-body {
         display: flex;
@@ -290,6 +332,11 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
         letter-spacing: -0.01em;
         line-height: 1.2;
         color: var(--color-dark-0);
+        /* single-line ellipsis keeps tiles tidy in dense grids */
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .ds-card-tile .ds-rings {
         display: flex;
