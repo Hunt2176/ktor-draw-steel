@@ -34,6 +34,7 @@ interface RenderedSection {
         />
         @for (s of rendered(); track $index) {
           <circle
+            class="ds-ring-section"
             [attr.cx]="center()"
             [attr.cy]="center()"
             [attr.r]="radius()"
@@ -43,9 +44,10 @@ interface RenderedSection {
             stroke-linecap="round"
             [attr.stroke-dasharray]="circumference()"
             [attr.stroke-dashoffset]="s.dashoffset"
+            [style.--ds-ring-offset]="s.dashoffset"
+            [style.--ds-ring-circumference]="circumference()"
             [style.transform]="'rotate(' + s.rotation + 'deg)'"
             [style.transformOrigin]="'center'"
-            style="transition: stroke-dashoffset 0.25s ease;"
           />
         }
       </svg>
@@ -54,6 +56,39 @@ interface RenderedSection {
       </div>
     </div>
   `,
+  styles: [
+    `
+      /*
+       * Entrance sweep: each section starts fully "empty" (dashoffset ==
+       * circumference) and animates to its computed dashoffset on first
+       * render. fill-mode is "backwards" only — the keyframe's "from" applies
+       * before the run, but once it completes the property is released back to
+       * the [attr.stroke-dashoffset] binding. This is what keeps later value
+       * changes (HP/recovery edits) working via the existing 0.25s transition
+       * and guarantees the settled geometry/visual output is byte-identical to
+       * before the animation was added.
+       */
+      .ds-ring-section {
+        transition: stroke-dashoffset 0.25s ease;
+        animation: ds-ring-sweep 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+      }
+
+      @keyframes ds-ring-sweep {
+        from {
+          stroke-dashoffset: var(--ds-ring-circumference);
+        }
+        to {
+          stroke-dashoffset: var(--ds-ring-offset);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .ds-ring-section {
+          animation: none;
+        }
+      }
+    `,
+  ],
 })
 export class RingProgressComponent {
   readonly size = input(100);
