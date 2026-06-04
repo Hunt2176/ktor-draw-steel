@@ -1,0 +1,216 @@
+@import 'tailwindcss';
+
+/*
+ * Theme — approximates the original Mantine dark palette so the rewrite keeps
+ * the same look and feel: charcoal background, soft grey text, glassmorphic
+ * cards, and the Mantine accent colours used throughout the UI.
+ */
+@theme {
+  --color-m-dark-0: #c1c2c5;
+  --color-m-dark-1: #a6a7ab;
+  --color-m-dark-2: #909296;
+  --color-m-dark-3: #5c5f66;
+  --color-m-dark-4: #373a40;
+  --color-m-dark-5: #2c2e33;
+  --color-m-dark-6: #25262b;
+  --color-m-dark-7: #1a1b1e;
+  --color-m-dark-8: #141517;
+  --color-m-dark-9: #101113;
+
+  --color-m-blue: #228be6;
+  --color-m-blue-light: #4dabf7;
+  --color-m-indigo: #4c6ef5;
+  --color-m-green: #40c057;
+  --color-m-red: #fa5252;
+  --color-m-orange: #fd7e14;
+  --color-m-yellow: #fab005;
+  --color-m-grape: #be4bdb;
+  --color-m-teal: #12b886;
+  --color-m-gray: #868e96;
+
+  --font-sans: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: var(--color-m-dark-7);
+  color: var(--color-m-dark-0);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root,
+app-root {
+  display: block;
+  min-height: 100%;
+}
+
+/* Glassmorphic surface used by cards, popovers, and anchored chips. */
+.glass {
+  background: rgba(28, 28, 30, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.left-anchored {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.right-anchored {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+/* Thin scrollbars to match the dark chrome. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-m-dark-4) transparent;
+}
+
+/*
+ * Mantine-flavoured component primitives. Colours are driven by CSS custom
+ * properties set inline by the Angular components, so dynamic accent colours
+ * work without Tailwind needing to see every utility combination.
+ */
+@layer components {
+  .ds-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: var(--btn-bg, var(--color-m-blue));
+    color: var(--btn-fg, #fff);
+    transition:
+      background-color 0.15s ease,
+      opacity 0.15s ease;
+    white-space: nowrap;
+  }
+  .ds-btn:hover:not(:disabled) {
+    background: var(--btn-bg-hover, var(--color-m-blue-light));
+  }
+  .ds-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .ds-btn--outline,
+  .ds-btn--subtle,
+  .ds-btn--transparent {
+    background: transparent;
+    color: var(--btn-accent, var(--color-m-blue));
+  }
+  .ds-btn--outline {
+    border-color: var(--btn-accent, var(--color-m-blue));
+  }
+  .ds-btn--subtle:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--btn-accent, var(--color-m-blue)) 15%, transparent);
+  }
+  .ds-btn--outline:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--btn-accent, var(--color-m-blue)) 12%, transparent);
+  }
+  .ds-btn--transparent:hover:not(:disabled) {
+    background: transparent;
+    opacity: 0.75;
+  }
+  .ds-btn--sm {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  .ds-btn--lg {
+    padding: 0.65rem 1.25rem;
+    font-size: 1rem;
+  }
+  .ds-btn--compact {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  .ds-btn--block {
+    width: 100%;
+  }
+
+  .ds-action-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: var(--ai-bg, var(--color-m-blue));
+    color: var(--ai-fg, #fff);
+    transition: background-color 0.15s ease;
+    flex-shrink: 0;
+  }
+  .ds-action-icon:hover:not(:disabled) {
+    background: var(--ai-bg-hover, var(--color-m-blue-light));
+  }
+  .ds-action-icon--outline {
+    background: transparent;
+    border-color: var(--ai-accent, var(--color-m-blue));
+    color: var(--ai-accent, var(--color-m-blue));
+  }
+  .ds-action-icon--outline:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ai-accent, var(--color-m-blue)) 15%, transparent);
+  }
+  .ds-action-icon--lg {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .ds-card {
+    background: rgba(28, 28, 30, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 0.6rem;
+    padding: 1rem;
+    border: 1px solid var(--color-m-dark-4);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
+  .ds-input {
+    width: 100%;
+    background: var(--color-m-dark-6);
+    border: 1px solid var(--color-m-dark-4);
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    color: var(--color-m-dark-0);
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .ds-input:focus {
+    border-color: var(--color-m-blue);
+  }
+  .ds-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: var(--color-m-dark-1);
+  }
+  .ds-divider {
+    border: none;
+    border-top: 1px solid var(--color-m-dark-4);
+    margin: 0.75rem 0;
+  }
+}

@@ -26,7 +26,12 @@ packages/*/dist/
 # ── Database & uploads ────────────────────────────────────────────────
 *.sqlite
 *.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 *.db
+
+# ── TS build info ─────────────────────────────────────────────────────
+*.tsbuildinfo
 packages/server/data/
 packages/server/files/
 

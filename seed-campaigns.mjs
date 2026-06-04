@@ -132,7 +132,7 @@ async function api(method, path, body) {
 	} catch (err) {
 		throw new Error(
 			`Cannot reach ${API}${path} (${err.message}).\n` +
-				`Is the server running? Try: java -jar build/libs/ktor-draw-steel-all.jar`,
+				`Is the server running? Try: pnpm --filter @draw-steel/server dev`,
 		);
 	}
 	const text = await res.text();
