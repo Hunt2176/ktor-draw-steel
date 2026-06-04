@@ -28,11 +28,46 @@
   --color-m-teal: #12b886;
   --color-m-gray: #868e96;
 
+  /*
+   * Draw Steel forged-steel identity. Steel-blue accent for links/secondary
+   * actions; warm forge-amber ember reserved for primary CTAs. Cinzel is the
+   * heroic display face; body copy stays Roboto.
+   */
+  --color-ds-accent: #6ba3d6;
+  --color-ds-ember: #e8893b;
+
   --font-sans: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Cinzel', 'Roboto', serif;
+
+  /* Typographic scale (display + headings) — generates text-* utilities. */
+  --text-display: 3.5rem;
+  --text-display--line-height: 1.05;
+  --text-h1: 2.25rem;
+  --text-h1--line-height: 1.15;
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 1.25;
+
+  /* Elevation tokens — generates shadow-* utilities. */
+  --shadow-ds-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-ds-2: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-ds-glow: 0 0 0 1px color-mix(in srgb, var(--color-ds-accent) 35%, transparent);
+
+  /* Spacing rhythm — generates spacing utilities (padding, margin, gap). */
+  --spacing-section: 4rem;
+  --spacing-gutter: 1.5rem;
 }
 
 :root {
   color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-ds-accent) 35%, transparent);
+  color: #fff;
 }
 
 html,
@@ -103,11 +138,15 @@ app-root {
     color: var(--btn-fg, #fff);
     transition:
       background-color 0.15s ease,
-      opacity 0.15s ease;
+      opacity 0.15s ease,
+      transform 0.08s ease;
     white-space: nowrap;
   }
   .ds-btn:hover:not(:disabled) {
     background: var(--btn-bg-hover, var(--color-m-blue-light));
+  }
+  .ds-btn:active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
   }
   .ds-btn:disabled {
     opacity: 0.45;
@@ -159,11 +198,16 @@ app-root {
     border: 1px solid transparent;
     background: var(--ai-bg, var(--color-m-blue));
     color: var(--ai-fg, #fff);
-    transition: background-color 0.15s ease;
+    transition:
+      background-color 0.15s ease,
+      transform 0.08s ease;
     flex-shrink: 0;
   }
   .ds-action-icon:hover:not(:disabled) {
     background: var(--ai-bg-hover, var(--color-m-blue-light));
+  }
+  .ds-action-icon:active:not(:disabled) {
+    transform: translateY(1px) scale(0.95);
   }
   .ds-action-icon--outline {
     background: transparent;
@@ -185,7 +229,16 @@ app-root {
     border-radius: 0.6rem;
     padding: 1rem;
     border: 1px solid var(--color-m-dark-4);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-ds-1);
+    transition:
+      box-shadow 0.2s ease,
+      transform 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .ds-card:hover {
+    box-shadow: var(--shadow-ds-2);
+    border-color: color-mix(in srgb, var(--color-ds-accent) 40%, var(--color-m-dark-4));
+    transform: translateY(-2px);
   }
 
   .ds-input {
@@ -197,9 +250,16 @@ app-root {
     color: var(--color-m-dark-0);
     font-size: 0.9rem;
     outline: none;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .ds-input::placeholder {
+    color: var(--color-m-dark-3);
   }
   .ds-input:focus {
-    border-color: var(--color-m-blue);
+    border-color: var(--color-ds-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ds-accent) 25%, transparent);
   }
   .ds-label {
     display: block;
@@ -212,5 +272,34 @@ app-root {
     border: none;
     border-top: 1px solid var(--color-m-dark-4);
     margin: 0.75rem 0;
+  }
+
+  /* Reusable centred page container — max width, auto gutters, consistent padding. */
+  .ds-page {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: var(--spacing-gutter);
+    padding-block: var(--spacing-gutter);
+  }
+}
+
+/*
+ * Accessibility — honour the user's reduced-motion preference by disabling all
+ * the transitions/animations and smooth scrolling added for the forged-steel UI.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .ds-btn,
+  .ds-action-icon,
+  .ds-card,
+  .ds-input,
+  .ds-btn:active:not(:disabled),
+  .ds-action-icon:active:not(:disabled),
+  .ds-card:hover {
+    transition: none;
+    transform: none;
   }
 }
