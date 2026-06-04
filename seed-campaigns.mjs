@@ -52,13 +52,16 @@ const DRY_RUN = hasFlag('dry-run');
 // Each campaign optionally carries `heroes`. A hero's `player` maps to a user
 // (created on demand and shared across heroes); everything else maps directly to
 // the Character model fields the API accepts.
+// NOTE: `background` is an *image URL* (e.g. `/files/foo.png`), not prose — it is
+// used as the campaign page background-image and the card thumbnail. We have no
+// seed image assets, so campaigns are seeded without one and render the app's
+// branded placeholder. (Flavor text is kept here only as a code comment.)
 const CAMPAIGNS = [
 	{
 		name: 'The Fall of Capital Vasloria',
 		heroTokens: 3,
-		background:
-			'The shining capital has fallen to the Ardent Legion. A scattered band of heroes ' +
-			'must rally the resistance from the catacombs beneath the ruined city.',
+		// The shining capital has fallen to the Ardent Legion. A scattered band of
+		// heroes must rally the resistance from the catacombs beneath the ruined city.
 		heroes: [
 			{ name: 'Kael Ironward', player: 'Alex', resourceName: 'Wrath',
 			  might: 2, agility: 0, reason: -1, intuition: 1, presence: 2, maxHp: 21, maxRecoveries: 8 },
@@ -71,9 +74,8 @@ const CAMPAIGNS = [
 	{
 		name: 'Echoes of the Timescape',
 		heroTokens: 2,
-		background:
-			'Reality is fraying at the edges of the Timescape. The heroes chase a Time Raider ' +
-			'warband across collapsing eras to seal the breaches before history unravels.',
+		// Reality is fraying at the edges of the Timescape. The heroes chase a Time
+		// Raider warband across collapsing eras to seal the breaches before history unravels.
 		heroes: [
 			{ name: 'Threnody', player: 'Priya', resourceName: 'Drama',
 			  might: 0, agility: 1, reason: 2, intuition: 1, presence: 2, maxHp: 18, maxRecoveries: 8 },
@@ -84,9 +86,8 @@ const CAMPAIGNS = [
 	{
 		name: 'Reach of the Tarkanan',
 		heroTokens: 1,
-		background:
-			'A thieves’ guild known as the Tarkanan has its hooks in every ward of the free city. ' +
-			'The heroes are hired to cut those hooks out — one warehouse, one informant, one rooftop chase at a time.',
+		// A thieves’ guild known as the Tarkanan has its hooks in every ward of the free
+		// city. The heroes are hired to cut those hooks out — one warehouse, one informant, one rooftop chase at a time.
 		heroes: [
 			{ name: 'Vex Nightshade', player: 'Alex', resourceName: 'Insight',
 			  might: -1, agility: 2, reason: 1, intuition: 2, presence: 1, maxHp: 16, maxRecoveries: 8 },
@@ -97,9 +98,8 @@ const CAMPAIGNS = [
 	{
 		name: 'The Hollow Crown',
 		heroTokens: 0,
-		background:
-			'The old king is dead and his crown sits empty. Five claimants, five armies, and one ' +
-			'prophecy bind the realm to the heroes who must decide who — if anyone — should rule.',
+		// The old king is dead and his crown sits empty. Five claimants, five armies, and one
+		// prophecy bind the realm to the heroes who must decide who — if anyone — should rule.
 		heroes: [
 			{ name: 'Lord Aldric Vane', player: 'Priya', resourceName: 'Discipline',
 			  might: 1, agility: 0, reason: 2, intuition: 1, presence: 2, maxHp: 20, maxRecoveries: 8 },
@@ -108,9 +108,8 @@ const CAMPAIGNS = [
 	{
 		name: 'Songs of the Quintessence',
 		heroTokens: 5,
-		background:
-			'Deep beneath the world hums the Quintessence, the elemental wellspring of all magic. ' +
-			'When its song falters, the heroes descend to mend the source before the surface withers.',
+		// Deep beneath the world hums the Quintessence, the elemental wellspring of all magic.
+		// When its song falters, the heroes descend to mend the source before the surface withers.
 		heroes: [
 			{ name: 'Ember', player: 'Alex', resourceName: 'Essence',
 			  might: 0, agility: 1, reason: 2, intuition: 2, presence: 1, maxHp: 17, maxRecoveries: 8 },
