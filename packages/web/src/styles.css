@@ -100,6 +100,74 @@ app-root {
   cursor: pointer;
 }
 
+/*
+ * Global focus & link system. These are deliberately low-specificity element
+ * selectors so component-level utility classes (e.g. the header wordmark's
+ * `text-ds-accent`, nav `text-m-dark-1`, button focus rings) always win.
+ */
+@layer base {
+  /* Visible keyboard-focus ring for every natively focusable element. Harmless
+   * alongside the component ring utilities that app-button / app-action-icon set. */
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  button:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--color-ds-accent);
+    outline-offset: 2px;
+  }
+
+  /* Bare content links pick up the steel accent and warm to ember on hover.
+   * Element-selector specificity (0,0,1) is overridden by any `.text-*` utility. */
+  a {
+    color: var(--color-ds-accent);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  a:hover {
+    color: var(--color-ds-ember);
+  }
+
+  /* Native form controls adopt the accent so checkmarks/dots stay on-theme. */
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: var(--color-ds-accent);
+  }
+  input[type='checkbox']:focus-visible,
+  input[type='radio']:focus-visible {
+    outline: 2px solid var(--color-ds-accent);
+    outline-offset: 2px;
+  }
+}
+
+/*
+ * Cross-route morph — a quick cross-fade between the outgoing and incoming
+ * route trees, driven by the Angular Router's View Transitions integration.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: ease;
+}
+::view-transition-old(root) {
+  animation-name: ds-route-fade-out;
+}
+::view-transition-new(root) {
+  animation-name: ds-route-fade-in;
+}
+
+@keyframes ds-route-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes ds-route-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 .left-anchored {
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
@@ -301,5 +369,13 @@ app-root {
   .ds-card:hover {
     transition: none;
     transform: none;
+  }
+  a {
+    transition: none;
+  }
+  /* Disable the cross-route morph entirely under reduced-motion. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
   }
 }

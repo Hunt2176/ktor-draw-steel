@@ -48,4 +48,10 @@ export const routes: Routes = [
     title: 'Combat',
     loadComponent: () => import('./features/combat/combat.component').then((m) => m.CombatComponent),
   },
+  {
+    path: '**',
+    title: 'Not Found',
+    loadComponent: () =>
+      import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),
+  },
 ];
