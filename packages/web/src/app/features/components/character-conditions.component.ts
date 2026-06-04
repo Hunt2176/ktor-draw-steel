@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faClock, faPlus, faShieldHalved, faXmark } from '@fortawesome/free-solid-svg-icons';
 import type { Character, CharacterCondition } from '../../core/models';
 import { ApiService } from '../../core/api.service';
 import { CampaignStore } from '../../core/campaign-store.service';
@@ -24,11 +24,28 @@ type Mode = 'button' | 'list' | 'all';
       <div class="flex flex-wrap gap-1">
         @for (c of character().conditions; track c.id) {
           <span
-            class="inline-flex items-center gap-1 rounded-full bg-m-dark-5 px-2 py-0.5 text-sm text-m-blue-light"
+            class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm"
+            [class]="
+              c.endType === 'save'
+                ? 'border-ds-accent/40 bg-ds-accent/10 text-ds-accent'
+                : 'border-ds-ember/40 bg-ds-ember/10 text-ds-ember'
+            "
+            [title]="endTypeLabel(c.endType)"
           >
+            <app-icon class="text-xs" [name]="c.endType === 'save' ? shield : clock" />
             {{ c.name }}
-            <button class="text-m-dark-1 hover:text-m-red" (click)="confirmRemove(c)">×</button>
+            <button
+              type="button"
+              class="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-m-dark-1 transition-colors hover:bg-m-red hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-m-red"
+              [attr.aria-label]="'Remove ' + c.name"
+              [title]="'Remove ' + c.name"
+              (click)="confirmRemove(c)"
+            >
+              <app-icon class="text-[0.65rem]" [name]="xmark" />
+            </button>
           </span>
+        } @empty {
+          <span class="text-sm italic text-m-dark-2">No conditions</span>
         }
       </div>
     }
@@ -76,6 +93,9 @@ export class CharacterConditionsComponent {
   readonly mode = input<Mode>('all');
 
   protected readonly plus = faPlus;
+  protected readonly xmark = faXmark;
+  protected readonly shield = faShieldHalved;
+  protected readonly clock = faClock;
   protected readonly options = [
     'Bleeding',
     'Dazed',
@@ -105,6 +125,10 @@ export class CharacterConditionsComponent {
     this.addOpen.set(false);
     this.name.set('');
     this.endType.set('save');
+  }
+
+  endTypeLabel(endType: CharacterCondition['endType']): string {
+    return endType === 'save' ? 'Ends on save' : 'Ends at end of turn';
   }
 
   confirmRemove(condition: CharacterCondition): void {

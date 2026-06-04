@@ -22,8 +22,39 @@ export interface ValueModifierChangeEvent {
         type="number"
         min="0"
         [value]="display() === 0 ? '' : display()"
+        (focus)="selectAll($event)"
         (input)="onInput($event)"
       />
+      <div class="flex flex-wrap gap-1">
+        <button
+          type="button"
+          class="ds-btn ds-btn--subtle ds-btn--compact flex-1"
+          (click)="bump(1)"
+        >
+          +1
+        </button>
+        <button
+          type="button"
+          class="ds-btn ds-btn--subtle ds-btn--compact flex-1"
+          (click)="bump(5)"
+        >
+          +5
+        </button>
+        <button
+          type="button"
+          class="ds-btn ds-btn--subtle ds-btn--compact flex-1"
+          (click)="bump(-5)"
+        >
+          -5
+        </button>
+        <button
+          type="button"
+          class="ds-btn ds-btn--subtle ds-btn--compact flex-1"
+          (click)="bump(-1)"
+        >
+          -1
+        </button>
+      </div>
       <div class="flex">
         <app-button
           class="flex-1"
@@ -55,6 +86,16 @@ export class ValueModifierComponent {
     const raw = (event.target as HTMLInputElement).value;
     const parsed = Number.parseFloat(raw);
     this.display.set(Number.isNaN(parsed) ? 0 : Math.max(0, Math.floor(parsed)));
+  }
+
+  /** Quick stepper: adjust the entered amount by `delta`, clamped at zero. */
+  bump(delta: number): void {
+    this.display.set(Math.max(0, this.display() + delta));
+  }
+
+  /** Select-all on focus so typing replaces the current value. */
+  selectAll(event: FocusEvent): void {
+    (event.target as HTMLInputElement).select();
   }
 
   execute(type: 'INCREASE' | 'DECREASE'): void {

@@ -13,7 +13,12 @@ export type CharacterSelection = Record<number, boolean>;
   imports: [ButtonComponent],
   template: `
     <div class="flex flex-col gap-2">
-      <app-button size="sm" (clicked)="selectAll()">Select All</app-button>
+      <div class="flex items-center justify-between gap-2">
+        <app-button size="sm" (clicked)="toggleAll()">
+          {{ allSelected() ? 'Deselect All' : 'Select All' }}
+        </app-button>
+        <span class="text-sm text-m-dark-1">{{ selectedCount() }} selected</span>
+      </div>
       @for (c of sorted(); track c.id) {
         <label class="flex items-center gap-2">
           <input
@@ -35,6 +40,18 @@ export class CharacterSelectorComponent {
 
   readonly selection = signal<CharacterSelection>({});
   private seeded = false;
+
+  /** Live count of currently-checked characters. */
+  readonly selectedCount = computed(() => {
+    const sel = this.selection();
+    return this.characters().filter((c) => sel[c.id]).length;
+  });
+
+  /** True when every character is checked (and there is at least one). */
+  readonly allSelected = computed(() => {
+    const chars = this.characters();
+    return chars.length > 0 && this.selectedCount() === chars.length;
+  });
 
   readonly sorted = computed(() =>
     [...this.characters()].sort(
@@ -60,6 +77,18 @@ export class CharacterSelectorComponent {
     for (const c of this.characters()) next[c.id] = true;
     this.selection.set(next);
     this.changed.emit(next);
+  }
+
+  /** Select all when not everything is checked, otherwise deselect all. */
+  toggleAll(): void {
+    if (this.allSelected()) {
+      const next = { ...this.selection() };
+      for (const c of this.characters()) next[c.id] = false;
+      this.selection.set(next);
+      this.changed.emit(next);
+      return;
+    }
+    this.selectAll();
   }
 
   update(id: number, value: boolean): void {
