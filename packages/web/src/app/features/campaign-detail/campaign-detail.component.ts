@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { faBook, faBriefcase, faImage, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faBook, faBriefcase, faImage, faPlus, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
 import type { Character, Combat } from '../../core/models';
 import { emptyCharacter } from '../../core/models';
 import { ApiService } from '../../core/api.service';
@@ -13,6 +13,8 @@ import { ButtonComponent } from '../../ui/button.component';
 import { CardComponent } from '../../ui/card.component';
 import { IconComponent } from '../../ui/icon.component';
 import { ModalComponent } from '../../ui/modal.component';
+import { EmptyStateComponent } from '../../ui/empty-state.component';
+import { SectionHeaderComponent } from '../../ui/section-header.component';
 import { CharacterCardComponent } from '../components/character-card.component';
 import { CharacterEditorComponent, type CharacterEditorResult } from '../components/character-editor.component';
 import { CharacterSelectorComponent, type CharacterSelection } from '../components/character-selector.component';
@@ -30,6 +32,8 @@ import { UploadModalComponent } from '../components/upload-modal.component';
     CardComponent,
     IconComponent,
     ModalComponent,
+    EmptyStateComponent,
+    SectionHeaderComponent,
     CharacterCardComponent,
     CharacterEditorComponent,
     CharacterSelectorComponent,
@@ -39,52 +43,58 @@ import { UploadModalComponent } from '../components/upload-modal.component';
   template: `
     @if (campaign(); as details) {
       <div class="flex flex-col gap-4 p-3">
-        <div>
-          <div class="glass left-anchored inline-flex w-fit items-center gap-2 p-3">
-            <h2 class="text-xl font-bold">{{ details.campaign.name }}</h2>
+        <app-section-header>
+          <span class="text-xl">{{ details.campaign.name }}</span>
+          <ng-container actions>
             <app-action-icon variant="outline" (clicked)="goToDisplay()"><app-icon [name]="book" /></app-action-icon>
             <app-action-icon variant="outline" (clicked)="backgroundUploadOpen.set(true)"><app-icon [name]="image" /></app-action-icon>
-          </div>
-        </div>
+          </ng-container>
+        </app-section-header>
 
         <!-- Combats -->
         <div class="flex flex-col gap-2">
-          <div class="glass left-anchored inline-flex w-fit items-center gap-2 p-3">
-            <h3 class="text-lg font-bold">Combats</h3>
-            <app-action-icon (clicked)="newCombatOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            @for (combat of combats(); track combat.id) {
-              <app-card class="w-1/2">
-                <div class="flex justify-between">
-                  <h3 class="text-lg font-bold">Round: {{ combat.round }}</h3>
-                  <div class="flex flex-col gap-1">
-                    <app-button (clicked)="viewCombat(combat)">View</app-button>
-                    <app-button color="red" (clicked)="combatToDelete.set(combat)">Delete</app-button>
-                  </div>
-                </div>
-              </app-card>
+          <app-section-header>
+            <span class="text-lg">Combats</span>
+            <app-action-icon actions (clicked)="newCombatOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
+          </app-section-header>
+          @if (combats(); as combatList) {
+            @if (combatList.length === 0) {
+              <app-empty-state
+                [icon]="shield"
+                title="No combats yet"
+                message="Start a combat to track initiative and rounds."
+              />
+            } @else {
+              <div class="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-2">
+                @for (combat of combatList; track combat.id) {
+                  <app-card>
+                    <div class="flex items-center justify-between gap-2">
+                      <h3 class="font-display text-lg font-bold">Round: {{ combat.round }}</h3>
+                      <div class="flex items-center gap-2">
+                        <app-button size="sm" (clicked)="viewCombat(combat)">View</app-button>
+                        <app-button size="sm" color="red" variant="subtle" (clicked)="combatToDelete.set(combat)">Delete</app-button>
+                      </div>
+                    </div>
+                  </app-card>
+                }
+              </div>
             }
-          </div>
+          }
         </div>
 
         <!-- Characters -->
         <div class="flex flex-col gap-2">
-          <div class="glass left-anchored inline-flex w-fit items-center gap-2 p-3">
-            <h3 class="text-lg font-bold">Characters</h3>
-            <app-action-icon (clicked)="newCharacterOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
-          </div>
-          <div class="flex flex-wrap items-start gap-2">
-            @for (column of characterColumns(); track $index) {
-              <div class="flex flex-col gap-2">
-                @for (character of column; track character.id) {
-                  <app-character-card [character]="character" type="tile" (portraitClick)="viewCharacter(character)">
-                    <div cardRight class="flex-shrink">
-                      <app-action-icon (clicked)="inventoryCharacterId.set(character.id)"><app-icon [name]="briefcase" /></app-action-icon>
-                    </div>
-                  </app-character-card>
-                }
-              </div>
+          <app-section-header>
+            <span class="text-lg">Characters</span>
+            <app-action-icon actions (clicked)="newCharacterOpen.set(true)"><app-icon [name]="plus" /></app-action-icon>
+          </app-section-header>
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] items-start gap-2">
+            @for (character of characters(); track character.id) {
+              <app-character-card [character]="character" type="tile" (portraitClick)="viewCharacter(character)">
+                <div cardRight class="flex-shrink">
+                  <app-action-icon (clicked)="inventoryCharacterId.set(character.id)"><app-icon [name]="briefcase" /></app-action-icon>
+                </div>
+              </app-character-card>
             }
           </div>
         </div>
@@ -154,6 +164,7 @@ export class CampaignDetailComponent {
   protected readonly image = faImage;
   protected readonly plus = faPlus;
   protected readonly briefcase = faBriefcase;
+  protected readonly shield = faShieldHalved;
   protected readonly blankCharacter = emptyCharacter();
 
   private readonly params = toSignal(this.route.paramMap, { requireSync: true });
@@ -170,15 +181,9 @@ export class CampaignDetailComponent {
     return this.store.combatsFor(id)();
   });
 
-  protected readonly characterColumns = computed(() => {
-    const chars = (this.campaign()?.characters ?? []).filter((c) => !c.offstage);
-    const columns: Character[][] = [];
-    chars.forEach((character, index) => {
-      if (index % 5 === 0) columns.push([character]);
-      else columns[columns.length - 1].push(character);
-    });
-    return columns;
-  });
+  protected readonly characters = computed(() =>
+    (this.campaign()?.characters ?? []).filter((c) => !c.offstage),
+  );
 
   readonly newCharacterOpen = signal(false);
   readonly newCombatOpen = signal(false);
