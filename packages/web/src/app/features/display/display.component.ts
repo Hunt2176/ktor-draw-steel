@@ -34,6 +34,7 @@ import {
 import type { DisplayEntryType } from '../../core/models';
 import { ApiService } from '../../core/api.service';
 import { CampaignStore } from '../../core/campaign-store.service';
+import { ToastService } from '../../core/toast.service';
 import { ButtonComponent } from '../../ui/button.component';
 import { IconComponent } from '../../ui/icon.component';
 import { ModalComponent } from '../../ui/modal.component';
@@ -267,7 +268,11 @@ interface DisplayModel {
         <app-display-entry-editor (changed)="editorState.set($event)" />
         <hr class="ds-divider" />
         <div class="flex justify-end">
-          <app-button color="green" [disabled]="editorState() == null" (clicked)="createEntry()"
+          <app-button
+            color="green"
+            [disabled]="editorState() == null"
+            [loading]="saving()"
+            (clicked)="createEntry()"
             >Save</app-button
           >
         </div>
@@ -350,6 +355,7 @@ export class DisplayComponent implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly api = inject(ApiService);
   private readonly store = inject(CampaignStore);
+  private readonly toasts = inject(ToastService);
 
   protected readonly plus = faPlus;
   protected readonly trash = faTrash;
@@ -382,6 +388,8 @@ export class DisplayComponent implements AfterViewInit, OnDestroy {
   readonly drawerOpen = signal(false);
   readonly editOpen = signal(false);
   readonly editorState = signal<DisplayEntryEditorUpdate | null>(null);
+  /** True while an add-entry save (file upload + create) is in flight. */
+  readonly saving = signal(false);
 
   protected readonly items = computed<DisplayModel[]>(() => {
     const campaignEntries = this.campaign()?.entries ?? [];
@@ -477,25 +485,32 @@ export class DisplayComponent implements AfterViewInit, OnDestroy {
   async createEntry(): Promise<void> {
     const entry = this.editorState();
     if (!entry) return;
-    let fileUrl: string | null = null;
-    if (entry.file) {
-      const uploaded = await this.api.uploadFile(entry.file);
-      fileUrl = '/files/' + uploaded.fileName;
+    this.saving.set(true);
+    try {
+      let fileUrl: string | null = null;
+      if (entry.file) {
+        const uploaded = await this.api.uploadFile(entry.file);
+        fileUrl = '/files/' + uploaded.fileName;
+      }
+      await this.api.createDisplayEntry({
+        title: entry.title,
+        description: entry.description ?? null,
+        type: entry.type,
+        pictureUrl: fileUrl,
+        campaign: this.id(),
+      });
+      this.store.refetchCampaign(this.id());
+      this.editOpen.set(false);
+      this.toasts.success('Entry added');
+    } finally {
+      this.saving.set(false);
     }
-    await this.api.createDisplayEntry({
-      title: entry.title,
-      description: entry.description ?? null,
-      type: entry.type,
-      pictureUrl: fileUrl,
-      campaign: this.id(),
-    });
-    this.store.refetchCampaign(this.id());
-    this.editOpen.set(false);
   }
 
   async deleteEntry(id: number): Promise<void> {
     await this.api.deleteDisplayEntry(id);
     this.store.refetchCampaign(this.id());
+    this.toasts.success('Entry removed');
   }
 
   private async loadKanka(kankaApiId: number): Promise<void> {

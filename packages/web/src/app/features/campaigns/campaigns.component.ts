@@ -14,8 +14,15 @@ import { SkeletonComponent } from '../../ui/skeleton.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CardComponent, EmptyStateComponent, SkeletonComponent],
   template: `
-    <div class="p-4">
-      <h1 class="font-display mb-4 text-2xl font-bold">Campaigns</h1>
+    <div class="ds-page">
+      <header class="mb-6">
+        <h1 class="font-display text-2xl font-bold text-m-dark-0">Campaigns</h1>
+        @if (campaigns(); as list) {
+          <p class="mt-1 text-sm text-m-dark-2">
+            {{ list.length }} {{ list.length === 1 ? 'campaign' : 'campaigns' }}
+          </p>
+        }
+      </header>
 
       @if (campaigns(); as list) {
         @if (list.length === 0) {

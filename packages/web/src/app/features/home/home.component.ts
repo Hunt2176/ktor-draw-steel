@@ -19,20 +19,20 @@ import { RouterLink } from '@angular/router';
     >
       <div class="ds-page flex max-w-3xl flex-col items-center text-center">
         <p
-          class="mb-4 text-xs font-semibold uppercase tracking-[0.35em] text-ds-accent"
+          class="mb-3 text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-ds-accent sm:mb-4 sm:text-xs sm:tracking-[0.35em]"
         >
           Heroic Fantasy Roleplaying
         </p>
         <h1
-          class="font-display text-display font-bold tracking-wide text-m-dark-0"
+          class="font-display text-4xl font-bold tracking-wide text-m-dark-0 sm:text-5xl lg:text-display"
           style="text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);"
         >
           Draw Steel
         </h1>
-        <p class="mt-5 max-w-xl text-lg leading-relaxed text-m-dark-1">
+        <p class="mt-4 max-w-md text-base leading-relaxed text-m-dark-1 sm:mt-5 sm:max-w-xl sm:text-lg">
           Forge your campaigns, marshal your heroes, and command the table.
         </p>
-        <div class="mt-9">
+        <div class="mt-8 sm:mt-10">
           <a
             class="ds-btn ds-btn--lg"
             style="--btn-bg: var(--color-ds-ember); --btn-bg-hover: #f29a52;"

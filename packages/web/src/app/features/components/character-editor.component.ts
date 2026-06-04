@@ -120,7 +120,7 @@ export type CharacterEditorResult = Partial<Omit<Character, 'conditions'>>;
 
       <!-- Sticky submit bar -->
       <div class="sticky bottom-0 -mx-4 mt-4 flex justify-end border-t border-m-dark-4 bg-m-dark-7/95 px-4 py-3 backdrop-blur">
-        <app-button [disabled]="submitting()" (clicked)="submit()">Submit</app-button>
+        <app-button [loading]="submitting()" (clicked)="submit()">Submit</app-button>
       </div>
     </div>
   `,
