@@ -1,0 +1,28 @@
+@use 'mantine' as mantine;
+
+.clickable {
+  cursor: pointer;
+}
+
+.glass {
+  @include mantine.light {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  @include mantine.dark {
+    background: rgba(28, 28, 30, 0.7);
+  }
+
+  backdrop-filter: blur(10px);
+}
+
+$anchor-radius: 8px;
+
+.left-anchored {
+  border-top-right-radius: $anchor-radius;
+  border-bottom-right-radius: $anchor-radius;
+}
+
+.right-anchored {
+  border-top-left-radius: $anchor-radius;
+  border-bottom-left-radius: $anchor-radius;
+}

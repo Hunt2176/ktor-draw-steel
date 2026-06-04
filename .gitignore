@@ -1,0 +1,45 @@
+# ── Grimoire framework ────────────────────────────────────────────────
+# Backups written by sync-from-source --apply
+.sync-backup/
+# Backups written by sync-from-upstream --apply (downstream projects)
+.scaffold-sync-backup/
+# Local-only integration marker (created deliberately in the integration worktree)
+.claude/integration-allow.local
+# Local-only Claude Code settings (per-machine permissions/overrides)
+.claude/settings.local.json
+# Migration helpers: backups and state written by migrate_roadmap_issues.py
+.claude/cache/
+# Pristine generation-source folder (populated at bootstrap/sync time; not committed)
+.grimoire-source/
+
+# ── Node / pnpm ───────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+
+# ── Build output ──────────────────────────────────────────────────────
+dist/
+build/
+.angular/
+packages/web/.angular/
+packages/*/dist/
+
+# ── Database & uploads ────────────────────────────────────────────────
+*.sqlite
+*.sqlite-journal
+*.db
+packages/server/data/
+packages/server/files/
+
+# ── Legacy Kotlin/Gradle (pre-rewrite, canonical copy in ../../Original) ─
+.gradle/
+.kotlin/
+*.jar
+
+# ── Misc ──────────────────────────────────────────────────────────────
+*.log
+.DS_Store
+.env
+.env.local
+.idea/
+.vscode/
+*.iml

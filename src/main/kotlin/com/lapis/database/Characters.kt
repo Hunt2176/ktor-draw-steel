@@ -1,0 +1,311 @@
+package com.lapis.database
+
+import com.lapis.database.base.*
+import io.ktor.http.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.*
+import org.jetbrains.exposed.dao.Entity
+import org.jetbrains.exposed.dao.EntityClass
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.ReferenceOption
+
+class CharacterRepository(database: Database) : BaseRepository<ExposedCharacter, ExposedCharacter.Companion>(
+	ExposedCharacter.Companion,
+	database,
+	BaseRepositoryEntityMapper(
+		{ this.toDTO() },
+		{ this.customizeFromJson(it) }
+	)
+) {
+	override fun Route.additionalRouteSetup()
+	{
+		patch("{id}/modify/health") {
+			val requestText = call.receiveText()
+			val update = Json.decodeFromString<CharacterHealthModifier>(requestText)
+			
+			val res = this@CharacterRepository.transaction {
+				val character = ExposedCharacter.findById(call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")) ?: error("Character not found")
+				val removed = character.removedHp.coerceAtLeast(0)
+				
+				val newRemoved = when (update.type) {
+					CharacterHealthModifier.Type.HEAL -> removed - update.mod
+					CharacterHealthModifier.Type.DAMAGE ->
+					{
+						if (character.temporaryHp > 0) {
+							val tempAfter = character.temporaryHp - update.mod
+							character.temporaryHp = tempAfter.coerceAtLeast(0)
+
+							if (tempAfter >= 0)
+							{
+								return@transaction character.toDTO()
+							}
+							
+							removed + (-tempAfter).coerceAtLeast(0)
+						}
+						else {
+							removed + update.mod
+						}
+					}
+				}
+				
+				character.removedHp = newRemoved.coerceAtLeast(0)
+				return@transaction character.toDTO()
+			}
+			
+			call.respond(HttpStatusCode.OK, res)
+		}
+		
+		patch("{id}/modify/recoveries") {
+			val requestText = call.receiveText()
+			val update = Json.decodeFromString<CharacterRecoveriesModifier>(requestText)
+			
+			val res = this@CharacterRepository.transaction {
+				val character = ExposedCharacter.findById(call.parameters["id"]?.toIntOrNull() ?: error("Invalid ID")) ?: error("Character not found")
+				val removed = character.removedRecoveries.coerceAtLeast(0)
+				val newRemoved = when (update.type) {
+					CharacterRecoveriesModifier.Type.INCREASE -> removed - update.mod
+					CharacterRecoveriesModifier.Type.DECREASE ->
+					{
+						if (character.temporaryRecoveries > 0) {
+							val tempAfter = character.temporaryRecoveries - update.mod
+							character.temporaryRecoveries = tempAfter.coerceAtLeast(0)
+
+							if (tempAfter >= 0)
+							{
+								return@transaction character.toDTO()
+							}
+							
+							removed + (-tempAfter).coerceAtLeast(0)
+						}
+						else {
+							removed + update.mod
+						}
+					}
+				}
+				
+				character.removedRecoveries = newRemoved.coerceAtLeast(0)
+				return@transaction character.toDTO()
+			}
+			
+			call.respond(HttpStatusCode.OK, res)
+		}
+	}
+	
+	@Serializable
+	private data class CharacterHealthModifier(
+		val mod: Int,
+		val type: Type
+	) {
+		enum class Type {
+			HEAL,
+			DAMAGE
+		}
+	}
+	
+	@Serializable
+	private data class CharacterRecoveriesModifier(
+		val mod: Int,
+		val type: Type
+	) {
+		enum class Type {
+			INCREASE,
+			DECREASE
+		}
+	}
+}
+
+object Characters : IntIdTable(), HasName, HasCampaign
+{
+	override val name = varchar("name", 255)
+	
+	val might = integer("might").default(0)
+	val agility = integer("agility").default(0)
+	val reason = integer("reason").default(0)
+	val intuition = integer("intuition").default(0)
+	val presence = integer("presence").default(0)
+	
+	val removedHp = integer("removed_hp").default(0)
+	val maxHp = integer("max_hp").default(0)
+	val temporaryHp = integer("temporary_hp").default(0)
+	
+	val removedRecoveries = integer("removed_recoveries").default(0)
+	val maxRecoveries = integer("max_recoveries").default(0)
+	val temporaryRecoveries = integer("temporary_recoveries").default(0)
+	
+	val victories = integer("victories").default(0)
+	
+	val minions = integer("minions").default(0).check { it greaterEq 0 }
+	val offstage = bool("offstage").default(false)
+	val resourceName = text("resource_name").nullable()
+	val pictureUrl = varchar("picture_url", 255).nullable()
+	val border = varchar("border", 255).nullable()
+	
+	override val campaign = reference("campaign", Campaigns)
+	val user = reference("user", Users,
+		onDelete = ReferenceOption.CASCADE,
+		onUpdate = ReferenceOption.CASCADE
+	)
+}
+
+class ExposedCharacter(
+	id: EntityID<Int>
+) : Entity<Int>(id), HasDTO<CharacterDTO>, FromJson<ExposedCharacter>
+{
+	companion object : EntityClass<Int, ExposedCharacter>(Characters)
+	
+	var name by Characters.name
+	
+	var might by Characters.might
+	var agility by Characters.agility
+	var reason by Characters.reason
+	var intuition by Characters.intuition
+	var presence by Characters.presence
+	
+	var removedHp by Characters.removedHp
+	var maxHp by Characters.maxHp
+	var temporaryHp by Characters.temporaryHp
+	
+	var removedRecoveries by Characters.removedRecoveries
+	var maxRecoveries by Characters.maxRecoveries
+	var temporaryRecoveries by Characters.temporaryRecoveries
+	
+	var victories by Characters.victories
+	
+	var minions by Characters.minions
+	var offstage by Characters.offstage
+	var resourceName by Characters.resourceName
+	var pictureUrl by Characters.pictureUrl
+	var border by Characters.border
+	
+	var campaign by ExposedCampaign referencedOn Characters.campaign
+	var user by ExposedUser referencedOn Characters.user
+	
+	val conditions by ExposedCharacterCondition referrersOn CharacterConditions.character
+	val inventory by ExposedInventoryItem referrersOn InventoryItem.character
+	
+	override fun toDTO(): CharacterDTO {
+		return CharacterDTO.fromEntity(this)
+	}
+	
+	override fun ExposedCharacter.customizeFromJson(json: JsonObject)
+	{
+		json["name"]?.jsonPrimitive?.content?.let { name = it }
+		
+		json["might"]?.jsonPrimitive?.int?.let { might = it }
+		json["agility"]?.jsonPrimitive?.int?.let { agility = it }
+		json["reason"]?.jsonPrimitive?.int?.let { reason = it }
+		json["intuition"]?.jsonPrimitive?.int?.let { intuition = it }
+		json["presence"]?.jsonPrimitive?.int?.let { presence = it }
+		
+		json["removedHp"]?.jsonPrimitive?.int?.let { removedHp = it }
+		json["maxHp"]?.jsonPrimitive?.int?.let { maxHp = it }
+		json["temporaryHp"]?.jsonPrimitive?.int?.let { temporaryHp = it }
+		
+		json["removedRecoveries"]?.jsonPrimitive?.int?.let { removedRecoveries = it }
+		json["maxRecoveries"]?.jsonPrimitive?.int?.let { maxRecoveries = it }
+		json["temporaryRecoveries"]?.jsonPrimitive?.int?.let { temporaryRecoveries = it }
+		
+		json["minions"]?.jsonPrimitive?.int?.let { minions = it }
+		json["offstage"]?.jsonPrimitive?.boolean?.let { offstage = it }
+		json["resourceName"]?.jsonPrimitive?.contentOrNull?.let { resourceName = it }
+		json["victories"]?.jsonPrimitive?.int?.let { victories = it }
+		
+		json["pictureUrl"]?.jsonPrimitive?.contentOrNull?.let { pictureUrl = it }
+		json["border"]?.jsonPrimitive?.contentOrNull?.let { border = it }
+		
+		json["campaign"]?.jsonPrimitive?.int?.let { campaign = ExposedCampaign.findById(it) ?: error("Campaign not found") }
+		json["user"]?.jsonPrimitive?.int?.let { user = ExposedUser.findById(it) ?: error("User not found") }
+	}
+}
+
+interface HasCharacter {
+	val character: Column<EntityID<Int>>
+	
+	companion object {
+		fun createField(table: IntIdTable): Column<EntityID<Int>> {
+			return table.reference("character",
+				Characters,
+				onDelete = ReferenceOption.CASCADE,
+				onUpdate = ReferenceOption.CASCADE
+			)
+		}
+	}
+}
+
+interface HasExposedCharacter {
+	var character: ExposedCharacter
+	
+	companion object {
+		fun HasExposedCharacter.deserializeExposedCharacter(json: JsonObject) {
+			json["character"]?.jsonPrimitive?.intOrNull?.let {
+				character = ExposedCharacter.findById(it) ?: error("Cannot find character with ID $it")
+			}
+		}
+	}
+}
+
+@Serializable
+data class CharacterDTO (
+	val id: Int,
+	val name: String,
+	val might: Int,
+	val agility: Int,
+	val reason: Int,
+	val intuition: Int,
+	val presence: Int,
+	val removedHp: Int,
+	val maxHp: Int,
+	val temporaryHp: Int,
+	val removedRecoveries: Int,
+	val maxRecoveries: Int,
+	val temporaryRecoveries: Int,
+	val victories: Int,
+	val campaign: Int,
+	val user: Int,
+	val minions: Int,
+	val offstage: Boolean,
+	val resourceName: String?,
+	val pictureUrl: String?,
+	val border: String?,
+	val conditions: List<CharacterConditionDTO>,
+	val inventory: List<InventoryItemDTO>
+)
+{
+	companion object
+	{
+		fun fromEntity(entity: ExposedCharacter): CharacterDTO
+		{
+			return CharacterDTO(
+				entity.id.value,
+				entity.name,
+				entity.might,
+				entity.agility,
+				entity.reason,
+				entity.intuition,
+				entity.presence,
+				entity.removedHp,
+				entity.maxHp,
+				entity.temporaryHp,
+				entity.removedRecoveries,
+				entity.maxRecoveries,
+				entity.temporaryRecoveries,
+				entity.victories,
+				entity.campaign.id.value,
+				entity.user.id.value,
+				entity.minions,
+				entity.offstage,
+				entity.resourceName,
+				entity.pictureUrl,
+				entity.border,
+				entity.conditions.map { it.toDTO() },
+				entity.inventory.map { it.toDTO() }
+			)
+		}
+	}
+}

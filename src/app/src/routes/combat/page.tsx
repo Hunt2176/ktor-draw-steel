@@ -1,0 +1,466 @@
+import { faBriefcase, faArrowLeft, faArrowRight, faPencil } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useDisclosure } from "@mantine/hooks";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { InventoryList } from "components/inventory-list.tsx";
+import { ValueModifier, ValueModifierChangeEvent } from "components/value-modifier.tsx";
+import { usePreviousRef } from "hooks/usePreviousRef.ts";
+import React, { useId, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { CharacterCard, CharacterCardExtra } from "components/character_card/card.tsx";
+import { CharacterConditions } from "components/character_conditions.tsx";
+import { CharacterSelector } from "components/character_selector/character_selector.tsx";
+import { useCampaign, useCombat, useWatchCampaign } from "hooks/api_hooks.ts";
+import { CombatModificationUpdate, modifyHeroTokens, ModifyRequest, quickAddCombatant, updateCombatantActive, updateCombatantValue, updateCombatModification, updateCombatRound } from "services/api.ts";
+import { Character, Combatant } from "types/models.ts";
+import { multiSort, nonNullBuilder, parseIntOrUndefined, trimToNull } from "utils.ts";
+import { Text, Box, Button, Card, Checkbox, Divider, Group, Modal, Stack, TextInput, Title, ActionIcon, useMantineColorScheme, Popover, NumberInput, Flex, Switch, SimpleGrid, Image } from "@mantine/core";
+
+export interface CombatPageProps {
+
+}
+
+export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
+	const params = useParams();
+	const navigate = useNavigate();
+	const queryClient = useQueryClient();
+	
+	const { colorScheme } = useMantineColorScheme();
+	
+	const [showNextRound, showNextRoundHandler] = useDisclosure(false);
+	const [showModifyCharacters, showModifyCharactersHandler] = useDisclosure(false);
+	
+	const [showQuickAdd, showQuickAddHandler] = useDisclosure(false);
+	const [quickAddConfig, setQuickAddConfig] = useState<Partial<Character>>({});
+	
+	const clearRoundId = useId();
+	const [clearRoundOnly, setClearRoundOnly] = useState(false);
+	
+	const modCharacterBefore = useRef<Record<number, boolean>>({});
+	const modCharacterAfter = useRef<Record<number, boolean>>({});
+	
+	const [showInventoryFor, setShowInventoryFor] = useState<number | null>(null);
+	
+	const id = useMemo(() => parseIntOrUndefined(params.id), [params.id]);
+	
+	if (id == null) {
+		navigate('/');
+		return;
+	}
+	
+	const combatResult = useCombat(id);
+	const combat = combatResult.data;
+	const previousCombat = usePreviousRef(combat, {
+		predicate: () => !combatResult.isPending
+	});
+	
+	if (!combatResult.isPending && (combat == null || combatResult.isError)) {
+		if (previousCombat != null) {
+			navigate(`/campaigns/${previousCombat.campaign}`);
+		}
+		else {
+			navigate('/campaigns');
+		}
+	}
+	
+	const { data: campaign } = useCampaign(combat?.campaign);
+	useWatchCampaign(campaign?.campaign.id);
+	
+	const quickAddMutation = useMutation({
+		mutationFn: (character: Partial<Character>) => {
+			return quickAddCombatant(id, { character: {name: character.name!, maxHp: character.maxHp!, offstage: character.offstage ?? true, user: 1} });
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: ['campaign', campaign?.campaign.id]
+			});
+			await queryClient.invalidateQueries({
+				queryKey: ['combat', id]
+			});
+			
+			showQuickAddHandler.close();
+		}
+	});
+	
+	const nextRoundMutation = useMutation({
+		mutationFn: () => {
+			if (combat == null) {
+				return Promise.reject('No combat');
+			}
+			
+			return updateCombatRound(combat.id, { fromRound: combat.round, reset: true, updateConditions: clearRoundOnly });
+		},
+		onSuccess: async (update) => {
+			showNextRoundHandler.close();
+			queryClient.setQueryData(['combat', id], update);
+			await queryClient.invalidateQueries({
+				queryKey: ['campaign', campaign?.campaign.id]
+			});
+		}
+	});
+	
+	const activeCombatantMutation = useMutation({
+		mutationFn: ({combatant, active}: { combatant: Combatant, active: boolean }) => {
+			return updateCombatantActive(combatant.id, active);
+		},
+		onSuccess: () => {
+			if (combat != null) {
+				return queryClient.invalidateQueries({
+					queryKey: ['combat', combat.id]
+				});
+			}
+		}
+	});
+	
+	const campaignUpdateMutation = useMutation({
+		mutationKey: ['campaign', campaign?.campaign.id],
+		mutationFn: async (update: ModifyRequest) => {
+			const id = campaign?.campaign.id;
+			if (id == null) {
+				throw new Error('No campaign');
+			}
+			
+			return modifyHeroTokens(id, update);
+		},
+	})
+	
+	const combatModificationMutation = useMutation({
+		mutationFn: (mod: CombatModificationUpdate) => {
+			if (combat == null) {
+				return Promise.reject('No combat');
+			}
+			
+			return updateCombatModification(combat.id, mod);
+		},
+		onSuccess: (update) => {
+			showModifyCharactersHandler.close();
+			queryClient.setQueryData(['combat', id], update);
+		}
+	});
+	
+	const combatantUpdateMutation = useMutation({
+		mutationFn: (update: Parameters<typeof updateCombatantValue>) => {
+			return updateCombatantValue(...update);
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: ['combat', combat?.id]
+			})
+		}
+	});
+	
+	// Maps Character ID to Combatant
+	const combatantMap = useMemo(() => {
+		const map = new Map<number, Combatant>();
+		if (combat == null) {
+			return map;
+		}
+		return combat?.combatants.reduce((acc, combatant) => {
+			acc.set(combatant.character.id, combatant);
+			return acc;
+		}, map);
+	}, [combat]);
+	
+	const availableMap = useMemo(() => {
+		return campaign?.characters.reduce((acc, character) => {
+			const c = combat?.combatants.find(c => c.character.id == character.id);
+			if (c) {
+				const isActive = c.available;
+				const arr = acc.get(isActive) ?? [];
+				arr.push(character);
+				
+				acc.set(isActive, arr);
+			}
+			return acc;
+		}, new Map<boolean, Character[]>());
+	}, [campaign?.characters, combat?.combatants]);
+	
+	const characterDisplay = useMemo(() => {
+		
+		const getDisplay = (available: boolean) => (
+			<Stack gap={2}>
+				<Card>
+					<Title ta={'center'} order={3}>{available ? 'Available' : 'Unavailable'}</Title>
+				</Card>
+				<SimpleGrid cols={{ base: 1, '750px': 2, '1300px': 3 }} type={'container'} spacing={'xs'} verticalSpacing={'xs'}>
+					{availableMap?.get(available)?.map(c => [combatantMap.get(c.id), c] as const)
+						.toSorted(multiSort([
+							{
+								sortBy: (e) => e[1].offstage,
+								dir: 'ASC'
+							},
+							{
+								sortBy: (e) => Character.getHp(e[1]).current,
+								dir: 'ASC'
+							},
+							{
+								sortBy: (e) => e[1].name.toLowerCase(),
+								dir: 'ASC'
+							}
+						]))
+						.map(([combatant, c]) => {
+								if (combatant == null) {
+									return <></>;
+								}
+								
+								const updateValue = (key: Extract<keyof Combatant,'resources' | 'surges'>, event: ValueModifierChangeEvent) => {
+									combatantUpdateMutation.mutate([
+										combatant.id,
+										{
+											key,
+											type: event.type.toLowerCase() as any,
+											value: event.modifyBy
+										}
+									]);
+								}
+								
+								return (
+									<CharacterCard key={c.id} onPortraitClick={() => navigate(`/characters/${c.id}`)} character={c}
+									               type={'tile'}>
+										{{
+											[available ? 'right' : 'left']: (
+												<CharacterCardExtra>
+													{(props) => <>
+														<Box mr={!available ? 'xs' : undefined}
+														     ml={available ? 'xs' : undefined}
+														     ta={available ? 'end' : undefined}
+														     flex={available ? 1 : undefined}>
+															<Box mb={'xs'}>
+																<ActionIcon
+																	onClick={() => activeCombatantMutation.mutate({
+																		combatant,
+																		active: !combatant.available
+																	})}>
+																	<FontAwesomeIcon icon={combatant.available ? faArrowRight : faArrowLeft}/>
+																</ActionIcon>
+															</Box>
+															<Box mb={'xs'}>
+																<ActionIcon onClick={props.edit}>
+																	<FontAwesomeIcon icon={faPencil}/>
+																</ActionIcon>
+															</Box>
+															<Box mb={'xs'}>
+																<CharacterConditions mode={'button'} character={c}></CharacterConditions>
+															</Box>
+															<Box>
+																<ActionIcon onClick={() => setShowInventoryFor(c.id)}>
+																	<FontAwesomeIcon icon={faBriefcase}></FontAwesomeIcon>
+																</ActionIcon>
+															</Box>
+															<Modal title={`Inventory for ${c.name}`}
+															       opened={showInventoryFor === c.id}
+															       onClose={() => setShowInventoryFor(null)}>
+																<InventoryList characterId={c.id} items={c.inventory}></InventoryList>
+															</Modal>
+														</Box>
+													</>}
+												</CharacterCardExtra>
+											),
+											gauges: (
+												<CharacterCardExtra>
+													<Flex justify={'center'} style={{alignSelf: 'stretch'}}>
+														<Popover trapFocus withArrow>
+															<Popover.Target>
+																<Button color={'indigo'} variant={'subtle'} h={'auto'} fw={700}>
+																	<Stack gap={0}>
+																		<Text size={'lg'} fw={700}>
+																			{c.resourceName ?? 'Resources'}
+																		</Text>
+																		<Text size={'lg'} fw={700}>
+																			{combatant.resources}
+																		</Text>
+																	</Stack>
+																</Button>
+															</Popover.Target>
+															<Popover.Dropdown>
+																<ValueModifier label={'Modify Resources'} onChange={(ev) => updateValue('resources', ev)}></ValueModifier>
+															</Popover.Dropdown>
+														</Popover>
+													</Flex>
+													<Flex justify={'center'} style={{alignSelf: 'stretch'}}>
+														<Popover trapFocus withArrow>
+															<Popover.Target>
+																<Button style={{alignSelf: 'stretch'}} color={'blue'} variant={'subtle'} h={'auto'}
+																        fw={700}>
+																	<Stack gap={0}>
+																		<Text size={'lg'} fw={700}>
+																			Surges
+																		</Text>
+																		<Text size={'lg'} fw={700}>
+																			{combatant.surges}
+																		</Text>
+																	</Stack>
+																</Button>
+															</Popover.Target>
+															<Popover.Dropdown>
+																<ValueModifier label={'Modify Surges'} onChange={(ev) => updateValue('surges', ev)}></ValueModifier>
+															</Popover.Dropdown>
+														</Popover>
+													</Flex>
+												</CharacterCardExtra>
+											),
+											bottom: (
+												<CharacterCardExtra>
+													<Box>
+														<CharacterConditions mode={'list'} character={c}/>
+													</Box>
+												</CharacterCardExtra>
+											)
+										}}
+									</CharacterCard>
+								)
+							}
+						)}
+				</SimpleGrid>
+			</Stack>
+		);
+		
+		return (
+			<SimpleGrid cols={2} spacing={'xs'}>
+				{getDisplay(true)}
+				{getDisplay(false)}
+			</SimpleGrid>
+		);
+	}, [availableMap, activeCombatantMutation, combatantMap, navigate]);
+	
+	const modifyCharacterModal = useMemo(() => {
+		if (combat == null || campaign == null) {
+			return;
+		}
+		
+		modCharacterBefore.current = campaign.characters.reduce((acc, character) => {
+			acc[character.id] = combatantMap?.get(character.id) != null;
+			return acc;
+		}, {} as Record<number, boolean>);
+		
+		modCharacterAfter.current = {...modCharacterBefore.current};
+		
+		function submit() {
+			const add = Object.entries(modCharacterAfter.current)
+				.filter(([id, selected]) => selected && !modCharacterBefore.current[parseInt(id)])
+				.map(([id]) => parseInt(id));
+			
+			const remove = Object.entries(modCharacterAfter.current)
+				.filter(([id, selected]) => !selected && modCharacterBefore.current[parseInt(id)])
+				.map(([id]) => parseInt(id));
+			
+			const update: CombatModificationUpdate = {};
+			if (add.length > 0) {
+				update.add = add;
+			}
+			
+			if (remove.length > 0) {
+				update.remove = remove;
+			}
+			
+			combatModificationMutation.mutate(update);
+		}
+		
+		return <>
+			<Modal title={'Modify'} opened={showModifyCharacters} onClose={showModifyCharactersHandler.close}>
+				<CharacterSelector onChange={(e) => modCharacterAfter.current = e}
+				                   characters={campaign.characters}
+				                   selected={modCharacterBefore.current}/>
+				
+				<Divider my={'md'} />
+				<Group justify={'end'}>
+					<Button color="gray" onClick={() => {
+						showModifyCharactersHandler.close();
+					}}>Cancel</Button>
+					<Button onClick={() => submit()}>Submit</Button>
+				</Group>
+			</Modal>
+		</>;
+	}, [combat, campaign, showModifyCharacters]);
+	
+	if (combat == null || campaign == null) {
+		return;
+	}
+	
+	return <>
+		{modifyCharacterModal}
+		<Modal title={'Quick Add'} opened={showQuickAdd} onClose={showQuickAddHandler.close} onEnterTransitionEnd={() => setQuickAddConfig({})}>
+			<TextInput label="Name" value={quickAddConfig['name'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, name: e.target.value})} />
+			<TextInput label={'Max HP'} type={'number'} min={0} value={quickAddConfig['maxHp'] ?? ''} onChange={(e) => setQuickAddConfig({...quickAddConfig, maxHp: parseIntOrUndefined(e.target.value)})} />
+			<NumberInput label={'Minions'} min={0} value={ quickAddConfig['minions'] ?? 0 } onChange={(e) => setQuickAddConfig({...quickAddConfig, minions: parseIntOrUndefined(e) ?? 0})}></NumberInput>
+			<Switch mt={'xs'} label={'Offstage'} checked={quickAddConfig['offstage'] ?? true} onChange={(e) => setQuickAddConfig({...quickAddConfig, offstage: e.target.checked})} />
+			<Divider my={'md'} />
+			{
+				nonNullBuilder(trimToNull(quickAddConfig['pictureUrl']), (pictureUrl) => {
+					return <Image mb={'md'} src={pictureUrl}></Image>;
+				})
+			}
+			<TextInput label={'Picture URL'} onChange={(e) => setQuickAddConfig({ ...quickAddConfig, pictureUrl: e.target.value })}></TextInput>
+			<Divider my={'md'} />
+			<Group justify={'end'}>
+				<Button disabled={quickAddConfig['name'] == null || quickAddConfig['maxHp'] == null}
+					onClick={() => {
+					quickAddMutation.mutate(quickAddConfig);
+				}}>Submit</Button>
+			</Group>
+		</Modal>
+		
+		<Modal title={`Advance to round ${combat.round + 1}`} opened={showNextRound} onClose={showNextRoundHandler.close}>
+			<Checkbox label={'Clear round only conditions'} id={clearRoundId} checked={clearRoundOnly} onChange={(e) => setClearRoundOnly(e.target.checked)} />
+			
+			<Divider my={'md'} />
+			<Group justify={'end'}>
+				<Button color="gray" onClick={showNextRoundHandler.close}>Cancel</Button>
+				<Button onClick={() => {
+					nextRoundMutation.mutate();
+				}}>Continue</Button>
+			</Group>
+		</Modal>
+		
+		<Box m={2}>
+			<Card mb={2}>
+				<Group justify={'space-between'}>
+					<Stack gap={2} justify={'stretch'}>
+						<Button variant={'outline'} color={colorScheme === 'dark' ? 'gray' : 'dark'} onClick={showModifyCharactersHandler.open}>Modify</Button>
+						<Button variant={'outline'} color={colorScheme === 'dark' ? 'gray' : 'dark'} onClick={showQuickAddHandler.open}>Quick Add</Button>
+					</Stack>
+					<Stack justify={'center'} gap={2}>
+						<Button component={'a'}
+						        size={'lg'}
+						        color={colorScheme === 'dark' ? 'gray' : 'dark'}
+						        variant={'subtle'}
+						        href={`/campaigns/${campaign.campaign.id}`}
+						        onClick={(e) => {
+											e.preventDefault();
+											
+											const url = `/campaigns/${campaign.campaign.id}`;
+											if (e.metaKey || e.ctrlKey) {
+												window.open(url, '_blank');
+												return;
+											}
+							        navigate(url);
+						        }}>
+							{campaign.campaign.name}
+						</Button>
+						<Text ta={'center'} fw={700}>Round {combat.round}</Text>
+					</Stack>
+					<Stack gap={'sm'}>
+						<Button onClick={showNextRoundHandler.open}>
+							<Text mr={2}>Next Round</Text>
+							<FontAwesomeIcon icon={faArrowRight}></FontAwesomeIcon>
+						</Button>
+						<Stack justify={'center'} align={'center'}>
+							<Popover trapFocus withArrow>
+								<Popover.Target>
+									<Button h={'auto'} variant={'transparent'}>
+										Hero Tokens {campaign.campaign.heroTokens}
+									</Button>
+								</Popover.Target>
+								<Popover.Dropdown>
+									<ValueModifier label={'Modify Hero Tokens'}
+									               onChange={(ev) => campaignUpdateMutation.mutate(ev)}></ValueModifier>
+								</Popover.Dropdown>
+							</Popover>
+						</Stack>
+					</Stack>
+				</Group>
+			</Card>
+			{characterDisplay}
+		</Box>
+	</>
+}
