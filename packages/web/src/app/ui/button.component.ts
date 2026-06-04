@@ -7,6 +7,7 @@ import {
   output,
 } from '@angular/core';
 import { PALETTE, type AccentColor } from './palette';
+import { SpinnerComponent } from './spinner.component';
 
 export type ButtonVariant = 'filled' | 'outline' | 'subtle' | 'transparent';
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'compact';
@@ -15,6 +16,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg' | 'compact';
 @Component({
   selector: 'app-button',
   standalone: true,
+  imports: [SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -28,9 +30,13 @@ export type ButtonSize = 'sm' | 'md' | 'lg' | 'compact';
       [class.ds-btn--compact]="size() === 'compact'"
       [class.ds-btn--block]="fullWidth()"
       [style]="styleVars()"
-      [disabled]="disabled()"
+      [disabled]="disabled() || loading()"
+      [attr.aria-busy]="loading()"
       (click)="clicked.emit($event)"
     >
+      @if (loading()) {
+        <ds-spinner />
+      }
       <ng-content />
     </button>
   `,
@@ -41,6 +47,8 @@ export class ButtonComponent {
   readonly size = input<ButtonSize>('md');
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly fullWidth = input(false, { transform: booleanAttribute });
+  /** When true, shows a spinner, disables the button, and sets aria-busy. Default off. */
+  readonly loading = input(false, { transform: booleanAttribute });
   readonly clicked = output<MouseEvent>();
 
   readonly styleVars = computed(() => {
