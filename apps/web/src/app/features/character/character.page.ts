@@ -116,7 +116,8 @@ export class CharacterPage {
 
   constructor() {
     effect(() => {
-      if (Number.isNaN(this.charId())) {
+      const raw = this.id();
+      if (raw !== '' && raw != null && Number.isNaN(this.charId())) {
         void this.router.navigate(['/']);
       }
     });

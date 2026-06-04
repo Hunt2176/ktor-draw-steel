@@ -266,7 +266,10 @@ export class CampaignDetailPage {
 
   constructor() {
     effect(() => {
-      if (Number.isNaN(this.campaignId())) void this.router.navigate(['/']);
+      const raw = this.id();
+      if (raw !== '' && raw != null && Number.isNaN(this.campaignId())) {
+        void this.router.navigate(['/']);
+      }
     });
     effect(() => this.realtime.watch(this.campaignId()));
     effect(() => this.background.apply(this.campaign.value()?.campaign));

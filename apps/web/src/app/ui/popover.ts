@@ -31,10 +31,12 @@ import type { ConnectedPosition } from '@angular/cdk/overlay';
       [cdkConnectedOverlayOrigin]="origin"
       [cdkConnectedOverlayOpen]="opened()"
       [cdkConnectedOverlayPositions]="positions"
+      [cdkConnectedOverlayPush]="true"
       [cdkConnectedOverlayHasBackdrop]="true"
       cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
       (backdropClick)="opened.set(false)"
       (overlayKeydown)="onKeydown($event)"
+      (detach)="opened.set(false)"
     >
       <div class="glass ds-pop-dropdown" [style.width]="width()">
         <ng-content select="[dsDropdown]" />
@@ -47,11 +49,39 @@ import type { ConnectedPosition } from '@angular/cdk/overlay';
         display: inline-flex;
       }
       .ds-pop-dropdown {
+        background: var(--color-dark-7, rgba(20, 21, 23, 0.92));
+        background: color-mix(
+          in srgb,
+          var(--color-dark-7, #141517) 88%,
+          transparent
+        );
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: var(--color-dark-0, #fff);
         border: 1px solid var(--color-dark-4);
         border-radius: 0.6rem;
         padding: 0.75rem;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        box-shadow:
+          0 12px 32px rgba(0, 0, 0, 0.55),
+          0 2px 8px rgba(0, 0, 0, 0.4);
         min-width: 12rem;
+        transform-origin: top center;
+        animation: ds-pop-in 0.14s ease-out both;
+      }
+      @keyframes ds-pop-in {
+        from {
+          opacity: 0;
+          transform: translateY(-4px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ds-pop-dropdown {
+          animation: none;
+        }
       }
     `,
   ],

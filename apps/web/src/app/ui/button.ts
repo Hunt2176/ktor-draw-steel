@@ -32,8 +32,11 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
       [class]="sizeClass()"
       [style.--c]="pair().c"
       [style.--ch]="pair().ch"
-      [disabled]="disabled()"
+      [disabled]="disabled() || loading()"
     >
+      @if (loading()) {
+        <span class="ds-btn__spinner" aria-hidden="true"></span>
+      }
       <ng-content />
     </button>
   `,
@@ -55,9 +58,16 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
         transition:
           background 0.12s,
           color 0.12s,
-          border-color 0.12s;
+          border-color 0.12s,
+          transform 0.06s ease;
         user-select: none;
         white-space: nowrap;
+      }
+      .ds-btn:active:not(:disabled) {
+        transform: translateY(1px);
+      }
+      .ds-btn:focus-visible {
+        outline-offset: 2px;
       }
       .ds-sz-xs {
         padding: 0.22rem 0.6rem;
@@ -120,6 +130,42 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
       .ds-btn--transparent:hover:not(:disabled) {
         color: var(--ch);
       }
+      .ds-btn--filled:active:not(:disabled) {
+        background: var(--ch);
+      }
+      .ds-btn--outline:active:not(:disabled),
+      .ds-btn--subtle:active:not(:disabled) {
+        background: color-mix(in srgb, var(--c) 20%, transparent);
+      }
+      .ds-btn--light:active:not(:disabled) {
+        background: color-mix(in srgb, var(--c) 30%, transparent);
+      }
+      .ds-btn__spinner {
+        display: inline-block;
+        width: 0.85em;
+        height: 0.85em;
+        flex: none;
+        border-radius: 50%;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        animation: ds-btn-spin 0.6s linear infinite;
+      }
+      @keyframes ds-btn-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ds-btn {
+          transition: none;
+        }
+        .ds-btn:active:not(:disabled) {
+          transform: none;
+        }
+        .ds-btn__spinner {
+          animation-duration: 1.2s;
+        }
+      }
     `,
   ],
 })
@@ -129,6 +175,7 @@ export class Button {
   readonly size = input<ButtonSize>('sm');
   readonly fullWidth = input(false, { transform: booleanAttribute });
   readonly disabled = input(false, { transform: booleanAttribute });
+  readonly loading = input(false, { transform: booleanAttribute });
   readonly type = input<'button' | 'submit'>('button');
 
   protected readonly pair = computed(() => colorPair(this.color()));

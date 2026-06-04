@@ -384,7 +384,10 @@ export class DisplayPage {
 
   constructor() {
     effect(() => {
-      if (Number.isNaN(this.campaignId())) void this.router.navigate(['/campaigns']);
+      const raw = this.id();
+      if (raw !== '' && raw != null && Number.isNaN(this.campaignId())) {
+        void this.router.navigate(['/campaigns']);
+      }
     });
     effect(() => this.realtime.watch(this.campaignId()));
     effect(() => this.background.apply(this.campaign.value()?.campaign));

@@ -18,6 +18,7 @@ export type IconButtonVariant = 'filled' | 'outline' | 'subtle' | 'transparent';
       [style.--ch]="pair().ch"
       [style.width.px]="dim()"
       [style.height.px]="dim()"
+      [attr.aria-label]="ariaLabel() || null"
       [disabled]="disabled()"
     >
       <ng-content />
@@ -38,7 +39,14 @@ export type IconButtonVariant = 'filled' | 'outline' | 'subtle' | 'transparent';
         transition:
           background 0.12s,
           color 0.12s,
-          border-color 0.12s;
+          border-color 0.12s,
+          transform 0.06s ease;
+      }
+      .ds-ab:active:not(:disabled) {
+        transform: translateY(1px);
+      }
+      .ds-ab:focus-visible {
+        outline-offset: 2px;
       }
       .ds-ab:disabled {
         opacity: 0.45;
@@ -70,6 +78,21 @@ export type IconButtonVariant = 'filled' | 'outline' | 'subtle' | 'transparent';
         background: transparent;
         color: var(--c);
       }
+      .ds-ab--filled:active:not(:disabled) {
+        background: var(--ch);
+      }
+      .ds-ab--outline:active:not(:disabled),
+      .ds-ab--subtle:active:not(:disabled) {
+        background: color-mix(in srgb, var(--c) 20%, transparent);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ds-ab {
+          transition: none;
+        }
+        .ds-ab:active:not(:disabled) {
+          transform: none;
+        }
+      }
     `,
   ],
 })
@@ -79,6 +102,8 @@ export class IconButton {
   /** size in px (Mantine md ≈ 34). */
   readonly size = input<'sm' | 'md' | 'lg'>('md');
   readonly disabled = input(false);
+  /** Accessible label for the icon-only button (sets aria-label when provided). */
+  readonly ariaLabel = input<string>('');
 
   protected readonly pair = computed(() => colorPair(this.color()));
   protected readonly dim = computed(
