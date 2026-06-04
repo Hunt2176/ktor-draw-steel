@@ -26,10 +26,28 @@
   --color-brand-gray: #909296;
 
   --font-sans: 'Roboto', system-ui, sans-serif;
+
+  /* Reusable surface tokens. */
+  --surface-border: var(--color-dark-4);
+  --surface-glass-bg: rgba(20, 21, 23, 0.66);
 }
 
 :root {
   color-scheme: dark;
+
+  /* S8 — Page rhythm tokens. Shells/pages can use these for a consistent
+   * content width and gutter, e.g. `max-width: var(--page-max)` with
+   * horizontal padding of `var(--page-pad)`. */
+  --page-max: 80rem;
+  --page-pad: 1rem;
+}
+
+html {
+  /* S6 — single, stable scroll owned by html/body; reserve the gutter so
+   * appearing scrollbars don't shift layout. */
+  scrollbar-gutter: stable;
+  /* Smooth in-page anchor scrolling. */
+  scroll-behavior: smooth;
 }
 
 html,
@@ -39,24 +57,74 @@ body {
 }
 
 body {
+  /* S10 — seamless dark background, no flash. */
   background-color: var(--color-dark-7);
   color: var(--color-dark-0);
   font-family: var(--font-sans);
+  /* ML10/global niceties — comfortable reading rhythm + crisp text. */
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 ds-root {
   display: block;
-  height: 100vh;
-  width: 100vw;
-  overflow: auto;
+  /* S6 — fill the viewport without owning a second scrollbar. Avoid 100vw
+   * (which overflows horizontally once a vertical scrollbar is present) and
+   * let html/body own the vertical scroll. */
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ML10 — heading rhythm. Light-touch defaults so component-level Tailwind
+ * utilities still win; colour stays inherited (var(--color-dark-0)). */
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  text-wrap: balance;
+}
+h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ML8 — global keyboard focus treatment. A clear brand-blue outline shows
+ * only for keyboard (:focus-visible); mouse focus shows nothing, and the
+ * rule never draws a box on elements that aren't focused. */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-brand-blue);
+  outline-offset: 2px;
+}
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible),
+[tabindex]:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none;
 }
 
 /* The signature frosted-glass surface (Mantine `.glass`). */
 .glass {
-  background: rgba(28, 28, 30, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--surface-glass-bg);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--surface-border) 60%, transparent);
 }
 
 .left-anchored {
@@ -129,13 +197,20 @@ select {
   line-height: 1;
 }
 
+/* S10 — subtle scrollbar on the dark surface. */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-dark-4);
+  background: color-mix(in srgb, var(--color-dark-4) 80%, transparent);
   border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-dark-3);
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-track {
   background: transparent;

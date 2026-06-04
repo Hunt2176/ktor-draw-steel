@@ -56,12 +56,21 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
       <div class="ds-main">
         <div class="ds-left"><ng-content select="[cardLeft]" /></div>
         <div class="ds-imgwrap">
-          <img
-            class="ds-img clickable"
-            [src]="character().pictureUrl ?? ''"
-            (click)="portraitClick.emit()"
-            alt=""
-          />
+          @if (pictureUrl()) {
+            <img
+              class="ds-img clickable"
+              [src]="pictureUrl()"
+              (click)="portraitClick.emit()"
+              alt=""
+            />
+          } @else {
+            <div
+              class="ds-img ds-img-placeholder clickable"
+              (click)="portraitClick.emit()"
+            >
+              <span class="ds-initials">{{ initials() }}</span>
+            </div>
+          }
           @if (full()) {
             <div class="ds-stats">
               <span>M {{ character().might }}</span>
@@ -153,11 +162,39 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
     `
       .ds-card {
         border-radius: 0.6rem;
+        border: 1px solid var(--color-dark-4);
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease,
+          border-color 0.15s ease;
+      }
+      .ds-card:hover {
+        transform: translateY(-1px);
+        border-color: var(--color-dark-3, #909296);
+        box-shadow:
+          0 8px 24px rgba(0, 0, 0, 0.45),
+          0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+      /* placeholder portrait */
+      .ds-img-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--color-dark-6);
+        border: 1px solid var(--color-dark-4);
+        color: var(--color-dark-1, #a6a7ab);
+      }
+      .ds-initials {
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: 1.5rem;
+        line-height: 1;
+        user-select: none;
       }
       /* full variant */
       .ds-card-full {
         width: 15rem;
-        border: 1px solid var(--color-dark-4);
         overflow: hidden;
       }
       .ds-card-full .ds-main {
@@ -177,6 +214,14 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
         object-fit: cover;
         object-position: top center;
       }
+      .ds-card-full .ds-img-placeholder {
+        aspect-ratio: 4 / 3;
+        border: none;
+        border-radius: 0;
+      }
+      .ds-card-full .ds-initials {
+        font-size: 2.5rem;
+      }
       .ds-card-full .ds-stats {
         position: absolute;
         bottom: 0;
@@ -190,8 +235,11 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
       .ds-card-full .ds-name {
         text-align: center;
         font-weight: 700;
-        font-size: 1.25rem;
-        padding: 0.25rem;
+        font-size: 1.3rem;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+        color: var(--color-dark-0);
+        padding: 0.5rem 0.5rem 0.35rem;
       }
       .ds-card-full .ds-rings {
         display: flex;
@@ -214,27 +262,40 @@ const MINION_COLORS = ['red', 'orange', 'green', 'grape', 'teal'];
         flex-wrap: nowrap;
         gap: 0;
       }
+      .ds-card-tile .ds-imgwrap {
+        flex: 0 0 auto;
+      }
       .ds-card-tile .ds-img {
         width: 100px;
+        height: 100px;
         object-fit: cover;
         object-position: top center;
         border-radius: 0.375rem;
       }
+      .ds-card-tile .ds-img-placeholder {
+        width: 100px;
+        height: 100px;
+      }
       .ds-card-tile .ds-body {
         display: flex;
         flex-direction: column;
-        flex: 5;
+        flex: 1 1 0;
         min-width: 0;
+        padding-left: 0.75rem;
+        gap: 0.25rem;
       }
       .ds-card-tile .ds-name {
-        font-size: 1.25rem;
+        font-size: 1.3rem;
         font-weight: 700;
-        padding-left: 0.5rem;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+        color: var(--color-dark-0);
       }
       .ds-card-tile .ds-rings {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
+        gap: 0.5rem;
       }
       .ds-card-tile .ds-gauges {
         display: flex;
@@ -259,6 +320,18 @@ export class CharacterCard {
 
   protected readonly full = computed(() => this.type() === 'full');
   protected readonly editorOpened = signal(false);
+
+  protected readonly pictureUrl = computed(() => {
+    const url = this.character().pictureUrl;
+    return url && url.trim() ? url : null;
+  });
+  protected readonly initials = computed(() => {
+    const name = this.character().name ?? '';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  });
 
   protected readonly modHp = signal<number | null>(null);
   protected readonly tempHp = signal<number | null>(null);

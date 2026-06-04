@@ -12,7 +12,6 @@ import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { RealtimeService } from '../../core/realtime.service';
 import { BackgroundService } from '../../core/background.service';
-import { Anchored } from '../../ui/anchored';
 import { Card } from '../../ui/card';
 import { IconButton } from '../../ui/icon-button';
 import { Icon } from '../../ui/icon';
@@ -37,7 +36,6 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [RealtimeService],
   imports: [
-    Anchored,
     Card,
     IconButton,
     Icon,
@@ -49,31 +47,66 @@ import {
     UploadModal,
     InventoryList,
   ],
+  styles: [
+    `
+      .section-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+      }
+      .stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+        color: var(--color-dark-0);
+        border: 1px solid color-mix(in srgb, var(--color-brand-blue) 40%, transparent);
+      }
+      .empty-state {
+        padding: 1.5rem;
+        text-align: center;
+        color: color-mix(in srgb, var(--color-dark-0) 55%, transparent);
+        font-size: 0.95rem;
+      }
+    `,
+  ],
   template: `
     @if (campaign.value(); as details) {
-      <div class="flex flex-col gap-4 p-3">
-        <div>
-          <ds-anchored position="left">
-            <span class="text-2xl font-bold pr-2">{{ details.campaign.name }}</span>
+      <div class="flex flex-col gap-6">
+        <!-- Header -->
+        <header
+          class="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-dark-5)] pb-4"
+        >
+          <div class="flex flex-wrap items-center gap-3">
+            <h1 class="text-3xl font-bold leading-tight">{{ details.campaign.name }}</h1>
+            <span class="stat-pill glass">
+              Hero Tokens: {{ details.campaign.heroTokens }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2 ml-auto">
             <ds-icon-btn variant="outline" (click)="goDisplay()">
               <ds-icon name="book" />
             </ds-icon-btn>
             <ds-icon-btn variant="outline" (click)="showBackground.set(true)">
               <ds-icon name="image" />
             </ds-icon-btn>
-          </ds-anchored>
-        </div>
+          </div>
+        </header>
 
         <!-- Combats -->
-        <div class="flex flex-col gap-3">
-          <ds-anchored position="left">
-            <span class="text-xl font-bold pr-2">Combats</span>
+        <section class="flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-xl font-bold">Combats</h2>
             <ds-icon-btn (click)="showNewCombat()"><ds-icon name="plus" /></ds-icon-btn>
-          </ds-anchored>
-          <div class="flex flex-wrap gap-3">
+          </div>
+          <div class="section-grid">
             @for (combat of combats.value() ?? []; track combat.id) {
-              <ds-card class="w-[48%]">
-                <div class="flex justify-between">
+              <ds-card>
+                <div class="flex items-center justify-between gap-3">
                   <div class="text-xl font-bold">Round: {{ combat.round }}</div>
                   <div class="flex flex-col gap-2 justify-center">
                     <ds-button (click)="viewCombat(combat)">View</ds-button>
@@ -83,25 +116,29 @@ import {
                   </div>
                 </div>
               </ds-card>
+            } @empty {
+              <ds-card>
+                <div class="empty-state flex flex-col items-center gap-3">
+                  <span>No combats yet</span>
+                  <ds-icon-btn (click)="showNewCombat()"><ds-icon name="plus" /></ds-icon-btn>
+                </div>
+              </ds-card>
             }
           </div>
-        </div>
+        </section>
 
         <!-- Characters -->
-        <div class="flex flex-col gap-3">
-          <ds-anchored position="left">
-            <span class="text-xl font-bold pr-2">Characters</span>
-            <ds-icon-btn (click)="newCharacter.set(true)"
-              ><ds-icon name="plus"
-            /></ds-icon-btn>
-          </ds-anchored>
-          <div class="flex flex-wrap gap-3 items-start">
+        <section class="flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-xl font-bold">Characters</h2>
+            <ds-icon-btn (click)="newCharacter.set(true)"><ds-icon name="plus" /></ds-icon-btn>
+          </div>
+          <div class="section-grid items-start">
             @for (character of onstage(); track character.id) {
               <ds-character-card
                 type="tile"
                 [character]="character"
                 (portraitClick)="goCharacter(character)"
-                class="w-[20rem]"
               >
                 <div cardRight class="shrink">
                   <ds-icon-btn (click)="inventoryCharId.set(character.id)">
@@ -109,9 +146,16 @@ import {
                   </ds-icon-btn>
                 </div>
               </ds-character-card>
+            } @empty {
+              <ds-card>
+                <div class="empty-state flex flex-col items-center gap-3">
+                  <span>No characters yet</span>
+                  <ds-icon-btn (click)="newCharacter.set(true)"><ds-icon name="plus" /></ds-icon-btn>
+                </div>
+              </ds-card>
             }
           </div>
-        </div>
+        </section>
       </div>
 
       <!-- Inventory modal -->
@@ -174,6 +218,10 @@ import {
         (hide)="showBackground.set(false)"
         (complete)="onBackgroundUploaded($event)"
       />
+    } @else {
+      <div class="flex items-center justify-center py-16 text-[color:var(--color-dark-0)]">
+        <span class="text-lg opacity-70">Loading campaign…</span>
+      </div>
     }
   `,
 })

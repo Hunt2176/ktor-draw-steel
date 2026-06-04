@@ -30,7 +30,7 @@ function ringColor(name: string | undefined): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
-      class="ring"
+      class="ds-ring"
       [style.width.px]="size()"
       [style.height.px]="size()"
     >
@@ -59,21 +59,21 @@ function ringColor(name: string | undefined): string {
           />
         }
       </svg>
-      <div class="ring-label">
+      <div class="ds-ring-label">
         <ng-content />
       </div>
     </div>
   `,
   styles: [
     `
-      .ring {
+      .ds-ring {
         position: relative;
         display: inline-flex;
       }
-      .ring svg {
+      .ds-ring svg {
         transform: rotate(0);
       }
-      .ring-label {
+      .ds-ring-label {
         position: absolute;
         inset: 0;
         display: flex;

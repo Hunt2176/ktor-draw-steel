@@ -1,14 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Modal } from './ui/modal';
+import { AppShell } from './ui/app-shell';
 import { ErrorService } from './core/error.service';
 
 @Component({
   selector: 'ds-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, Modal],
+  imports: [RouterOutlet, Modal, AppShell],
   template: `
-    <router-outlet />
+    <ds-shell>
+      <router-outlet />
+    </ds-shell>
     <ds-modal
       [opened]="errors.error() != null"
       title="Error"
