@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, type Signal, type WritableSignal } from '@angular/core';
+import { Injectable, inject, signal, untracked, type Signal, type WritableSignal } from '@angular/core';
 import type { CampaignDetails, Character, Combat, SocketEvent } from '@draw-steel/shared';
 import { ApiService } from './api.service';
 import { WatchService } from './watch.service';
@@ -43,7 +43,11 @@ export class CampaignStore {
       this.campaignSigs.set(id, sig);
       this.refetchCampaign(id);
     }
-    this.watcher.watch(id);
+    // Establishing the live socket writes connection-status signals. Components
+    // legitimately read campaign() from inside a computed, so run this side effect
+    // outside the caller's reactive context to avoid NG0600 (writing a signal in a
+    // computed). watch() is idempotent, so repeated calls during recomputes are cheap.
+    untracked(() => this.watcher.watch(id));
     return sig.asReadonly();
   }
 
