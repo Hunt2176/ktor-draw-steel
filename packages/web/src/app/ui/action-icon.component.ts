@@ -9,7 +9,7 @@ import { PALETTE, type AccentColor } from './palette';
   template: `
     <button
       type="button"
-      class="ds-action-icon"
+      class="ds-action-icon focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-accent focus-visible:ring-offset-2 focus-visible:ring-offset-m-dark-7"
       [class.ds-action-icon--outline]="variant() === 'outline'"
       [class.ds-action-icon--lg]="size() === 'lg'"
       [style]="styleVars()"

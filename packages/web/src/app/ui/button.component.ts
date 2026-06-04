@@ -19,7 +19,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg' | 'compact';
   template: `
     <button
       type="button"
-      class="ds-btn"
+      class="ds-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-accent focus-visible:ring-offset-2 focus-visible:ring-offset-m-dark-7"
       [class.ds-btn--outline]="variant() === 'outline'"
       [class.ds-btn--subtle]="variant() === 'subtle'"
       [class.ds-btn--transparent]="variant() === 'transparent'"
