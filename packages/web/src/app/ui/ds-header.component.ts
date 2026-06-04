@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { WatchService, type WatchStatus } from '../core/watch.service';
+import { ConnectionStatusService, type ConnectionStatus } from '../core/connection-status.service';
 
 /** Presentation metadata for a given connection status. */
 interface StatusView {
@@ -16,8 +16,11 @@ interface StatusView {
  * by the root shell.
  *
  * Also surfaces the live WebSocket connection status (a coloured dot + short
- * label) derived from `WatchService.status`. The indicator is hidden entirely
- * when status is 'idle' (the user is not on a watched screen).
+ * label) derived from `ConnectionStatusService.status`. Reading from that
+ * zero-dependency service (rather than the zod-importing `WatchService`) keeps
+ * this eagerly-rendered header out of the shared schema bundle. The indicator
+ * is hidden entirely when status is 'idle' (the user is not on a watched
+ * screen).
  */
 @Component({
   selector: 'ds-header',
@@ -88,13 +91,15 @@ interface StatusView {
   ],
 })
 export class DsHeaderComponent {
-  private readonly watch = inject(WatchService);
+  private readonly connectionStatus = inject(ConnectionStatusService);
 
   /** Presentation for the current status, or null when idle (hide indicator). */
-  readonly view = computed<StatusView | null>(() => DsHeaderComponent.VIEWS[this.watch.status()]);
+  readonly view = computed<StatusView | null>(
+    () => DsHeaderComponent.VIEWS[this.connectionStatus.status()],
+  );
 
   /** Static status → presentation lookup; 'idle' maps to null to hide the chip. */
-  private static readonly VIEWS: Record<WatchStatus, StatusView | null> = {
+  private static readonly VIEWS: Record<ConnectionStatus, StatusView | null> = {
     idle: null,
     live: {
       label: 'Live',

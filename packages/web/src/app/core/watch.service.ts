@@ -1,8 +1,13 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { SocketEventSchema, type SocketEvent } from '@draw-steel/shared';
+import { ConnectionStatusService, type ConnectionStatus } from './connection-status.service';
 
-/** Aggregate connection status surfaced to the UI across all watched sockets. */
-export type WatchStatus = 'idle' | 'connecting' | 'live' | 'reconnecting' | 'offline';
+/**
+ * Aggregate connection status surfaced to the UI across all watched sockets.
+ * Re-exported from {@link ConnectionStatusService} for backward compatibility;
+ * that service is now the source of truth for the status signals.
+ */
+export type WatchStatus = ConnectionStatus;
 
 /** Maximum reconnect attempts per socket before a campaign is considered offline. */
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -13,10 +18,11 @@ const MAX_RECONNECT_ATTEMPTS = 5;
  * single handler. Mirrors the original `useWatchCampaign` hook (reconnecting,
  * validated socket consumption) — zod replaces the original arktype validation.
  *
- * Also tracks a public, read-only connection `status` signal (aggregated across
- * all watched sockets) and a `reconnectAttempts` signal, for surfacing live
- * connection state in the UI. Status tracking is purely additive — the socket
- * map, reconnect/backoff, zod parsing, and handler dispatch are unchanged.
+ * Writes aggregate connection state (status + reconnect attempts) to the
+ * zero-dependency {@link ConnectionStatusService}, which the UI reads from. This
+ * keeps the zod-importing WatchService out of any eager bundle. Status tracking
+ * is purely additive — the socket map, reconnect/backoff, zod parsing, and
+ * handler dispatch are unchanged.
  */
 @Injectable({ providedIn: 'root' })
 export class WatchService {
@@ -27,14 +33,8 @@ export class WatchService {
   /** Per-socket lifecycle state, used to derive the aggregate `status`. */
   private readonly states = new Map<number, WatchStatus>();
 
-  private readonly _status = signal<WatchStatus>('idle');
-  private readonly _reconnectAttempts = signal(0);
-
-  /** Aggregate connection status across every watched campaign. */
-  readonly status = this._status.asReadonly();
-
-  /** Highest current reconnect attempt count across watched sockets. */
-  readonly reconnectAttempts = this._reconnectAttempts.asReadonly();
+  /** Source of truth for the UI-facing connection status signals. */
+  private readonly connectionStatus = inject(ConnectionStatusService);
 
   setHandler(handler: (event: SocketEvent) => void): void {
     this.handler = handler;
@@ -97,10 +97,11 @@ export class WatchService {
   }
 
   /**
-   * Derives the public aggregate `status` and `reconnectAttempts` signals from
-   * the per-campaign lifecycle states. Precedence: any live → 'live'; else any
-   * connecting/reconnecting → that; else offline if any campaign is tracked;
-   * else 'idle' when nothing is (or has been) watched.
+   * Derives the aggregate `status` and `reconnectAttempts` from the per-campaign
+   * lifecycle states and writes them to {@link ConnectionStatusService}.
+   * Precedence: any live → 'live'; else any connecting/reconnecting → that; else
+   * offline if any campaign is tracked; else 'idle' when nothing is (or has
+   * been) watched.
    */
   private recomputeStatus(): void {
     const states = [...this.states.values()];
@@ -118,7 +119,9 @@ export class WatchService {
       next = 'offline';
     }
 
-    this._status.set(next);
-    this._reconnectAttempts.set(Math.max(0, ...this.attempts.values()));
+    this.connectionStatus.update({
+      status: next,
+      attempts: Math.max(0, ...this.attempts.values()),
+    });
   }
 }
