@@ -1,53 +1,95 @@
-# ktor-draw-steel
+# Draw Steel
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
+A campaign / combat manager for the **Draw Steel** TTRPG.
 
-Here are some useful links to get you started:
+This is a full rewrite of the original Ktor (Kotlin) + React/Mantine application,
+kept **functionally identical** and visually close to the original, on a modern
+TypeScript stack:
 
-- [Ktor Documentation](https://ktor.io/docs/home.html)
-- [Ktor GitHub page](https://github.com/ktorio/ktor)
-- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). You'll need
-  to [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to join.
+| Layer     | Original                    | This rewrite                          |
+| --------- | --------------------------- | ------------------------------------- |
+| Backend   | Ktor + Exposed + SQLite     | **Hono** + **Drizzle** + better-sqlite3 |
+| Frontend  | React 19 + Mantine          | **Angular** (standalone, signals, zoneless) + **Tailwind v4** |
+| Validation| arktype                     | **zod**                               |
+| Tooling   | Gradle + Bun + Vite         | **pnpm** workspace                    |
 
-## Features
+Everything is **100% TypeScript**.
 
-Here's a list of features included in this project:
-
-| Name                                                                   | Description                                                                        |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [AutoHeadResponse](https://start.ktor.io/p/auto-head-response)         | Provides automatic responses for HEAD requests                                     |
-| [Routing](https://start.ktor.io/p/routing)                             | Provides a structured routing DSL                                                  |
-| [Resources](https://start.ktor.io/p/resources)                         | Provides type-safe routing                                                         |
-| [Static Content](https://start.ktor.io/p/static-content)               | Serves static files from defined locations                                         |
-| [Status Pages](https://start.ktor.io/p/status-pages)                   | Provides exception handling for routes                                             |
-| [Compression](https://start.ktor.io/p/compression)                     | Compresses responses using encoding algorithms like GZIP                           |
-| [Default Headers](https://start.ktor.io/p/default-headers)             | Adds a default set of headers to HTTP responses                                    |
-| [Partial Content](https://start.ktor.io/p/partial-content)             | Handles requests with the Range header                                             |
-| [Content Negotiation](https://start.ktor.io/p/content-negotiation)     | Provides automatic content conversion according to Content-Type and Accept headers |
-| [kotlinx.serialization](https://start.ktor.io/p/kotlinx-serialization) | Handles JSON serialization using kotlinx.serialization library                     |
-| [Exposed](https://start.ktor.io/p/exposed)                             | Adds Exposed database to your application                                          |
-| [WebSockets](https://start.ktor.io/p/ktor-websockets)                  | Adds WebSocket protocol support for bidirectional client connections               |
-| [Task Scheduling](https://start.ktor.io/p/ktor-server-task-scheduling) | Manages scheduled tasks across instances of your distributed Ktor server           |
-| [Call Logging](https://start.ktor.io/p/call-logging)                   | Logs client requests                                                               |
-
-## Building & Running
-
-To build or run the project, use one of the following tasks:
-
-| Task                          | Description                                                          |
-|-------------------------------|----------------------------------------------------------------------|
-| `./gradlew test`              | Run the tests                                                        |
-| `./gradlew build`             | Build everything                                                     |
-| `buildFatJar`                 | Build an executable JAR of the server with all dependencies included |
-| `buildImage`                  | Build the docker image to use with the fat JAR                       |
-| `publishImageToLocalRegistry` | Publish the docker image locally                                     |
-| `run`                         | Run the server                                                       |
-| `runDocker`                   | Run using the local docker image                                     |
-
-If the server starts successfully, you'll see the following output:
+## Layout
 
 ```
-2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
-2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
+.
+├── packages/
+│   └── shared/        # zod schemas + inferred DTO/socket/Kanka types (the server↔web contract)
+├── apps/
+│   ├── server/        # Hono REST API + WebSockets + Kanka proxy + file uploads + static SPA host
+│   └── web/           # Angular SPA
+└── legacy/            # the original Ktor + React project, kept for reference
 ```
 
+## Requirements
+
+- **Node 22.22.3+ / 24.15+ / 26+** — Angular 22's CLI rejects older or
+  odd-numbered (non-LTS) releases. On Node 26, `better-sqlite3` has no prebuilt
+  binary yet and compiles from source on install, so the Xcode Command Line
+  Tools (`xcode-select --install`) are needed on macOS.
+- **pnpm** — Node 24 ships it via `corepack enable pnpm`; Node 25+ dropped the
+  bundled corepack, so install it directly with `npm install -g pnpm`.
+
+## Install
+
+```bash
+pnpm install
+```
+
+This also downloads the native `better-sqlite3` binary. The first install asks
+to approve build scripts; they are pre-approved in `pnpm-workspace.yaml`.
+
+## Develop
+
+Run the API and the Angular dev server together (the dev server proxies
+`/api`, `/files`, `/kanka`, `/static` and `/watch` to the API on port 8080):
+
+```bash
+pnpm dev
+# API:  http://localhost:8080
+# Web:  http://localhost:4200
+```
+
+Or individually: `pnpm dev:server` / `pnpm dev:web`.
+
+## Build & run (production)
+
+```bash
+pnpm build          # builds shared → web → server
+pnpm start          # serves the built SPA + API on http://localhost:8080
+```
+
+The server serves the compiled Angular app at `/`, so a single process hosts
+everything in production.
+
+## Configuration (environment variables)
+
+| Variable           | Default               | Purpose                                  |
+| ------------------ | --------------------- | ---------------------------------------- |
+| `PORT`             | `8080`                | HTTP port                                |
+| `DATABASE_URL`     | `draw_steel.sqlite`   | SQLite file path                         |
+| `FILES_DIR`        | `./files`             | Upload storage / served at `/files`      |
+| `KANKA_API_KEY`    | _(unset)_             | Enables the cached Kanka proxy at `/kanka` |
+| `KANKA_CACHE_DELAY`| `60`                  | Kanka cache TTL (seconds)                |
+
+On first run the database schema is created and a default user (`id = 1`) is
+seeded, matching the original deployment's assumption.
+
+## API surface
+
+The REST API is preserved verbatim under `/api` (camel-cased entity routes:
+`campaigns`, `characters`, `combats`, `combatants`, `inventoryItem`, `users`,
+`characterConditions`, `displayEntry`), including the original custom routes —
+`/combats/create`, `/combats/{id}/nextRound`, `/characters/{id}/modify/health`,
+`/campaigns/{id}/modify/heroTokens`, etc. — and the same HP / temporary-HP
+damage-absorption logic.
+
+Live updates use a WebSocket at `/watch/{campaignId}` that broadcasts the same
+`CampaignSocketUpdate` payload the original emitted, so the UI refreshes
+reactively on every change.

@@ -1,43 +1,32 @@
-.gradle
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+**/dist/
+**/.angular/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
-.vscode/
-
-**/*.sqlite
-
+# Database / uploads
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 files/
 
-node_modules
+# Env
+.env
+.env.local
 /application.yaml
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+*.log
+
+# Legacy build artifacts
+legacy/.gradle/
+legacy/build/
+legacy/node_modules/

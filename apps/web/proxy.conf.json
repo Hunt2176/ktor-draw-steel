@@ -1,0 +1,7 @@
+{
+  "/api": { "target": "http://localhost:8080", "secure": false },
+  "/files": { "target": "http://localhost:8080", "secure": false },
+  "/static": { "target": "http://localhost:8080", "secure": false },
+  "/kanka": { "target": "http://localhost:8080", "secure": false },
+  "/watch": { "target": "http://localhost:8080", "secure": false, "ws": true }
+}

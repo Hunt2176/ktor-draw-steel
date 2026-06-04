@@ -1,0 +1,142 @@
+@import 'tailwindcss';
+
+/*
+ * Theme tokens approximating the original Mantine dark theme so the rebuilt
+ * Angular UI keeps the same glassmorphism / colour aesthetic.
+ */
+@theme {
+  --color-dark-0: #c1c2c5;
+  --color-dark-1: #a6a7ab;
+  --color-dark-2: #909296;
+  --color-dark-3: #5c5f66;
+  --color-dark-4: #373a40;
+  --color-dark-5: #2c2e33;
+  --color-dark-6: #25262b;
+  --color-dark-7: #1a1b1e;
+  --color-dark-8: #141517;
+  --color-dark-9: #101113;
+
+  --color-brand-blue: #228be6;
+  --color-brand-blue-hover: #1c7ed6;
+  --color-brand-green: #40c057;
+  --color-brand-green-hover: #37b24d;
+  --color-brand-red: #fa5252;
+  --color-brand-red-hover: #f03e3e;
+  --color-brand-indigo: #4c6ef5;
+  --color-brand-gray: #909296;
+
+  --font-sans: 'Roboto', system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: var(--color-dark-7);
+  color: var(--color-dark-0);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+ds-root {
+  display: block;
+  height: 100vh;
+  width: 100vw;
+  overflow: auto;
+}
+
+/* The signature frosted-glass surface (Mantine `.glass`). */
+.glass {
+  background: rgba(28, 28, 30, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.left-anchored {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.right-anchored {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+/* Native control theming to blend with the dark palette. */
+input,
+textarea,
+select {
+  color-scheme: dark;
+}
+
+/* Form controls (Mantine input approximation). */
+.ds-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.ds-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-dark-0);
+}
+.ds-input {
+  width: 100%;
+  background: var(--color-dark-6);
+  border: 1px solid var(--color-dark-4);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  color: var(--color-dark-0);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.ds-input:focus {
+  border-color: var(--color-brand-blue);
+}
+.ds-input::placeholder {
+  color: var(--color-dark-2);
+}
+
+/* Pill (Mantine Pill). */
+.ds-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: color-mix(in srgb, var(--color-brand-blue) 22%, transparent);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.8rem;
+}
+.ds-pill button {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-dark-4);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -1,0 +1,30 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+
+allowBuilds:
+  '@parcel/watcher': true
+  better-sqlite3: true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+
+minimumReleaseAgeExclude:
+  - '@angular-devkit/architect@0.2200.0'
+  - '@angular-devkit/core@22.0.0'
+  - '@angular-devkit/schematics@22.0.0'
+  - '@angular/build@22.0.0'
+  - '@angular/cdk@22.0.0'
+  - '@angular/cli@22.0.0'
+  - '@angular/common@22.0.0'
+  - '@angular/compiler-cli@22.0.0'
+  - '@angular/compiler@22.0.0'
+  - '@angular/core@22.0.0'
+  - '@angular/forms@22.0.0'
+  - '@angular/platform-browser@22.0.0'
+  - '@angular/router@22.0.0'
+  - '@schematics/angular@22.0.0'
+
+onlyBuiltDependencies:
+  - better-sqlite3
+  - esbuild
