@@ -45,6 +45,7 @@ function ringColor(name: string | undefined): string {
         />
         @for (seg of segments(); track $index) {
           <circle
+            class="ds-ring-segment"
             [attr.cx]="center()"
             [attr.cy]="center()"
             [attr.r]="radius()"
@@ -72,6 +73,16 @@ function ringColor(name: string | undefined): string {
       }
       .ds-ring svg {
         transform: rotate(0);
+      }
+      .ds-ring-segment {
+        transition:
+          stroke-dasharray 0.4s ease,
+          stroke 0.3s ease;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ds-ring-segment {
+          transition: none;
+        }
       }
       .ds-ring-label {
         position: absolute;

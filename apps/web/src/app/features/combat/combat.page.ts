@@ -39,6 +39,7 @@ import { getHp, type Combatant } from '@draw-steel/shared';
   selector: 'ds-combat-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [RealtimeService],
+  host: { '(document:keydown)': 'onKeydown($event)' },
   imports: [
     Card,
     Button,
@@ -86,9 +87,12 @@ import { getHp, type Combatant } from '@draw-steel/shared';
                   >{{ campaign.campaign.name }}</ds-button
                 >
                 <div
-                  class="text-sm font-semibold uppercase tracking-wide text-[color:color-mix(in_srgb,var(--color-dark-0)_60%,transparent)]"
+                  class="round-indicator text-sm font-semibold uppercase tracking-wide text-[color:color-mix(in_srgb,var(--color-dark-0)_70%,transparent)]"
                 >
-                  Round {{ combat.round }}
+                  <span class="round-indicator__label">Round</span>
+                  @for (r of [combat.round]; track r) {
+                    <span class="round-indicator__value">{{ r }}</span>
+                  }
                 </div>
               </div>
 
@@ -111,10 +115,18 @@ import { getHp, type Combatant } from '@draw-steel/shared';
                     />
                   </div>
                 </ds-popover>
-                <ds-button size="md" (click)="showNextRound.set(true)">
-                  <span class="mr-2">Next Round</span>
-                  <ds-icon name="arrow-right" />
-                </ds-button>
+                <div class="flex items-center gap-1.5">
+                  <ds-button size="md" (click)="showNextRound.set(true)">
+                    <span class="mr-2">Next Round</span>
+                    <ds-icon name="arrow-right" />
+                  </ds-button>
+                  <kbd
+                    class="kbd-hint"
+                    aria-hidden="true"
+                    title="Press N to advance the round"
+                    >N</kbd
+                  >
+                </div>
               </div>
             </div>
           </ds-card>
@@ -134,6 +146,7 @@ import { getHp, type Combatant } from '@draw-steel/shared';
                   @for (combatant of col.list; track combatant.id) {
                     <ds-character-card
                       #card
+                      class="card-enter"
                       type="tile"
                       [character]="combatant.character"
                       (portraitClick)="goCharacter(combatant.character.id)"
@@ -389,6 +402,77 @@ import { getHp, type Combatant } from '@draw-steel/shared';
         border: 1px dashed var(--color-dark-4);
         border-radius: 0.6rem;
       }
+
+      /* Round indicator + one-shot pulse when the round advances. */
+      .round-indicator {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.35rem;
+      }
+      .round-indicator__value {
+        display: inline-block;
+        font-weight: 800;
+        color: var(--color-dark-0);
+        animation: ds-round-pulse 0.6s ease-out;
+      }
+
+      /* Subtle discoverability badge for the keyboard shortcut. */
+      .kbd-hint {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.25rem;
+        height: 1.25rem;
+        padding: 0 0.35rem;
+        border-radius: 0.35rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1;
+        font-family: inherit;
+        color: color-mix(in srgb, var(--color-dark-0) 60%, transparent);
+        background: color-mix(in srgb, var(--color-dark-6) 40%, transparent);
+        border: 1px solid var(--color-dark-4);
+        border-bottom-width: 2px;
+        user-select: none;
+      }
+
+      /* Subtle mount fade/translate for combatant cards. */
+      .card-enter {
+        animation: ds-card-enter 0.25s ease-out both;
+      }
+
+      @keyframes ds-card-enter {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes ds-round-pulse {
+        0% {
+          transform: scale(1);
+          color: var(--color-brand-blue);
+        }
+        35% {
+          transform: scale(1.18);
+          color: var(--color-brand-blue);
+        }
+        100% {
+          transform: scale(1);
+          color: var(--color-dark-0);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .card-enter,
+        .round-indicator__value {
+          animation: none;
+        }
+      }
     `,
   ],
 })
@@ -481,6 +565,42 @@ export class CombatPage {
     });
     effect(() => this.realtime.watch(this.combat.value()?.campaign));
     effect(() => this.background.apply(this.campaign.value()?.campaign));
+  }
+
+  /**
+   * Global keyboard shortcut: press "n" to open the Next Round confirmation.
+   * Ignored while typing in a form field/contenteditable, while a modal is
+   * already open, or when modifier keys are held (so browser shortcuts work).
+   */
+  protected onKeydown(event: KeyboardEvent): void {
+    if (event.key.toLowerCase() !== 'n') return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+    const target = event.target as HTMLElement | null;
+    if (target) {
+      const tag = target.tagName;
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+    }
+
+    // Don't trigger while any modal is already open.
+    if (
+      this.showNextRound() ||
+      this.showQuickAdd() ||
+      this.showModifyChars() ||
+      this.inventoryFor() != null
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    this.showNextRound.set(true);
   }
 
   protected inventoryCharacter(combat: { combatants: Combatant[] }) {

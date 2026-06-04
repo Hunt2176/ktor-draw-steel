@@ -13,12 +13,13 @@ import { Button } from '../../ui/button';
 import { Icon } from '../../ui/icon';
 import { Modal } from '../../ui/modal';
 import { NumberInput, TextInput } from '../../ui/inputs';
+import { Skeleton } from '../../ui/skeleton';
 import type { Campaign, CampaignDetails } from '@draw-steel/shared';
 
 @Component({
   selector: 'ds-campaigns',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Button, Icon, Modal, TextInput, NumberInput],
+  imports: [Button, Icon, Modal, TextInput, NumberInput, Skeleton],
   template: `
     <section class="space-y-6">
       <header class="flex items-center justify-between gap-4">
@@ -36,8 +37,8 @@ import type { Campaign, CampaignDetails } from '@draw-steel/shared';
         >
           @for (n of skeletons; track n) {
             <div class="glass skel" aria-hidden="true">
-              <div class="skel-line skel-title"></div>
-              <div class="skel-line skel-meta"></div>
+              <ds-skeleton width="60%" height="1.1rem" />
+              <ds-skeleton width="40%" height="0.85rem" />
             </div>
           }
         </div>
@@ -49,7 +50,9 @@ import type { Campaign, CampaignDetails } from '@draw-steel/shared';
               class="glass campaign-card"
               (click)="select(details)"
             >
-              <span class="campaign-name">{{ details.campaign.name }}</span>
+              <span class="campaign-name" [title]="details.campaign.name">{{
+                details.campaign.name
+              }}</span>
               <span class="campaign-meta">
                 <span class="pill">
                   <span class="pill-dot"></span>
@@ -157,6 +160,10 @@ import type { Campaign, CampaignDetails } from '@draw-steel/shared';
         font-weight: 700;
         line-height: 1.25;
         color: #fff;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
       }
       .campaign-meta {
         display: flex;
@@ -213,38 +220,9 @@ import type { Campaign, CampaignDetails } from '@draw-steel/shared';
         border: 1px solid var(--color-dark-4);
         border-radius: 0.85rem;
       }
-      .skel-line {
-        height: 0.85rem;
-        border-radius: 0.4rem;
-        background: linear-gradient(
-          90deg,
-          var(--color-dark-5) 25%,
-          var(--color-dark-4) 37%,
-          var(--color-dark-5) 63%
-        );
-        background-size: 400% 100%;
-        animation: skel-shimmer 1.4s ease infinite;
-      }
-      .skel-title {
-        width: 60%;
-        height: 1.1rem;
-      }
-      .skel-meta {
-        width: 40%;
-      }
-      @keyframes skel-shimmer {
-        0% {
-          background-position: 100% 50%;
-        }
-        100% {
-          background-position: 0 50%;
-        }
-      }
       @media (prefers-reduced-motion: reduce) {
-        .campaign-card,
-        .skel-line {
+        .campaign-card {
           transition: none;
-          animation: none;
         }
       }
     `,

@@ -15,6 +15,21 @@ TypeScript stack:
 
 Everything is **100% TypeScript**.
 
+## Experimental UX program (`experimental` branch)
+
+The `Rewrite-1.0` tag marks the functional-parity rewrite. The `experimental` branch then
+carries five iterative UX/design releases on top of it — each one a critical design pass that
+files 10 medium/large + 10 small improvements, implements them, and ships. Release notes live in
+[`docs/releases/`](docs/releases):
+
+| Release | Theme |
+| ------- | ----- |
+| [1](docs/releases/release-1.md) | Foundations & Fidelity — app shell, landing, card grids, the `.ring`/Tailwind gauge-box fix |
+| [2](docs/releases/release-2.md) | Polish & Presentation — fullscreen display route, character sheet, combat polish, per-campaign data fix |
+| [3](docs/releases/release-3.md) | Robustness & Refinement — deep-link/refresh fix, condition semantics, popovers, inputs, a11y |
+| [4](docs/releases/release-4.md) | Navigation, Feedback & Edge Cases — 404 page, toasts, searchable selector, icon-button labels |
+| [5](docs/releases/release-5.md) | Motion, Consistency & Final Polish — gauge/list animation, modal focus-trap, skeletons, home quick-launch |
+
 ## Layout
 
 ```
