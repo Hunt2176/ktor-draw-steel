@@ -1,42 +1,30 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
-import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
-import { ModalComponent } from './ui/modal.component';
-import { ButtonComponent } from './ui/button.component';
-import { IconComponent } from './ui/icon.component';
 import { DsHeaderComponent } from './ui/ds-header.component';
+import { ToastContainerComponent } from './ui/toast-container.component';
 import { ErrorService } from './core/error.service';
+import { ToastService } from './core/toast.service';
 
-/** Root shell: persistent header, routed views, and the global error modal. */
+/** Root shell: persistent header, routed views, and the global toast surface. */
 @Component({
   selector: 'app-root',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, ModalComponent, ButtonComponent, IconComponent, DsHeaderComponent],
+  imports: [RouterOutlet, DsHeaderComponent, ToastContainerComponent],
   template: `
     @if (showHeader()) {
       <ds-header />
     }
     <router-outlet />
-    <app-modal title="Error" [opened]="hasError()" (closed)="errors.clear()">
-      <div class="flex items-start gap-3">
-        <span class="mt-0.5 shrink-0 text-ds-ember">
-          <app-icon [name]="warningIcon" />
-        </span>
-        <p class="whitespace-pre-wrap break-words">{{ message() }}</p>
-      </div>
-      <div class="mt-4 flex justify-end">
-        <app-button color="red" (clicked)="errors.clear()">Dismiss</app-button>
-      </div>
-    </app-modal>
+    <ds-toasts />
   `,
 })
 export class AppComponent {
   private readonly router = inject(Router);
   protected readonly errors = inject(ErrorService);
-  protected readonly warningIcon = faTriangleExclamation;
+  private readonly toasts = inject(ToastService);
 
   /** Current URL, kept in sync with navigation so the header can hide itself. */
   private readonly url = toSignal(
@@ -51,11 +39,15 @@ export class AppComponent {
   /** Hide the global header on the fullscreen display route. */
   protected readonly showHeader = computed(() => !this.url().split('?')[0].endsWith('/display'));
 
-  protected readonly hasError = computed(() => this.errors.error() != null);
-  protected readonly message = computed(() => {
-    const err = this.errors.error();
-    if (err == null) return '';
-    if (err instanceof Error) return err.message;
-    return String(err);
-  });
+  constructor() {
+    // Surface global errors as persistent error toasts, then clear the source so
+    // the same error is not re-shown on the next change-detection pass.
+    effect(() => {
+      const err = this.errors.error();
+      if (err == null) return;
+      const message = err instanceof Error ? err.message : String(err);
+      this.toasts.error(message);
+      this.errors.clear();
+    });
+  }
 }
