@@ -42,6 +42,29 @@ files 10 medium/large + 10 small improvements, implements them, and ships. Relea
 └── legacy/            # the original Ktor + React project, kept for reference
 ```
 
+## Quick start (operator TL;DR)
+
+From the repo root, with **Node ≥ 22.22.3** and **pnpm** installed (see
+[Requirements](#requirements) if either is missing):
+
+```bash
+pnpm install            # install deps + build the native sqlite binary
+pnpm build              # compile shared → web → server
+pnpm start              # serve the app on http://localhost:8080
+```
+
+Then open **http://localhost:8080**.
+
+To load example data, leave `pnpm start` running and, in a **second terminal**:
+
+```bash
+pnpm seed               # creates 3 demo campaigns with characters/combats/items
+```
+
+Refresh the page — the campaigns now appear at `/campaigns`.
+
+> Different port? `PORT=2222 pnpm start` and `BASE=http://localhost:2222 pnpm seed`.
+
 ## Requirements
 
 - **Node 22.22.3+ / 24.15+ / 26+** — Angular 22's CLI rejects older or
@@ -82,6 +105,38 @@ pnpm start          # serves the built SPA + API on http://localhost:8080
 
 The server serves the compiled Angular app at `/`, so a single process hosts
 everything in production.
+
+## Seed test data
+
+The seed script (`apps/server/seed.mjs`) populates the database with three demo
+campaigns — heroes, minions, an NPC, conditions, inventory, an active combat, and
+display entries — by calling the running server's REST API. So the server must be
+**running first**:
+
+```bash
+# terminal 1 — start the app (or use `pnpm dev:server` for just the API)
+pnpm start
+
+# terminal 2 — seed against it
+pnpm seed
+```
+
+- It targets `http://localhost:8080` by default. Override with `BASE`, e.g.
+  `BASE=http://localhost:2222 pnpm seed` (match whatever `PORT` the server uses).
+- Re-running **appends** another copy of the sample data; it does not reset the DB.
+  To start fresh, stop the server and delete the SQLite file (default
+  `draw_steel.sqlite`, see `DATABASE_URL` below), then start and seed again.
+- It only uses public API endpoints, so it works against a local **or** remote
+  deployment.
+
+Expected output:
+
+```
+Seeded campaigns:
+  #1 Shadow of the Spire — heroTokens 3
+  #2 Embers of the Deep — heroTokens 1
+  #3 The Hollow Crown — heroTokens 5
+```
 
 ## Configuration (environment variables)
 

@@ -13,6 +13,7 @@
     "dev:server": "pnpm --filter @draw-steel/server dev",
     "dev:web": "pnpm --filter @draw-steel/web dev",
     "start": "pnpm --filter @draw-steel/server start",
+    "seed": "node apps/server/seed.mjs",
     "typecheck": "pnpm -r typecheck",
     "db:push": "pnpm --filter @draw-steel/server db:push"
   },
