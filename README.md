@@ -6,8 +6,7 @@ rounds), inventories, and a full-screen player-facing display screen with option
 [Kanka](https://kanka.io) worldbuilding integration.
 
 This is a **100% TypeScript** rewrite of the original Kotlin/Ktor + React/Mantine
-application, kept functionally identical and visually close to the original. The
-canonical original lives at `../../Original/ktor-draw-steel`.
+application, kept functionally identical and visually close to the original.
 
 ## Stack
 
@@ -33,28 +32,73 @@ The server serves the built Angular SPA at `/`, the REST API under `/api`,
 uploaded files under `/files`, the Kanka proxy under `/kanka`, and the campaign
 live-update WebSocket at `/watch/{campaignId}`.
 
+## Prerequisites
+
+- **Node.js ≥ 20** (developed on Node 20–26). Check with `node -v`.
+- **pnpm 11** — this repo pins `pnpm@11.5.1`. The easiest way to get the right
+  version is Corepack (bundled with Node):
+  ```bash
+  corepack enable
+  corepack prepare pnpm@11.5.1 --activate
+  pnpm -v   # → 11.5.1
+  ```
+  (Or install pnpm any other way; any pnpm 11.x works.)
+- A C toolchain is needed the first time you install, because `better-sqlite3`
+  compiles a native module — on macOS install Xcode Command Line Tools
+  (`xcode-select --install`); on Debian/Ubuntu `apt-get install build-essential python3`.
+  No separate database server is required — SQLite is file-based and auto-created.
+
 ## Getting started
 
 ```bash
-pnpm install          # install all workspaces (compiles better-sqlite3)
-pnpm build            # build shared → server → web
+# 1. Clone and enter the repo
+git clone https://github.com/Hunt2176/ktor-draw-steel.git
+cd ktor-draw-steel
+git switch claude-code-grimoire    # the branch this rewrite lives on
 
-# Development (two processes, web proxies /api and /watch to the server):
-pnpm dev:server       # Hono on http://localhost:8080
-pnpm dev:web          # Angular dev server on http://localhost:5173
+# 2. Install all workspaces (compiles better-sqlite3 on first run)
+pnpm install
 
-# Or run the production server (serves the built SPA itself):
-pnpm --filter @draw-steel/server start   # http://localhost:8080
+# 3. Build everything (shared → server → web)
+pnpm build
 ```
+
+### Run it
+
+**Option A — production-style (one process, recommended for just trying it).**
+The server builds-in nothing extra; it serves the compiled Angular SPA, the API,
+and the WebSocket all on one port. Requires `pnpm build` to have run first.
+
+```bash
+pnpm --filter @draw-steel/server start    # → open http://localhost:8080
+```
+
+**Option B — development (two processes, live reload).** The Angular dev server
+proxies `/api`, `/files`, and the `/watch` WebSocket to the API server, so you
+use the web URL.
+
+```bash
+pnpm dev            # runs BOTH: API on :8080 + Angular on :5173
+# open http://localhost:5173
+```
+
+(`pnpm dev:server` and `pnpm dev:web` run the two halves individually if you
+prefer separate terminals.)
 
 ### Seed sample data
 
-With the server running:
+The seeder talks to the running server's REST API, so **start the server first**
+(Option A or B above), then in another terminal:
 
 ```bash
-pnpm seed                       # 5 campaigns + players + heroes on :8080
-node seed-campaigns.mjs --url http://localhost:8099   # custom URL
+pnpm seed                                  # 5 campaigns + players + heroes on :8080
+pnpm seed -- --campaigns-only              # campaigns only (no heroes)
+pnpm seed -- --dry-run                     # print what it would create, write nothing
+node seed-campaigns.mjs --url http://localhost:3000   # point at a non-default URL/port
 ```
+
+Seeding is **idempotent** — re-running skips anything that already exists, so it's
+safe to run repeatedly. Then reload the app and you'll see five campaigns.
 
 ## Configuration (server env vars)
 
