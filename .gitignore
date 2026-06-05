@@ -1,4 +1,9 @@
 # ── Grimoire framework ────────────────────────────────────────────────
+# Grimoire scaffolding artifacts — kept on-disk for local tooling but never
+# committed to this app repository.
+.claude/
+/CLAUDE.md
+/docs/
 # Backups written by sync-from-source --apply
 .sync-backup/
 # Backups written by sync-from-upstream --apply (downstream projects)
