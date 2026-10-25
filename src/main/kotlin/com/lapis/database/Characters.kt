@@ -204,7 +204,9 @@ class ExposedCharacter(
 		json["presence"]?.jsonPrimitive?.int?.let { presence = it }
 		
 		json["removedHp"]?.jsonPrimitive?.int?.let { removedHp = it }
-		json["maxHp"]?.jsonPrimitive?.int?.let { maxHp = it }
+		if ("maxHp" in json) {
+			maxHp = json["maxHp"]?.jsonPrimitive?.intOrNull ?: 0
+		}
 		json["temporaryHp"]?.jsonPrimitive?.int?.let { temporaryHp = it }
 		
 		json["removedRecoveries"]?.jsonPrimitive?.int?.let { removedRecoveries = it }

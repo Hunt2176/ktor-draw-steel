@@ -68,7 +68,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 	
 	const quickAddMutation = useMutation({
 		mutationFn: (character: Partial<Character>) => {
-			return quickAddCombatant(id, { character: {name: character.name!, maxHp: character.maxHp!, offstage: character.offstage ?? true, user: 1} });
+			return quickAddCombatant(id, { character: {name: character.name!, maxHp: character.maxHp, offstage: character.offstage ?? true, user: 1} });
 		},
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({
@@ -393,7 +393,7 @@ export function CombatPage({}: CombatPageProps): React.JSX.Element | undefined {
 			<TextInput label={'Picture URL'} onChange={(e) => setQuickAddConfig({ ...quickAddConfig, pictureUrl: e.target.value })}></TextInput>
 			<Divider my={'md'} />
 			<Group justify={'end'}>
-				<Button disabled={quickAddConfig['name'] == null || quickAddConfig['maxHp'] == null}
+				<Button disabled={quickAddConfig['name'] == null}
 					onClick={() => {
 					quickAddMutation.mutate(quickAddConfig);
 				}}>Submit</Button>
