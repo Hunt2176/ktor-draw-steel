@@ -92,6 +92,26 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 	});
 	
 	const hpBar = useMemo(() => {
+		if (!Character.hasKnownHp(character)) {
+			return (
+				<Popover trapFocus withArrow arrowSize={12}>
+					<Popover.Target>
+						<Stack px={'sm'} gap={0} align={'center'}>
+							<Text c={'red'} fw={700} size={'lg'}>
+								{character.removedHp}
+							</Text>
+							<Text size={'sm'} fw={700}>
+								HP Taken
+							</Text>
+						</Stack>
+					</Popover.Target>
+					<Popover.Dropdown>
+						<OverlayDisplay type={'hp'}/>
+					</Popover.Dropdown>
+				</Popover>
+			);
+		}
+
 		const overColor = 'yellow';
 		const underColor = 'dark';
 		
@@ -219,7 +239,7 @@ export function CharacterCard({ stackId, uploadStackId, character, type = 'full'
 				</Popover.Dropdown>
 			</Popover>
 		);
-	}, [hp.percent, hp.current, hp.max, hp.temporary, character.minions]);
+	}, [character, hp.percent, hp.current, hp.max, hp.temporary, character.minions]);
 	
 	const recoveriesBar = useMemo(() => {
 		const ring = (

@@ -248,7 +248,7 @@ export async function updateCombatRound(id: number, update: CombatRoundUpdate): 
 export type CombatantQuickAddUpdate = {
 	character: {
 		name: string,
-		maxHp: number,
+		maxHp?: number,
 		user: number,
 		offstage: boolean
 	}

@@ -80,7 +80,15 @@ export interface CharacterPool {
 }
 
 export namespace Character {
+	export function hasKnownHp(char: Character): boolean {
+		return char.maxHp > 0;
+	}
+
 	export function getHp(char: Character): CharacterPool {
+		if (!hasKnownHp(char)) {
+			return { current: -char.removedHp, max: char.maxHp, percent: 0, temporary: char.temporaryHp };
+		}
+
 		const current = char.maxHp + char.temporaryHp - char.removedHp;
 		const percent = current / char.maxHp;
 		return { current, max: char.maxHp, percent, temporary: char.temporaryHp };
